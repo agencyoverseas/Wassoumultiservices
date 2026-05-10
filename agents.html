@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="theme-color" content="#1b4332"/>
+  <title>Agents — Wassou Multiservices</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
+</head>
+<body>
+<div id="overlay"></div>
+<div class="app-shell">
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🌿</span>
+      <span class="logo-name">Wassou</span>
+      <span class="logo-sub">Multiservices — Guadeloupe</span>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Principal</div>
+      <a href="index.html" class="nav-link"><span class="nav-icon">📊</span> Tableau de bord</a>
+      <a href="clients.html" class="nav-link"><span class="nav-icon">👥</span> Clients</a>
+      <a href="agents.html" class="nav-link"><span class="nav-icon">🧑‍🌾</span> Agents</a>
+      <a href="interventions.html" class="nav-link"><span class="nav-icon">📅</span> Interventions</a>
+      <div class="nav-section-title">Outils</div>
+      <a href="sms.html" class="nav-link"><span class="nav-icon">💬</span> SMS</a>
+      <a href="devis.html" class="nav-link"><span class="nav-icon">📄</span> Devis & Factures</a>
+      <a href="rapports.html" class="nav-link"><span class="nav-icon">📈</span> Rapports</a>
+    </div>
+    <div class="sidebar-footer"><a href="https://drayk973.github.io/Wassou-services-/" target="_blank">🌐 Site public</a></div>
+  </nav>
+
+  <div class="main-content">
+    <header class="top-header">
+      <button class="burger-btn" id="burger">☰</button>
+      <div class="page-title">🧑‍🌾 Agents</div>
+      <div class="header-actions">
+        <button class="btn btn-primary btn-sm" onclick="openModal()">+ Nouvel agent</button>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <div class="page-header">
+        <div class="filter-pills">
+          <button class="pill active" onclick="setFilter('all',this)">Tous</button>
+          <button class="pill" onclick="setFilter('actif',this)">✓ Actifs</button>
+          <button class="pill" onclick="setFilter('conge',this)">💤 En congé</button>
+        </div>
+      </div>
+
+      <!-- Stats agents -->
+      <div class="stats-grid stagger mb-6" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card green"><div class="stat-icon">🧑‍🌾</div><div class="stat-info"><div class="stat-value" id="s-total">—</div><div class="stat-label">Agents total</div></div></div>
+        <div class="stat-card gold"><div class="stat-icon">✅</div><div class="stat-info"><div class="stat-value" id="s-actif">—</div><div class="stat-label">Actifs</div></div></div>
+        <div class="stat-card orange"><div class="stat-icon">📊</div><div class="stat-info"><div class="stat-value" id="s-inter">—</div><div class="stat-label">Interventions totales</div></div></div>
+      </div>
+
+      <!-- Agents grid -->
+      <div id="agents-grid" class="grid-3 stagger"></div>
+      <div id="empty-agents" class="empty-state" style="display:none"><div class="empty-icon">🧑‍🌾</div><p>Aucun agent</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="agentModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span>🧑‍🌾</span>
+      <h3 id="modal-title">Nouvel agent</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id"/>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Nom <span>*</span></label><input class="form-control" id="f-nom" placeholder="Rosine"/></div>
+        <div class="form-group"><label class="form-label">Prénom <span>*</span></label><input class="form-control" id="f-prenom" placeholder="Kevin"/></div>
+      </div>
+      <div class="form-group"><label class="form-label">Téléphone</label><input class="form-control" id="f-tel" type="tel" placeholder="0690…"/></div>
+      <div class="form-group">
+        <label class="form-label">Spécialités</label>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;"><input type="checkbox" id="sp-jardin" value="jardin"/> 🌱 Jardin</label>
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;"><input type="checkbox" id="sp-karcher" value="karcher"/> 💦 Kärcher</label>
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;"><input type="checkbox" id="sp-autre" value="autre"/> 🔧 Autre</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Avatar (emoji)</label>
+        <input class="form-control" id="f-avatar" placeholder="🧑‍🌾" style="font-size:1.3rem;"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Statut</label>
+        <select class="form-control" id="f-statut">
+          <option value="actif">✓ Actif</option>
+          <option value="conge">💤 En congé</option>
+          <option value="inactif">❌ Inactif</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveAgent()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div><div class="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline btn-cancel">Annuler</button>
+      <button class="btn btn-danger btn-confirm">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+let currentFilter = 'all';
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderAgents();
+}
+
+function renderAgents() {
+  let agents = WassouDB.agents.getAll();
+  if (currentFilter !== 'all') agents = agents.filter(a => a.statut === currentFilter);
+
+  document.getElementById('s-total').textContent = WassouDB.agents.getAll().length;
+  document.getElementById('s-actif').textContent = WassouDB.agents.getAll().filter(a => a.statut === 'actif').length;
+  document.getElementById('s-inter').textContent = WassouDB.agents.getAll().reduce((s,a) => s + (a.interventions||0), 0);
+  document.getElementById('empty-agents').style.display = agents.length ? 'none' : 'block';
+
+  const grid = document.getElementById('agents-grid');
+  grid.innerHTML = '';
+  agents.forEach(a => {
+    const interventions = WassouDB.interventions.getAll().filter(i => i.agentId === a.id);
+    const terminées = interventions.filter(i => i.statut === 'terminé').length;
+    const ca = interventions.filter(i => i.statut === 'terminé').reduce((s,i) => s+(i.montant||0), 0);
+    const div = document.createElement('div');
+    div.className = 'agent-card fade-in';
+    div.innerHTML = `
+      <div style="position:absolute;top:14px;right:14px;display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="editAgent('${a.id}')">✏️</button>
+        <button class="btn btn-ghost btn-icon btn-sm" onclick="deleteAgent('${a.id}')">🗑️</button>
+      </div>
+      <div class="agent-avatar-wrap">${a.avatar || '🧑‍🌾'}</div>
+      <div class="agent-name">${a.prenom} ${a.nom}</div>
+      <div class="star-rating">${App.stars(a.note || 5)}</div>
+      <div class="agent-specialites">${(a.specialites||[]).map(s => `<span class="badge badge-success">${WassouDB.serviceLabel(s)}</span>`).join('')}</div>
+      <div style="margin:10px 0">
+        <span class="badge ${a.statut === 'actif' ? 'badge-success' : 'badge-warning'}">${a.statut === 'actif' ? '✓ Actif' : a.statut === 'conge' ? '💤 Congé' : '❌ Inactif'}</span>
+      </div>
+      <div class="agent-stats">
+        <div class="stat"><div class="val">${terminées}</div><div class="lbl">Interventions</div></div>
+        <div class="stat"><div class="val">${App.formatMoney(ca)}</div><div class="lbl">CA généré</div></div>
+        <div class="stat"><div class="val">${a.note || '5.0'}</div><div class="lbl">Note</div></div>
+      </div>
+      ${a.tel ? `<a href="tel:${a.tel}" class="btn btn-outline btn-sm" style="margin-top:14px;width:100%;justify-content:center;">📞 ${a.tel}</a>` : ''}
+    `;
+    div.style.position = 'relative';
+    grid.appendChild(div);
+  });
+}
+
+function openModal() {
+  document.getElementById('modal-title').textContent = 'Nouvel agent';
+  document.getElementById('edit-id').value = '';
+  ['nom','prenom','tel','avatar'].forEach(f => document.getElementById('f-'+f).value = '');
+  ['jardin','karcher','autre'].forEach(s => document.getElementById('sp-'+s).checked = false);
+  document.getElementById('f-statut').value = 'actif';
+  document.getElementById('agentModal').classList.add('open');
+}
+
+function editAgent(id) {
+  const a = WassouDB.agents.getById(id);
+  if (!a) return;
+  document.getElementById('modal-title').textContent = 'Modifier l\'agent';
+  document.getElementById('edit-id').value = id;
+  document.getElementById('f-nom').value = a.nom || '';
+  document.getElementById('f-prenom').value = a.prenom || '';
+  document.getElementById('f-tel').value = a.tel || '';
+  document.getElementById('f-avatar').value = a.avatar || '';
+  document.getElementById('f-statut').value = a.statut || 'actif';
+  ['jardin','karcher','autre'].forEach(s => document.getElementById('sp-'+s).checked = (a.specialites||[]).includes(s));
+  document.getElementById('agentModal').classList.add('open');
+}
+
+function saveAgent() {
+  const nom = document.getElementById('f-nom').value.trim();
+  const prenom = document.getElementById('f-prenom').value.trim();
+  if (!nom || !prenom) { App.toast('Nom et prénom requis','error'); return; }
+  const specialites = ['jardin','karcher','autre'].filter(s => document.getElementById('sp-'+s).checked);
+  const data = {
+    nom, prenom,
+    tel: document.getElementById('f-tel').value.trim(),
+    avatar: document.getElementById('f-avatar').value.trim() || '🧑‍🌾',
+    statut: document.getElementById('f-statut').value,
+    specialites,
+    note: 5.0,
+    interventions: 0,
+  };
+  const editId = document.getElementById('edit-id').value;
+  if (editId) {
+    WassouDB.agents.update(editId, data);
+    App.toast('Agent mis à jour ✅');
+  } else {
+    WassouDB.agents.add(data);
+    App.toast('Agent ajouté ✅');
+  }
+  closeModal();
+  renderAgents();
+}
+
+function deleteAgent(id) {
+  App.confirm('Supprimer cet agent ?', () => {
+    WassouDB.agents.delete(id);
+    renderAgents();
+    App.toast('Agent supprimé','warning');
+  });
+}
+
+function closeModal() { document.getElementById('agentModal').classList.remove('open'); }
+document.addEventListener('DOMContentLoaded', renderAgents);
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").then(()=>console.log("SW registered")).catch(e=>console.error(e))}</script>
+</body>
+</html>

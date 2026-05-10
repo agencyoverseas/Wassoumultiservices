@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="theme-color" content="#1b4332"/>
+  <title>Clients — Wassou Multiservices</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
+</head>
+<body>
+<div id="overlay"></div>
+<div class="app-shell">
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🌿</span>
+      <span class="logo-name">Wassou</span>
+      <span class="logo-sub">Multiservices — Guadeloupe</span>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Principal</div>
+      <a href="index.html" class="nav-link"><span class="nav-icon">📊</span> Tableau de bord</a>
+      <a href="clients.html" class="nav-link"><span class="nav-icon">👥</span> Clients</a>
+      <a href="agents.html" class="nav-link"><span class="nav-icon">🧑‍🌾</span> Agents</a>
+      <a href="interventions.html" class="nav-link"><span class="nav-icon">📅</span> Interventions</a>
+      <div class="nav-section-title">Outils</div>
+      <a href="sms.html" class="nav-link"><span class="nav-icon">💬</span> SMS</a>
+      <a href="devis.html" class="nav-link"><span class="nav-icon">📄</span> Devis & Factures</a>
+      <a href="rapports.html" class="nav-link"><span class="nav-icon">📈</span> Rapports</a>
+    </div>
+    <div class="sidebar-footer"><a href="https://drayk973.github.io/Wassou-services-/" target="_blank">🌐 Site public</a></div>
+  </nav>
+
+  <div class="main-content">
+    <header class="top-header">
+      <button class="burger-btn" id="burger">☰</button>
+      <div class="page-title">👥 Clients</div>
+      <div class="header-actions">
+        <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Nouveau client</button>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <div class="page-header">
+        <div class="page-header-left">
+          <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Nom, téléphone, adresse…" oninput="renderClients()"/>
+          </div>
+          <div class="filter-pills">
+            <button class="pill active" data-filter="all" onclick="setFilter('all',this)">Tous</button>
+            <button class="pill" data-filter="jardin" onclick="setFilter('jardin',this)">🌱 Jardin</button>
+            <button class="pill" data-filter="karcher" onclick="setFilter('karcher',this)">💦 Kärcher</button>
+            <button class="pill" data-filter="autre" onclick="setFilter('autre',this)">🔧 Autre</button>
+          </div>
+        </div>
+        <div class="page-header-right">
+          <button class="btn btn-outline btn-sm" onclick="toggleView('grid')" id="btn-grid">⊞ Grille</button>
+          <button class="btn btn-outline btn-sm" onclick="toggleView('list')" id="btn-list">☰ Liste</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportClients()">⬇ Export</button>
+        </div>
+      </div>
+
+      <!-- Grid view -->
+      <div id="clients-grid" class="clients-grid stagger"></div>
+
+      <!-- List view (hidden by default) -->
+      <div id="clients-list" class="card" style="display:none;">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr>
+              <th>Client</th><th>Téléphone</th><th>Adresse</th><th>Services</th><th>Ajouté</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="clients-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="empty-clients" class="empty-state" style="display:none;">
+        <div class="empty-icon">👥</div>
+        <p>Aucun client trouvé.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="clientModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span>👤</span>
+      <h3 id="modal-title">Nouveau client</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id"/>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nom <span>*</span></label>
+          <input class="form-control" id="f-nom" placeholder="Dupont"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Prénom</label>
+          <input class="form-control" id="f-prenom" placeholder="Jean"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Téléphone <span>*</span></label>
+          <input class="form-control" id="f-tel" type="tel" placeholder="0690…"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-control" id="f-email" type="email" placeholder="jean@email.com"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Adresse</label>
+        <input class="form-control" id="f-adresse" placeholder="12 rue des Fleurs, Le Gosier"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Services</label>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
+            <input type="checkbox" id="tag-jardin" value="jardin"/> 🌱 Jardin
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
+            <input type="checkbox" id="tag-karcher" value="karcher"/> 💦 Kärcher
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;cursor:pointer;">
+            <input type="checkbox" id="tag-autre" value="autre"/> 🔧 Autre
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" id="f-notes" rows="3" placeholder="Informations complémentaires…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveClient()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div>
+    <div class="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline btn-cancel">Annuler</button>
+      <button class="btn btn-danger btn-confirm">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+let currentFilter = 'all';
+let currentView = 'grid';
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderClients();
+}
+
+function toggleView(v) {
+  currentView = v;
+  document.getElementById('clients-grid').style.display = v === 'grid' ? 'grid' : 'none';
+  document.getElementById('clients-list').style.display = v === 'list' ? 'block' : 'none';
+  renderClients();
+}
+
+function renderClients() {
+  const q = document.getElementById('searchInput').value;
+  let clients = WassouDB.clients.getAll();
+  if (currentFilter !== 'all') clients = clients.filter(c => c.tags && c.tags.includes(currentFilter));
+  clients = App.filterList(clients, q, ['nom','prenom','tel','email','adresse']);
+
+  document.getElementById('empty-clients').style.display = clients.length ? 'none' : 'block';
+
+  if (currentView === 'grid') renderGrid(clients);
+  else renderList(clients);
+}
+
+function renderGrid(clients) {
+  const grid = document.getElementById('clients-grid');
+  grid.innerHTML = '';
+  clients.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'client-card fade-in';
+    div.innerHTML = `
+      <div class="client-card-header">
+        <div class="avatar">${c.nom[0]}${c.prenom ? c.prenom[0] : ''}</div>
+        <div>
+          <div class="client-card-name">${c.prenom || ''} ${c.nom}</div>
+          <div class="client-card-tel">📞 ${c.tel}</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();editClient('${c.id}')" title="Modifier">✏️</button>
+          <button class="btn btn-ghost btn-icon btn-sm" onclick="event.stopPropagation();deleteClient('${c.id}')" title="Supprimer">🗑️</button>
+        </div>
+      </div>
+      ${c.adresse ? `<div class="text-sm text-muted">📍 ${c.adresse}</div>` : ''}
+      <div class="client-card-tags">${(c.tags||[]).map(t => `<span class="tag">${WassouDB.serviceLabel(t)}</span>`).join('')}</div>
+      <div class="mt-4" style="display:flex;gap:8px;">
+        <a href="client-detail.html?id=${c.id}" class="btn btn-primary btn-sm" style="flex:1;justify-content:center;">Fiche →</a>
+        <a href="sms.html?clientId=${c.id}" class="btn btn-outline btn-sm">💬</a>
+      </div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function renderList(clients) {
+  const tbody = document.getElementById('clients-tbody');
+  tbody.innerHTML = '';
+  clients.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="avatar" style="width:32px;height:32px;font-size:.9rem">${c.nom[0]}${c.prenom ? c.prenom[0] : ''}</div>
+          <strong>${c.prenom || ''} ${c.nom}</strong>
+        </div>
+      </td>
+      <td><a href="tel:${c.tel}" style="color:var(--green-600)">${c.tel}</a></td>
+      <td class="text-sm text-muted">${c.adresse || '—'}</td>
+      <td>${(c.tags||[]).map(t => `<span class="badge badge-success" style="margin:1px">${WassouDB.serviceLabel(t)}</span>`).join('')}</td>
+      <td class="text-sm text-muted">${App.formatDate(c.createdAt)}</td>
+      <td>
+        <div class="td-actions">
+          <a href="client-detail.html?id=${c.id}" class="btn btn-primary btn-sm">Fiche</a>
+          <button class="btn btn-ghost btn-sm" onclick="editClient('${c.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteClient('${c.id}')">🗑️</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function openAddModal() {
+  document.getElementById('modal-title').textContent = 'Nouveau client';
+  document.getElementById('edit-id').value = '';
+  ['nom','prenom','tel','email','adresse','notes'].forEach(f => document.getElementById('f-'+f).value = '');
+  ['jardin','karcher','autre'].forEach(t => document.getElementById('tag-'+t).checked = false);
+  document.getElementById('clientModal').classList.add('open');
+}
+
+function editClient(id) {
+  const c = WassouDB.clients.getById(id);
+  if (!c) return;
+  document.getElementById('modal-title').textContent = 'Modifier le client';
+  document.getElementById('edit-id').value = id;
+  document.getElementById('f-nom').value = c.nom || '';
+  document.getElementById('f-prenom').value = c.prenom || '';
+  document.getElementById('f-tel').value = c.tel || '';
+  document.getElementById('f-email').value = c.email || '';
+  document.getElementById('f-adresse').value = c.adresse || '';
+  document.getElementById('f-notes').value = c.notes || '';
+  ['jardin','karcher','autre'].forEach(t => {
+    document.getElementById('tag-'+t).checked = (c.tags||[]).includes(t);
+  });
+  document.getElementById('clientModal').classList.add('open');
+}
+
+function saveClient() {
+  const nom = document.getElementById('f-nom').value.trim();
+  const tel = document.getElementById('f-tel').value.trim();
+  if (!nom || !tel) { App.toast('Nom et téléphone requis','error'); return; }
+
+  const tags = ['jardin','karcher','autre'].filter(t => document.getElementById('tag-'+t).checked);
+  const data = {
+    nom, tel,
+    prenom: document.getElementById('f-prenom').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    adresse: document.getElementById('f-adresse').value.trim(),
+    notes: document.getElementById('f-notes').value.trim(),
+    tags,
+    createdAt: new Date().toISOString().split('T')[0],
+  };
+
+  const editId = document.getElementById('edit-id').value;
+  if (editId) {
+    WassouDB.clients.update(editId, data);
+    App.toast('Client mis à jour ✅');
+  } else {
+    WassouDB.clients.add(data);
+    App.toast('Client ajouté ✅');
+  }
+  closeModal();
+  renderClients();
+}
+
+function deleteClient(id) {
+  App.confirm('Supprimer ce client ?', () => {
+    WassouDB.clients.delete(id);
+    renderClients();
+    App.toast('Client supprimé','warning');
+  });
+}
+
+function closeModal() {
+  document.getElementById('clientModal').classList.remove('open');
+}
+
+function exportClients() {
+  App.exportCSV(WassouDB.clients.getAll(), 'wassou-clients.csv');
+  App.toast('Export en cours…');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderClients();
+  if (location.hash === '#add') openAddModal();
+});
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").then(()=>console.log("SW registered")).catch(e=>console.error(e))}</script>
+</body>
+</html>

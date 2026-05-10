@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="theme-color" content="#1b4332"/>
+  <title>SMS — Wassou Multiservices</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
+</head>
+<body>
+<div id="overlay"></div>
+<div class="app-shell">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><span class="logo-icon">🌿</span><span class="logo-name">Wassou</span><span class="logo-sub">Multiservices — Guadeloupe</span></div>
+    <div class="nav-section">
+      <div class="nav-section-title">Principal</div>
+      <a href="index.html" class="nav-link"><span class="nav-icon">📊</span> Tableau de bord</a>
+      <a href="clients.html" class="nav-link"><span class="nav-icon">👥</span> Clients</a>
+      <a href="agents.html" class="nav-link"><span class="nav-icon">🧑‍🌾</span> Agents</a>
+      <a href="interventions.html" class="nav-link"><span class="nav-icon">📅</span> Interventions</a>
+      <div class="nav-section-title">Outils</div>
+      <a href="sms.html" class="nav-link"><span class="nav-icon">💬</span> SMS</a>
+      <a href="devis.html" class="nav-link"><span class="nav-icon">📄</span> Devis & Factures</a>
+      <a href="rapports.html" class="nav-link"><span class="nav-icon">📈</span> Rapports</a>
+    </div>
+    <div class="sidebar-footer"><a href="https://drayk973.github.io/Wassou-services-/" target="_blank">🌐 Site public</a></div>
+  </nav>
+
+  <div class="main-content">
+    <header class="top-header">
+      <button class="burger-btn" id="burger">☰</button>
+      <div class="page-title">💬 SMS</div>
+      <div class="header-actions">
+        <button class="btn btn-primary btn-sm" onclick="scrollToCompose()">✉️ Composer</button>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <div class="grid-2">
+
+        <!-- Historique -->
+        <div class="card" style="grid-column:1">
+          <div class="card-header">
+            <h3>📋 Historique SMS</h3>
+            <span class="badge badge-default" id="sms-count">0</span>
+          </div>
+          <div style="padding:0 24px 4px;" id="sms-history"></div>
+        </div>
+
+        <!-- Composer -->
+        <div class="card" id="compose" style="grid-column:2;position:sticky;top:84px;align-self:start">
+          <div class="card-header"><h3>✉️ Nouveau SMS</h3></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Client <span>*</span></label>
+              <select class="form-control" id="sms-client" onchange="onClientChange()">
+                <option value="">— Choisir un client —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Téléphone</label>
+              <input class="form-control" id="sms-tel" placeholder="0690…" readonly/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Modèle de message</label>
+              <select class="form-control" id="sms-template" onchange="applyTemplate()">
+                <option value="">— Choisir un modèle —</option>
+                <option value="confirmation">✅ Confirmation RDV</option>
+                <option value="rappel">🔔 Rappel veille</option>
+                <option value="devis">📄 Envoi devis</option>
+                <option value="remerciement">🙏 Remerciement</option>
+                <option value="custom">✏️ Message personnalisé</option>
+              </select>
+            </div>
+            <div class="form-group" id="rdv-info" style="display:none">
+              <label class="form-label">Prochain RDV</label>
+              <select class="form-control" id="sms-rdv" onchange="applyTemplate()">
+                <option value="">— Choisir l'intervention —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Message <span>*</span></label>
+              <textarea class="form-control" id="sms-msg" rows="5" placeholder="Tapez votre message…" oninput="updateCounter()"></textarea>
+              <div class="char-counter" id="char-count">0 / 160 caractères</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="sendSMS()" style="flex:1;justify-content:center;">
+                💬 Envoyer SMS
+              </button>
+              <a id="whatsapp-btn" href="#" target="_blank" class="btn btn-gold" style="flex:1;justify-content:center;">
+                📱 WhatsApp
+              </a>
+            </div>
+            <div class="mt-4 text-sm text-muted" style="background:var(--gray-100);border-radius:var(--radius-sm);padding:12px;">
+              💡 L'envoi réel nécessite une intégration SMS (ex. Twilio, OVH SMS). Les SMS sont sauvegardés dans l'historique pour simulation.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div><div class="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline btn-cancel">Annuler</button>
+      <button class="btn btn-danger btn-confirm">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+function renderHistory() {
+  const all = WassouDB.sms.getAll().slice().reverse();
+  document.getElementById('sms-count').textContent = all.length;
+  const container = document.getElementById('sms-history');
+  if (!all.length) {
+    container.innerHTML = '<div class="empty-state" style="padding:30px 0"><div class="empty-icon">💬</div><p>Aucun SMS</p></div>';
+    return;
+  }
+  container.innerHTML = '';
+  all.forEach(s => {
+    const client = WassouDB.clients.getById(s.clientId);
+    const div = document.createElement('div');
+    div.className = 'sms-item fade-in';
+    div.innerHTML = `
+      <div class="avatar" style="background:var(--info);font-size:.9rem;">💬</div>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <strong>${client ? client.prenom+' '+client.nom : '—'}</strong>
+          <span class="badge badge-${s.statut === 'envoyé' ? 'success' : 'warning'}">${s.statut}</span>
+        </div>
+        <div class="sms-bubble">${s.message}</div>
+        <div class="sms-meta">
+          <span>📞 ${s.tel}</span>
+          <span>📅 ${App.formatDate(s.date)}</span>
+          <span class="badge badge-default" style="font-size:.68rem">${s.type || 'custom'}</span>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-icon btn-sm" onclick="deleteSMS('${s.id}')" style="color:var(--danger)">🗑️</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function populateClients() {
+  const sel = document.getElementById('sms-client');
+  sel.innerHTML = '<option value="">— Choisir un client —</option>';
+  WassouDB.clients.getAll().forEach(c => {
+    sel.innerHTML += `<option value="${c.id}">${c.prenom || ''} ${c.nom} — ${c.tel}</option>`;
+  });
+  const params = new URLSearchParams(location.search);
+  if (params.get('clientId')) {
+    sel.value = params.get('clientId');
+    onClientChange();
+  }
+}
+
+function onClientChange() {
+  const id = document.getElementById('sms-client').value;
+  const c = WassouDB.clients.getById(id);
+  if (c) {
+    document.getElementById('sms-tel').value = c.tel;
+    document.getElementById('whatsapp-btn').href = `https://wa.me/+33${c.tel.slice(1)}`;
+    // Load client interventions for template
+    const rdvSel = document.getElementById('sms-rdv');
+    rdvSel.innerHTML = '<option value="">— Choisir —</option>';
+    WassouDB.interventions.getAll().filter(i => i.clientId === id && ['confirmé','en_attente'].includes(i.statut)).forEach(i => {
+      rdvSel.innerHTML += `<option value="${i.id}" data-date="${i.date}" data-heure="${i.heure}">${App.formatDate(i.date)} à ${i.heure} — ${WassouDB.serviceLabel(i.service)}</option>`;
+    });
+  } else {
+    document.getElementById('sms-tel').value = '';
+    document.getElementById('whatsapp-btn').href = '#';
+  }
+  applyTemplate();
+}
+
+function applyTemplate() {
+  const type = document.getElementById('sms-template').value;
+  const id = document.getElementById('sms-client').value;
+  const client = WassouDB.clients.getById(id);
+  const rdvEl = document.getElementById('sms-rdv');
+  const rdvOpt = rdvEl.options[rdvEl.selectedIndex];
+
+  document.getElementById('rdv-info').style.display = ['confirmation','rappel'].includes(type) ? 'block' : 'none';
+
+  if (type === 'custom' || !type) { return; }
+
+  const data = {
+    prenom: client ? client.prenom : '',
+    date: rdvOpt ? App.formatDate(rdvOpt.dataset.date) : 'XX/XX',
+    heure: rdvOpt ? rdvOpt.dataset.heure : 'XX:XX',
+    numero: 'DEV-2025-XXX',
+    montant: '',
+  };
+
+  const msg = App.smsTemplate(type, data);
+  document.getElementById('sms-msg').value = msg;
+  updateCounter();
+}
+
+function updateCounter() {
+  const len = document.getElementById('sms-msg').value.length;
+  const el = document.getElementById('char-count');
+  el.textContent = `${len} / 160 caractères`;
+  el.className = 'char-counter' + (len > 160 ? ' danger' : len > 130 ? ' warn' : '');
+}
+
+function sendSMS() {
+  const clientId = document.getElementById('sms-client').value;
+  const tel = document.getElementById('sms-tel').value;
+  const msg = document.getElementById('sms-msg').value.trim();
+  const type = document.getElementById('sms-template').value;
+  if (!tel || !msg) { App.toast('Client et message requis','error'); return; }
+
+  WassouDB.sms.add({
+    clientId, tel, message: msg,
+    date: new Date().toISOString().split('T')[0],
+    statut: 'envoyé',
+    type: type || 'custom',
+  });
+  App.toast('SMS enregistré ✅ (simulation)');
+  document.getElementById('sms-msg').value = '';
+  document.getElementById('sms-template').value = '';
+  updateCounter();
+  renderHistory();
+}
+
+function deleteSMS(id) {
+  App.confirm('Supprimer ce SMS ?', () => {
+    WassouDB.sms.delete(id);
+    renderHistory();
+    App.toast('SMS supprimé','warning');
+  });
+}
+
+function scrollToCompose() {
+  document.getElementById('compose').scrollIntoView({ behavior: 'smooth' });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  populateClients();
+  renderHistory();
+  if (location.hash === '#compose') scrollToCompose();
+});
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").then(()=>console.log("SW registered")).catch(e=>console.error(e))}</script>
+</body>
+</html>

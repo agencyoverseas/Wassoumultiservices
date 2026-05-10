@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="theme-color" content="#1b4332"/>
+  <title>Fiche client — Wassou</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
+</head>
+<body>
+<div id="overlay"></div>
+<div class="app-shell">
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">🌿</span>
+      <span class="logo-name">Wassou</span>
+      <span class="logo-sub">Multiservices — Guadeloupe</span>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Principal</div>
+      <a href="index.html" class="nav-link"><span class="nav-icon">📊</span> Tableau de bord</a>
+      <a href="clients.html" class="nav-link"><span class="nav-icon">👥</span> Clients</a>
+      <a href="agents.html" class="nav-link"><span class="nav-icon">🧑‍🌾</span> Agents</a>
+      <a href="interventions.html" class="nav-link"><span class="nav-icon">📅</span> Interventions</a>
+      <div class="nav-section-title">Outils</div>
+      <a href="sms.html" class="nav-link"><span class="nav-icon">💬</span> SMS</a>
+      <a href="devis.html" class="nav-link"><span class="nav-icon">📄</span> Devis & Factures</a>
+      <a href="rapports.html" class="nav-link"><span class="nav-icon">📈</span> Rapports</a>
+    </div>
+    <div class="sidebar-footer"><a href="https://drayk973.github.io/Wassou-services-/" target="_blank">🌐 Site public</a></div>
+  </nav>
+
+  <div class="main-content">
+    <header class="top-header">
+      <button class="burger-btn" id="burger">☰</button>
+      <div class="page-title">
+        <a href="clients.html" style="color:var(--gray-400);text-decoration:none;font-size:.9rem;">← Clients</a>
+        <span style="margin:0 8px;color:var(--gray-300);">/</span>
+        <span id="breadcrumb-name">Fiche client</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-outline btn-sm" id="btn-edit-client">✏️ Modifier</button>
+        <button class="btn btn-primary btn-sm" onclick="newIntervention()">+ Intervention</button>
+      </div>
+    </header>
+
+    <div class="page-body" id="client-body">
+      <div class="empty-state"><div class="empty-icon">⏳</div><p>Chargement…</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="clientModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span>✏️</span><h3>Modifier le client</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Nom <span>*</span></label><input class="form-control" id="f-nom" /></div>
+        <div class="form-group"><label class="form-label">Prénom</label><input class="form-control" id="f-prenom" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Téléphone</label><input class="form-control" id="f-tel" type="tel"/></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-control" id="f-email" type="email"/></div>
+      </div>
+      <div class="form-group"><label class="form-label">Adresse</label><input class="form-control" id="f-adresse"/></div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea class="form-control" id="f-notes" rows="3"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveClient()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div><div class="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline btn-cancel">Annuler</button>
+      <button class="btn btn-danger btn-confirm">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const clientId = params.get('id');
+let client;
+
+function renderPage() {
+  client = WassouDB.clients.getById(clientId);
+  if (!client) {
+    document.getElementById('client-body').innerHTML = '<div class="empty-state"><div class="empty-icon">❌</div><p>Client introuvable.</p></div>';
+    return;
+  }
+
+  document.getElementById('breadcrumb-name').textContent = `${client.prenom || ''} ${client.nom}`;
+  document.getElementById('btn-edit-client').onclick = openEditModal;
+
+  const interventions = WassouDB.interventions.getAll().filter(i => i.clientId === clientId);
+  const devis = WassouDB.devis.getAll().filter(d => d.clientId === clientId);
+  const sms = WassouDB.sms.getAll().filter(s => s.clientId === clientId);
+  const caTotal = interventions.filter(i => i.statut === 'terminé').reduce((s,i) => s + (i.montant||0), 0);
+
+  document.getElementById('client-body').innerHTML = `
+    <div class="grid-2 mb-6 fade-in">
+      <!-- Fiche identité -->
+      <div class="card">
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:18px;margin-bottom:20px;">
+            <div class="avatar-xl">${client.nom[0]}${client.prenom ? client.prenom[0] : ''}</div>
+            <div>
+              <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800;color:var(--green-700);">${client.prenom || ''} ${client.nom}</div>
+              <div class="text-muted text-sm">Client depuis le ${App.formatDate(client.createdAt)}</div>
+              <div class="client-card-tags" style="margin-top:8px;">${(client.tags||[]).map(t=>`<span class="tag">${WassouDB.serviceLabel(t)}</span>`).join('')}</div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div style="display:grid;gap:12px;">
+            <div style="display:flex;gap:10px;align-items:center;">
+              <span>📞</span>
+              <a href="tel:${client.tel}" style="color:var(--green-600);font-weight:600;">${client.tel}</a>
+            </div>
+            ${client.email ? `<div style="display:flex;gap:10px;align-items:center;"><span>📧</span><a href="mailto:${client.email}" style="color:var(--green-600);">${client.email}</a></div>` : ''}
+            ${client.adresse ? `<div style="display:flex;gap:10px;align-items:flex-start;"><span>📍</span><span class="text-sm">${client.adresse}</span></div>` : ''}
+            ${client.notes ? `<div style="display:flex;gap:10px;align-items:flex-start;"><span>📝</span><span class="text-sm text-muted">${client.notes}</span></div>` : ''}
+          </div>
+          <div class="divider"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a href="tel:${client.tel}" class="btn btn-primary btn-sm">📞 Appeler</a>
+            <a href="sms.html?clientId=${clientId}" class="btn btn-outline btn-sm">💬 SMS</a>
+            <a href="devis.html?clientId=${clientId}" class="btn btn-outline btn-sm">📄 Devis</a>
+            <button class="btn btn-danger btn-sm" onclick="deleteClient()">🗑️ Supprimer</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats client -->
+      <div style="display:grid;gap:16px;">
+        <div class="stat-card green"><div class="stat-icon">📅</div><div class="stat-info"><div class="stat-value">${interventions.length}</div><div class="stat-label">Interventions</div></div></div>
+        <div class="stat-card gold"><div class="stat-icon">💶</div><div class="stat-info"><div class="stat-value">${App.formatMoney(caTotal)}</div><div class="stat-label">CA total</div></div></div>
+        <div class="stat-card blue"><div class="stat-icon">📄</div><div class="stat-info"><div class="stat-value">${devis.length}</div><div class="stat-label">Devis</div></div></div>
+      </div>
+    </div>
+
+    <!-- Interventions -->
+    <div class="card mb-6">
+      <div class="card-header">
+        <h3>📅 Historique interventions</h3>
+        <button class="btn btn-primary btn-sm" onclick="newIntervention()">+ Nouvelle</button>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Date</th><th>Service</th><th>Agent</th><th>Montant</th><th>Statut</th></tr></thead>
+          <tbody id="tbody-interventions"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SMS -->
+    <div class="card mb-6">
+      <div class="card-header">
+        <h3>💬 SMS envoyés</h3>
+        <a href="sms.html?clientId=${clientId}" class="btn btn-outline btn-sm">Envoyer SMS →</a>
+      </div>
+      <div id="sms-list" style="padding:0 24px 4px;"></div>
+    </div>
+
+    <!-- Devis -->
+    <div class="card">
+      <div class="card-header">
+        <h3>📄 Devis & Factures</h3>
+        <a href="devis.html?clientId=${clientId}" class="btn btn-primary btn-sm">+ Devis</a>
+      </div>
+      <div id="devis-list" style="padding:0 24px 4px;"></div>
+    </div>
+  `;
+
+  // Render interventions table
+  const tbody = document.getElementById('tbody-interventions');
+  if (!interventions.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state" style="padding:20px 0"><p>Aucune intervention</p></div></td></tr>';
+  } else {
+    interventions.sort((a,b) => b.date.localeCompare(a.date)).forEach(i => {
+      const agent = WassouDB.agents.getById(i.agentId);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${App.formatDate(i.date)} à ${i.heure}</td>
+        <td>${WassouDB.serviceLabel(i.service)}</td>
+        <td>${agent ? agent.prenom + ' ' + agent.nom : '—'}</td>
+        <td>${App.formatMoney(i.montant)}</td>
+        <td><span class="badge ${WassouDB.statutClass(i.statut)}">${WassouDB.statutLabel(i.statut)}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Render SMS
+  const smsList = document.getElementById('sms-list');
+  if (!sms.length) {
+    smsList.innerHTML = '<div class="empty-state" style="padding:20px 0"><p>Aucun SMS envoyé</p></div>';
+  } else {
+    sms.slice().reverse().forEach(s => {
+      smsList.innerHTML += `
+        <div class="activity-item">
+          <div class="avatar" style="background:var(--info)">💬</div>
+          <div class="activity-meta">
+            <strong>${s.message.slice(0,60)}${s.message.length > 60 ? '…' : ''}</strong>
+            <span>${App.formatDate(s.date)} · <span class="badge badge-success">${s.statut}</span></span>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  // Render devis
+  const devisList = document.getElementById('devis-list');
+  if (!devis.length) {
+    devisList.innerHTML = '<div class="empty-state" style="padding:20px 0"><p>Aucun devis</p></div>';
+  } else {
+    devis.forEach(d => {
+      const total = App.devisTotal(d.services);
+      devisList.innerHTML += `
+        <div class="activity-item">
+          <div class="avatar" style="background:var(--gold-dark)">📄</div>
+          <div class="activity-meta">
+            <strong>${d.numero} — ${App.formatMoney(total)}</strong>
+            <span>${App.formatDate(d.date)} · <span class="badge badge-gold">${d.statut}</span></span>
+          </div>
+          <a href="devis.html" class="btn btn-ghost btn-sm">Voir →</a>
+        </div>
+      `;
+    });
+  }
+}
+
+function openEditModal() {
+  document.getElementById('f-nom').value = client.nom || '';
+  document.getElementById('f-prenom').value = client.prenom || '';
+  document.getElementById('f-tel').value = client.tel || '';
+  document.getElementById('f-email').value = client.email || '';
+  document.getElementById('f-adresse').value = client.adresse || '';
+  document.getElementById('f-notes').value = client.notes || '';
+  document.getElementById('clientModal').classList.add('open');
+}
+
+function saveClient() {
+  const data = {
+    nom: document.getElementById('f-nom').value.trim(),
+    prenom: document.getElementById('f-prenom').value.trim(),
+    tel: document.getElementById('f-tel').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    adresse: document.getElementById('f-adresse').value.trim(),
+    notes: document.getElementById('f-notes').value.trim(),
+  };
+  if (!data.nom || !data.tel) { App.toast('Nom et téléphone requis','error'); return; }
+  WassouDB.clients.update(clientId, data);
+  App.toast('Client mis à jour ✅');
+  closeModal();
+  renderPage();
+}
+
+function deleteClient() {
+  App.confirm('Supprimer ce client définitivement ?', () => {
+    WassouDB.clients.delete(clientId);
+    App.toast('Client supprimé','warning');
+    location.href = 'clients.html';
+  });
+}
+
+function newIntervention() {
+  location.href = `interventions.html?clientId=${clientId}#add`;
+}
+
+function closeModal() {
+  document.getElementById('clientModal').classList.remove('open');
+}
+
+document.addEventListener('DOMContentLoaded', renderPage);
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").then(()=>console.log("SW registered")).catch(e=>console.error(e))}</script>
+</body>
+</html>

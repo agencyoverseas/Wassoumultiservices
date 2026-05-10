@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="theme-color" content="#1b4332"/>
+  <title>Interventions — Wassou Multiservices</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
+</head>
+<body>
+<div id="overlay"></div>
+<div class="app-shell">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><span class="logo-icon">🌿</span><span class="logo-name">Wassou</span><span class="logo-sub">Multiservices — Guadeloupe</span></div>
+    <div class="nav-section">
+      <div class="nav-section-title">Principal</div>
+      <a href="index.html" class="nav-link"><span class="nav-icon">📊</span> Tableau de bord</a>
+      <a href="clients.html" class="nav-link"><span class="nav-icon">👥</span> Clients</a>
+      <a href="agents.html" class="nav-link"><span class="nav-icon">🧑‍🌾</span> Agents</a>
+      <a href="interventions.html" class="nav-link"><span class="nav-icon">📅</span> Interventions</a>
+      <div class="nav-section-title">Outils</div>
+      <a href="sms.html" class="nav-link"><span class="nav-icon">💬</span> SMS</a>
+      <a href="devis.html" class="nav-link"><span class="nav-icon">📄</span> Devis & Factures</a>
+      <a href="rapports.html" class="nav-link"><span class="nav-icon">📈</span> Rapports</a>
+    </div>
+    <div class="sidebar-footer"><a href="https://drayk973.github.io/Wassou-services-/" target="_blank">🌐 Site public</a></div>
+  </nav>
+
+  <div class="main-content">
+    <header class="top-header">
+      <button class="burger-btn" id="burger">☰</button>
+      <div class="page-title">📅 Interventions</div>
+      <div class="header-actions">
+        <button class="btn btn-primary btn-sm" onclick="openModal()">+ Nouvelle</button>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <div class="page-header">
+        <div class="page-header-left">
+          <div class="search-bar">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Client, adresse, service…" oninput="renderInterventions()"/>
+          </div>
+          <div class="filter-pills">
+            <button class="pill active" onclick="setFilter('all',this)">Toutes</button>
+            <button class="pill" onclick="setFilter('en_attente',this)">⏳ Attente</button>
+            <button class="pill" onclick="setFilter('confirmé',this)">📅 Confirmé</button>
+            <button class="pill" onclick="setFilter('terminé',this)">✅ Terminé</button>
+            <button class="pill" onclick="setFilter('annulé',this)">❌ Annulé</button>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="App.exportCSV(WassouDB.interventions.getAll(),'wassou-interventions.csv');App.toast('Export CSV')">⬇ Export</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid stagger mb-6">
+        <div class="stat-card green"><div class="stat-icon">📅</div><div class="stat-info"><div class="stat-value" id="s-total">—</div><div class="stat-label">Total</div></div></div>
+        <div class="stat-card gold"><div class="stat-icon">⏳</div><div class="stat-info"><div class="stat-value" id="s-attente">—</div><div class="stat-label">En attente</div></div></div>
+        <div class="stat-card blue"><div class="stat-icon">✅</div><div class="stat-info"><div class="stat-value" id="s-termine">—</div><div class="stat-label">Terminées</div></div></div>
+        <div class="stat-card orange"><div class="stat-icon">💶</div><div class="stat-info"><div class="stat-value" id="s-ca">—</div><div class="stat-label">CA terminé</div></div></div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Client</th><th>Date & Heure</th><th>Service</th><th>Agent</th><th>Adresse</th><th>Montant</th><th>Statut</th><th>Actions</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div id="empty" class="empty-state" style="display:none"><div class="empty-icon">📅</div><p>Aucune intervention</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="interModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span>📅</span><h3 id="modal-title">Nouvelle intervention</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id"/>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Client <span>*</span></label>
+          <select class="form-control" id="f-client"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Agent <span>*</span></label>
+          <select class="form-control" id="f-agent"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Service <span>*</span></label>
+          <select class="form-control" id="f-service">
+            <option value="jardin">🌱 Entretien jardin</option>
+            <option value="karcher">💦 Nettoyage Kärcher</option>
+            <option value="autre">🔧 Autre / Sur devis</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Statut</label>
+          <select class="form-control" id="f-statut">
+            <option value="en_attente">⏳ En attente</option>
+            <option value="confirmé">📅 Confirmé</option>
+            <option value="terminé">✅ Terminé</option>
+            <option value="annulé">❌ Annulé</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date <span>*</span></label>
+          <input class="form-control" id="f-date" type="date"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Heure</label>
+          <input class="form-control" id="f-heure" type="time" value="08:00"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Adresse d'intervention</label>
+        <input class="form-control" id="f-adresse" placeholder="Auto-remplie depuis le client…"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Montant (€)</label>
+          <input class="form-control" id="f-montant" type="number" min="0" step="5" placeholder="80"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <input class="form-control" id="f-notes" placeholder="Tonte, haies…"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.9rem;">
+          <input type="checkbox" id="f-sms"/> Envoyer SMS de confirmation au client
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveIntervention()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div><div class="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline btn-cancel">Annuler</button>
+      <button class="btn btn-danger btn-confirm">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+let currentFilter = 'all';
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderInterventions();
+}
+
+function renderInterventions() {
+  const all = WassouDB.interventions.getAll();
+  let list = currentFilter === 'all' ? all : all.filter(i => i.statut === currentFilter);
+  const q = document.getElementById('searchInput').value;
+  if (q) {
+    list = list.filter(i => {
+      const c = WassouDB.clients.getById(i.clientId);
+      return (c && (c.nom+c.prenom).toLowerCase().includes(q.toLowerCase())) ||
+             (i.adresse||'').toLowerCase().includes(q.toLowerCase()) ||
+             (i.service||'').includes(q);
+    });
+  }
+
+  document.getElementById('s-total').textContent = all.length;
+  document.getElementById('s-attente').textContent = all.filter(i=>i.statut==='en_attente').length;
+  document.getElementById('s-termine').textContent = all.filter(i=>i.statut==='terminé').length;
+  document.getElementById('s-ca').textContent = App.formatMoney(all.filter(i=>i.statut==='terminé').reduce((s,i)=>s+(i.montant||0),0));
+
+  list.sort((a,b) => b.date.localeCompare(a.date));
+  document.getElementById('empty').style.display = list.length ? 'none' : 'block';
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  list.forEach(i => {
+    const client = WassouDB.clients.getById(i.clientId);
+    const agent = WassouDB.agents.getById(i.agentId);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="avatar" style="width:28px;height:28px;font-size:.75rem">${client ? client.nom[0] : '?'}</div>
+          <strong>${client ? client.prenom+' '+client.nom : '—'}</strong>
+        </div>
+      </td>
+      <td class="text-sm">${App.formatDate(i.date)}<br/><span class="text-muted">${i.heure || ''}</span></td>
+      <td>${WassouDB.serviceLabel(i.service)}</td>
+      <td class="text-sm">${agent ? agent.prenom+' '+agent.nom : '—'}</td>
+      <td class="text-sm text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.adresse || '—'}</td>
+      <td><strong>${App.formatMoney(i.montant)}</strong></td>
+      <td><span class="badge ${WassouDB.statutClass(i.statut)}">${WassouDB.statutLabel(i.statut)}</span></td>
+      <td>
+        <div class="td-actions">
+          <select class="form-control" style="padding:5px 8px;font-size:.78rem;width:auto;" onchange="changeStatut('${i.id}',this.value)">
+            <option value="en_attente" ${i.statut==='en_attente'?'selected':''}>⏳ Attente</option>
+            <option value="confirmé" ${i.statut==='confirmé'?'selected':''}>📅 Confirmé</option>
+            <option value="terminé" ${i.statut==='terminé'?'selected':''}>✅ Terminé</option>
+            <option value="annulé" ${i.statut==='annulé'?'selected':''}>❌ Annulé</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="editIntervention('${i.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteIntervention('${i.id}')">🗑️</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function changeStatut(id, statut) {
+  WassouDB.interventions.update(id, { statut });
+  App.toast('Statut mis à jour ✅');
+  renderInterventions();
+}
+
+function populateSelects() {
+  const clientSel = document.getElementById('f-client');
+  const agentSel = document.getElementById('f-agent');
+  clientSel.innerHTML = '<option value="">— Choisir client —</option>';
+  WassouDB.clients.getAll().forEach(c => {
+    clientSel.innerHTML += `<option value="${c.id}">${c.prenom || ''} ${c.nom} — ${c.tel}</option>`;
+  });
+  agentSel.innerHTML = '<option value="">— Choisir agent —</option>';
+  WassouDB.agents.getAll().filter(a => a.statut === 'actif').forEach(a => {
+    agentSel.innerHTML += `<option value="${a.id}">${a.prenom} ${a.nom}</option>`;
+  });
+  // Auto-fill address when client changes
+  clientSel.onchange = () => {
+    const c = WassouDB.clients.getById(clientSel.value);
+    if (c && c.adresse) document.getElementById('f-adresse').value = c.adresse;
+  };
+}
+
+function openModal() {
+  document.getElementById('modal-title').textContent = 'Nouvelle intervention';
+  document.getElementById('edit-id').value = '';
+  populateSelects();
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('f-heure').value = '08:00';
+  ['adresse','montant','notes'].forEach(f => document.getElementById('f-'+f).value = '');
+  document.getElementById('f-service').value = 'jardin';
+  document.getElementById('f-statut').value = 'en_attente';
+  document.getElementById('f-sms').checked = true;
+
+  const params = new URLSearchParams(location.search);
+  if (params.get('clientId')) {
+    setTimeout(() => {
+      document.getElementById('f-client').value = params.get('clientId');
+      const c = WassouDB.clients.getById(params.get('clientId'));
+      if (c && c.adresse) document.getElementById('f-adresse').value = c.adresse;
+    }, 50);
+  }
+  document.getElementById('interModal').classList.add('open');
+}
+
+function editIntervention(id) {
+  const i = WassouDB.interventions.getById(id);
+  if (!i) return;
+  document.getElementById('modal-title').textContent = 'Modifier intervention';
+  document.getElementById('edit-id').value = id;
+  populateSelects();
+  setTimeout(() => {
+    document.getElementById('f-client').value = i.clientId || '';
+    document.getElementById('f-agent').value = i.agentId || '';
+    document.getElementById('f-service').value = i.service || 'jardin';
+    document.getElementById('f-statut').value = i.statut || 'en_attente';
+    document.getElementById('f-date').value = i.date || '';
+    document.getElementById('f-heure').value = i.heure || '08:00';
+    document.getElementById('f-adresse').value = i.adresse || '';
+    document.getElementById('f-montant').value = i.montant || '';
+    document.getElementById('f-notes').value = i.notes || '';
+  }, 50);
+  document.getElementById('interModal').classList.add('open');
+}
+
+function saveIntervention() {
+  const clientId = document.getElementById('f-client').value;
+  const date = document.getElementById('f-date').value;
+  if (!clientId || !date) { App.toast('Client et date requis','error'); return; }
+
+  const data = {
+    clientId,
+    agentId: document.getElementById('f-agent').value,
+    service: document.getElementById('f-service').value,
+    statut: document.getElementById('f-statut').value,
+    date,
+    heure: document.getElementById('f-heure').value,
+    adresse: document.getElementById('f-adresse').value.trim(),
+    montant: parseFloat(document.getElementById('f-montant').value) || 0,
+    notes: document.getElementById('f-notes').value.trim(),
+    photos: [],
+  };
+
+  const editId = document.getElementById('edit-id').value;
+  if (editId) {
+    WassouDB.interventions.update(editId, data);
+    App.toast('Intervention mise à jour ✅');
+  } else {
+    WassouDB.interventions.add(data);
+    // Auto SMS
+    if (document.getElementById('f-sms').checked) {
+      const client = WassouDB.clients.getById(clientId);
+      if (client) {
+        const msg = App.smsTemplate('confirmation', { prenom: client.prenom, date: App.formatDate(date), heure: data.heure });
+        WassouDB.sms.add({ clientId, tel: client.tel, message: msg, date: new Date().toISOString().split('T')[0], statut: 'envoyé', type: 'confirmation' });
+        App.toast('Intervention ajoutée + SMS envoyé ✅');
+      }
+    } else {
+      App.toast('Intervention ajoutée ✅');
+    }
+  }
+  closeModal();
+  renderInterventions();
+}
+
+function deleteIntervention(id) {
+  App.confirm('Supprimer cette intervention ?', () => {
+    WassouDB.interventions.delete(id);
+    renderInterventions();
+    App.toast('Supprimée','warning');
+  });
+}
+
+function closeModal() { document.getElementById('interModal').classList.remove('open'); }
+document.addEventListener('DOMContentLoaded', () => {
+  renderInterventions();
+  if (location.hash === '#add') openModal();
+});
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").then(()=>console.log("SW registered")).catch(e=>console.error(e))}</script>
+</body>
+</html>

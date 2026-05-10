@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<title>Tableau de bord Admin — Wassou</title>
-<meta name="theme-color" content="#1b4332"/>
-<link rel="manifest" href="manifest.json"/>
-<link rel="apple-touch-icon" href="icons/icon-192.png"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="css/style.css"/>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+  <title>Tableau de bord Admin — Wassou</title>
+  <meta name="theme-color" content="#1b4332"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
 <div id="overlay"></div>
@@ -20,29 +22,26 @@
   <!-- ========== SIDEBAR ========== -->
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-row">
-        <span class="logo-icon">🌿</span>
-        <span class="logo-name" id="brand-name">Wassou</span>
-      </div>
+      <span class="logo-icon">🌿</span>
+      <span class="logo-name" id="brand-name">Wassou</span>
       <span class="logo-sub">Admin — Guadeloupe</span>
     </div>
     <div id="user-pill-slot"></div>
     <div class="nav-section">
       <div class="nav-section-title">Principal</div>
-      <a href="dashboard-admin.html" class="nav-link side"><span class="nav-icon">📊</span> Tableau de bord</a>
-      <a href="clients.html" class="nav-link side"><span class="nav-icon">👥</span> Clients</a>
-      <a href="agents.html" class="nav-link side" data-role="admin"><span class="nav-icon">🧑‍🌾</span> Agents</a>
-      <a href="interventions.html" class="nav-link side"><span class="nav-icon">📅</span> Interventions</a>
+      <a href="dashboard-admin.html" class="nav-link"><span class="nav-icon">📊</span> Tableau de bord</a>
+      <a href="clients.html" class="nav-link"><span class="nav-icon">👥</span> Clients</a>
+      <a href="agents.html" class="nav-link"><span class="nav-icon">🧑‍🌾</span> Agents</a>
+      <a href="interventions.html" class="nav-link"><span class="nav-icon">📅</span> Interventions</a>
       <div class="nav-section-title">Outils</div>
-      <a href="sms.html" class="nav-link side"><span class="nav-icon">💬</span> SMS</a>
-      <a href="devis.html" class="nav-link side"><span class="nav-icon">📄</span> Devis & Factures</a>
-      <a href="paiements.html" class="nav-link side"><span class="nav-icon">💳</span> Paiements</a>
-      <a href="rapports.html" class="nav-link side" data-role="admin"><span class="nav-icon">📈</span> Rapports</a>
-      <div class="nav-section-title" data-role="admin">Configuration</div>
-      <a href="parametres.html" class="nav-link side" data-role="admin"><span class="nav-icon">⚙️</span> Paramètres</a>
+      <a href="agent-ia.html" class="nav-link"><span class="nav-icon">🤖</span> Agent IA</a>
+      <a href="sms.html" class="nav-link"><span class="nav-icon">💬</span> SMS</a>
+      <a href="devis.html" class="nav-link"><span class="nav-icon">📄</span> Devis & Factures</a>
+      <a href="rapports.html" class="nav-link"><span class="nav-icon">📈</span> Rapports</a>
+      <div class="nav-section-title">Configuration</div>
+      <a href="parametres.html" class="nav-link"><span class="nav-icon">⚙️</span> Paramètres</a>
     </div>
     <div class="sidebar-footer">
-      <a href="index.html" target="_blank">🌐 Site public</a>
       <a href="#" class="logout-btn" onclick="Auth.logout();return false">🚪 Déconnexion</a>
     </div>
   </nav>
@@ -53,33 +52,69 @@
       <button class="burger-btn" id="burger">☰</button>
       <div class="page-title">📊 Tableau de bord</div>
       <div class="header-actions">
-        <a href="devis-create.html" class="btn btn-primary btn-sm">+ Nouveau devis</a>
+        <span id="header-date" class="text-sm text-muted"></span>
       </div>
     </header>
 
     <div class="page-body">
+
+      <div class="dashboard-welcome fade-in">
+        <h1 id="welcome-msg">Bonjour 🌿</h1>
+        <p id="welcome-sub">Voici un résumé de votre activité</p>
+      </div>
+
       <!-- KPIs -->
       <div class="stats-grid stagger" id="kpis"></div>
 
-      <!-- Activité récente -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px" id="dash-grid">
-        <div class="card">
-          <h3 class="card-title">📅 Prochaines interventions</h3>
-          <div id="next-int"></div>
-        </div>
-        <div class="card">
-          <h3 class="card-title">💌 Demandes RDV récentes</h3>
-          <div id="recent-rdv"></div>
-        </div>
-        <div class="card">
-          <h3 class="card-title">📄 Derniers devis</h3>
-          <div id="recent-devis"></div>
-        </div>
-        <div class="card">
-          <h3 class="card-title">💳 Encaissements à venir</h3>
-          <div id="pending-pay"></div>
+      <!-- ⚡ ACTIONS RAPIDES (AVANT les interventions) -->
+      <div class="card slide-up" style="margin-top:18px;animation-delay:.1s">
+        <div class="card-header"><h3>⚡ Actions rapides</h3></div>
+        <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <a href="interventions.html#add" class="btn btn-primary" style="justify-content:center;padding:18px;font-size:1rem;">
+            <span style="font-size:1.3em;margin-right:6px">📅</span> Nouveau RDV
+          </a>
+          <a href="clients.html#add" class="btn btn-outline" style="justify-content:center;padding:18px;font-size:1rem;">
+            <span style="font-size:1.3em;margin-right:6px">👤</span> Nouveau client
+          </a>
+          <a href="devis.html#add" class="btn btn-outline" style="justify-content:center;padding:18px;font-size:1rem;">
+            <span style="font-size:1.3em;margin-right:6px">📄</span> Nouveau devis
+          </a>
+          <a href="sms.html#compose" class="btn btn-outline" style="justify-content:center;padding:18px;font-size:1rem;">
+            <span style="font-size:1.3em;margin-right:6px">💬</span> Envoyer SMS
+          </a>
         </div>
       </div>
+
+      <!-- Activité récente -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px" id="dash-grid">
+        <div class="card slide-up" style="animation-delay:.2s">
+          <div class="card-header"><h3>📅 Prochaines interventions</h3></div>
+          <div id="next-int" style="padding:0 20px 16px"></div>
+        </div>
+        <div class="card slide-up" style="animation-delay:.25s">
+          <div class="card-header"><h3>💌 Demandes RDV récentes</h3></div>
+          <div id="recent-rdv" style="padding:0 20px 16px"></div>
+        </div>
+        <div class="card slide-up" style="animation-delay:.3s">
+          <div class="card-header"><h3>📄 Derniers devis</h3></div>
+          <div id="recent-devis" style="padding:0 20px 16px"></div>
+        </div>
+        <div class="card slide-up" style="animation-delay:.35s">
+          <div class="card-header"><h3>💳 Encaissements à venir</h3></div>
+          <div id="pending-pay" style="padding:0 20px 16px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div>
+    <div class="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline btn-cancel">Annuler</button>
+      <button class="btn btn-danger btn-confirm">Confirmer</button>
     </div>
   </div>
 </div>
@@ -88,85 +123,87 @@
 <script src="js/auth.js"></script>
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
+<script src="js/nexus-secret.js"></script>
 <script src="js/payment.js"></script>
 <script>
 const session = App.initAdminPage(['admin']);
 if (session) {
-  document.getElementById('brand-name').textContent = CONFIG.business.nom.split(' ')[0];
+  document.getElementById('brand-name').textContent = (CONFIG.business.nom || 'Wassou').split(' ')[0];
+  const now = new Date();
+  document.getElementById('header-date').textContent = now.toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('welcome-msg').textContent = `Bonjour ${session.nom?.split(' ')[0] || ''} 🌿`;
 
   setTimeout(() => {
-    // KPIs
-    const clients = Data.clients.all();
-    const ints = Data.interventions.all();
-    const devis = Data.devis.all();
-    const pays = Data.paiements.all();
-    const rdvs = Data.rdvs.all().filter(r => r.statut === 'à traiter');
-    const ca = pays.filter(p => p.statut === 'reçu').reduce((s, p) => s + p.montant, 0);
+    const safe = (fn, def) => { try { return fn() ?? def; } catch(e) { return def; } };
+    const clients = safe(() => Data.clients.all(), []);
+    const ints = safe(() => Data.interventions.all(), []);
+    const devis = safe(() => Data.devis.all(), []);
+    const pays = safe(() => Data.paiements.all(), []);
+    const rdvs = safe(() => Data.rdvs.all(), []).filter(r => r.statut === 'à traiter');
+    const ca = pays.filter(p => p.statut === 'reçu').reduce((s, p) => s + (p.montant || 0), 0);
 
-    const kpis = document.getElementById('kpis');
-    kpis.innerHTML = `
+    document.getElementById('kpis').innerHTML = `
       <div class="stat-card green"><div class="stat-icon">👥</div><div class="stat-info"><div class="stat-value">${clients.length}</div><div class="stat-label">Clients</div></div></div>
       <div class="stat-card gold"><div class="stat-icon">📅</div><div class="stat-info"><div class="stat-value">${ints.filter(i => i.statut !== 'terminé').length}</div><div class="stat-label">Interventions actives</div></div></div>
       <div class="stat-card blue"><div class="stat-icon">📄</div><div class="stat-info"><div class="stat-value">${devis.length}</div><div class="stat-label">Devis</div></div></div>
       <div class="stat-card orange"><div class="stat-icon">💶</div><div class="stat-info"><div class="stat-value">${App.fmtEur(ca)}</div><div class="stat-label">CA encaissé</div></div></div>
     `;
 
-    // Prochaines interventions
     const next = ints.filter(i => i.statut === 'planifié').sort((a,b) => (a.date || '').localeCompare(b.date || '')).slice(0, 5);
     document.getElementById('next-int').innerHTML = next.length
       ? next.map(i => {
-          const c = Data.clients.get(i.client_id);
-          const a = CONFIG.auth.agents.find(x => x.id === i.agent_id);
-          return `<div style="padding:10px;border-bottom:1px solid var(--line)">
+          const c = Data.clients.get?.(i.client_id);
+          const a = (CONFIG.auth.agents || []).find(x => x.id === i.agent_id);
+          return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
             <strong>${c?.prenom || ''} ${c?.nom || '—'}</strong>
-            <span class="badge badge-green" style="margin-left:8px">${i.service}</span>
-            <div style="font-size:.82rem;color:var(--text-soft);margin-top:4px">📅 ${App.fmtDate(i.date)} ${i.heure || ''} • 🧑 ${a?.nom || '—'}</div>
+            <span class="badge badge-success" style="margin-left:8px">${i.service || ''}</span>
+            <div style="font-size:.82rem;color:var(--gray-600);margin-top:4px">📅 ${App.fmtDate(i.date)} ${i.heure || ''} • 🧑 ${a?.nom || '—'}</div>
           </div>`;
         }).join('')
-      : '<p class="empty-state" style="padding:18px">Aucune intervention planifiée</p>';
+      : '<p class="empty-state" style="padding:18px 0">Aucune intervention planifiée</p>';
 
-    // RDV récents
     document.getElementById('recent-rdv').innerHTML = rdvs.length
       ? rdvs.slice(0, 5).map(r => `
-        <div style="padding:10px;border-bottom:1px solid var(--line)">
-          <strong>${r.prenom || ''} ${r.nom}</strong>
-          <span class="badge badge-orange" style="margin-left:8px">À traiter</span>
-          <div style="font-size:.82rem;color:var(--text-soft);margin-top:4px">📞 ${r.tel} • ${r.service}</div>
+        <div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
+          <strong>${r.prenom || ''} ${r.nom || ''}</strong>
+          <span class="badge badge-warning" style="margin-left:8px">À traiter</span>
+          <div style="font-size:.82rem;color:var(--gray-600);margin-top:4px">📞 ${r.tel || ''} • ${r.service || ''}</div>
         </div>`).join('')
-      : '<p class="empty-state" style="padding:18px">Aucune nouvelle demande</p>';
+      : '<p class="empty-state" style="padding:18px 0">Aucune nouvelle demande</p>';
 
-    // Derniers devis
     const lastDev = devis.slice().sort((a,b) => (b.created || '').localeCompare(a.created || '')).slice(0, 5);
     document.getElementById('recent-devis').innerHTML = lastDev.length
       ? lastDev.map(d => {
-          const c = Data.clients.get(d.client_id);
-          const cls = { brouillon: 'badge-grey', envoyé: 'badge-blue', accepté: 'badge-green', refusé: 'badge-red', soldé: 'badge-green' }[d.statut] || 'badge-grey';
-          return `<div style="padding:10px;border-bottom:1px solid var(--line)">
-            <strong>${d.numero}</strong> <span class="badge ${cls}" style="margin-left:8px">${d.statut}</span>
-            <div style="font-size:.82rem;color:var(--text-soft);margin-top:4px">${c?.nom || '—'} • ${App.fmtEur(d.total_ttc || 0)}</div>
+          const c = Data.clients.get?.(d.client_id);
+          const cls = { brouillon: 'badge-gray', envoyé: 'badge-info', accepté: 'badge-success', refusé: 'badge-danger', soldé: 'badge-success' }[d.statut] || 'badge-gray';
+          return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
+            <strong>${d.numero || ''}</strong> <span class="badge ${cls}" style="margin-left:8px">${d.statut || ''}</span>
+            <div style="font-size:.82rem;color:var(--gray-600);margin-top:4px">${c?.nom || '—'} • ${App.fmtEur(d.total_ttc || 0)}</div>
           </div>`;
         }).join('')
-      : '<p class="empty-state" style="padding:18px">Aucun devis</p>';
+      : '<p class="empty-state" style="padding:18px 0">Aucun devis</p>';
 
-    // Encaissements en attente
     const pending = pays.filter(p => p.statut === 'en_attente' || p.statut === 'à_encaisser');
     document.getElementById('pending-pay').innerHTML = pending.length
       ? pending.slice(0, 5).map(p => {
-          const d = Data.devis.get(p.devis_id);
-          return `<div style="padding:10px;border-bottom:1px solid var(--line)">
+          const d = Data.devis.get?.(p.devis_id);
+          return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
             <strong>${App.fmtEur(p.montant)}</strong>
-            <span class="badge badge-orange" style="margin-left:8px">${p.statut.replace('_',' ')}</span>
-            <div style="font-size:.82rem;color:var(--text-soft);margin-top:4px">${d?.numero || '—'} • ${p.methode}</div>
+            <span class="badge badge-warning" style="margin-left:8px">${(p.statut || '').replace('_',' ')}</span>
+            <div style="font-size:.82rem;color:var(--gray-600);margin-top:4px">${d?.numero || '—'} • ${p.methode || ''}</div>
           </div>`;
         }).join('')
-      : '<p class="empty-state" style="padding:18px">Tous les paiements à jour</p>';
+      : '<p class="empty-state" style="padding:18px 0">Tous les paiements à jour</p>';
   }, 100);
 }
 
-// Responsive grid
 const mediaQ = window.matchMedia('(max-width: 800px)');
-function updateGrid() { document.getElementById('dash-grid').style.gridTemplateColumns = mediaQ.matches ? '1fr' : '1fr 1fr'; }
+function updateGrid() {
+  const g = document.getElementById('dash-grid');
+  if (g) g.style.gridTemplateColumns = mediaQ.matches ? '1fr' : '1fr 1fr';
+}
 mediaQ.addEventListener('change', updateGrid); updateGrid();
 </script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(e=>console.error(e))}</script>
 </body>
 </html>

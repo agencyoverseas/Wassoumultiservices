@@ -306,53 +306,223 @@ const CONFIG = {
   },
 
   // -----------------------------------------------------------
-  // 10. AGENT IA — Préparé, désactivé pour l'instant
-  //     Active "active: true" + remplis les clés quand tu seras prêt.
+  // 10. AGENT IA — Configuration complète v2.1
+  //     L'agent AI prend les RDV et répond aux messages clients.
+  //     Le code orchestrateur tourne dans Make.com (voir guide).
+  //     Cette config sert de référence et est lue par le dashboard.
   // -----------------------------------------------------------
   ia_agent: {
-    active: true,                         // ⚠️ Mets true quand tu veux l'activer
-    provider: "anthropic",                 // "anthropic" | "openai" | "make"
-    model: "claude-sonnet-4-5",
-    api_key: "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",                           // sk-ant-xxx
-    prompt_systeme: `Tu es l'assistant IA de Wassou Multiservices en Guadeloupe.
-Tu prends les rendez-vous, vérifies les disponibilités sur l'agenda Google,
-réponds aux clients en français, et programmes les interventions.
-Sois chaleureux, professionnel et concis.`,
-    google_calendar: {
-      id: "",                              // ID du calendrier Google
-      oauth_token: "",
-    },
-    email: {
-      imap_user: "",
-      imap_pass: "",
-      smtp_user: "",
-      smtp_pass: "",
-    },
-    whatsapp_webhook: "",
+    active: true,                              // ✅ Activé
+    nom: "Wassou Assistant",                   // Nom affiché côté client
+    avatar: "🌿",
+
+    // ── MODÈLE & API ─────────────────────────────────────────
+    provider: "anthropic",
+    model: "claude-sonnet-4-6",                // Sonnet = 5x moins cher qu'Opus pour RDV
+    api_key_storage: "make_com_secret",        // ⚠️ Clé stockée dans Make, JAMAIS ici
+    max_tokens_per_response: 1000,             // Limite la longueur des réponses
+    max_cost_per_day_eur: 5,                   // 🛡️ Garde-fou : stoppe à 5€/jour
+
+    // ── PROMPT SYSTÈME (personnalité de l'agent) ────────────
+    prompt_systeme: `Tu es Wassou Assistant, l'assistant virtuel de Wassou Multiservices en Guadeloupe.
+
+Tu réponds aux clients par WhatsApp et email pour :
+1. Prendre des rendez-vous (jardinage, kärcher, entretien extérieur)
+2. Répondre aux questions sur les services et tarifs
+3. Confirmer les RDV et envoyer des rappels
+4. Gérer les annulations et reports
+
+RÈGLES STRICTES :
+- Toujours en français, ton chaleureux et créole-friendly ("a plus", "à bientôt")
+- Toujours signer "— Équipe Wassou 🌿"
+- Si le client veut un RDV : demande nom, adresse en Guadeloupe, service souhaité, date/heure préférée
+- Tu ne donnes JAMAIS de prix exact (renvoie vers un devis : "Notre équipe vous fera un devis personnalisé")
+- Tu ne parles JAMAIS de paiement (ce n'est pas ton rôle)
+- Si question hors-sujet ou difficile : "Je transmets votre demande à Obrayan, il vous rappelle dans la journée"
+- Si urgence (dégât d'eau, arbre tombé, etc.) : donne le numéro 0690 67 30 85 directement
+
+INFORMATIONS UTILES :
+- Zone : Toute la Guadeloupe
+- Horaires : Lun-Sam 7h-18h
+- Services : jardinage, kärcher, entretien extérieur, débroussaillage, taille de haies
+- Délai minimum : 1 jour (pas de RDV pour aujourd'hui)
+- Créneau standard : 1h30
+
+Tu as accès aux outils suivants :
+- check_disponibilite(date, heure) → vérifie l'agenda
+- creer_rdv(client_data) → crée le RDV dans le système
+- envoyer_sms(numero, message) → envoie un SMS de confirmation
+- escalader_admin(raison) → notifie Obrayan en cas de problème`,
+
+    // ── DISPONIBILITÉS (règles métier) ──────────────────────
     regles_disponibilite: {
-      jours_ouvres: [1, 2, 3, 4, 5, 6],   // 0=dim, 1=lun, ... 6=sam
+      jours_ouvres: [1, 2, 3, 4, 5, 6],         // 0=dim, 1=lun, ... 6=sam
       heure_debut: "07:00",
       heure_fin: "18:00",
-      duree_creneau_min: 90,
-      delai_min_jours: 1,                  // Pas de RDV pour aujourd'hui
-      delai_max_jours: 30,
+      duree_creneau_min: 90,                    // Minutes par RDV
+      delai_min_jours: 1,                       // Pas de RDV aujourd'hui
+      delai_max_jours: 30,                      // Max 30 jours d'avance
+      pause_dejeuner: { debut: "12:00", fin: "13:30" },
+      jours_feries_2026: [
+        "2026-01-01", "2026-04-06", "2026-05-01", "2026-05-08",
+        "2026-05-25", "2026-06-04", "2026-07-14", "2026-08-15",
+        "2026-11-01", "2026-11-11", "2026-12-25"
+      ],
     },
+
+    // ── CANAUX ACTIFS ───────────────────────────────────────
+    canaux: {
+      whatsapp_business: {
+        active: true,
+        phone_number_id: "",                    // À remplir depuis Meta Business
+        verify_token: "",                       // Token de vérification webhook
+        webhook_make: "",                       // URL Make.com
+      },
+      email: {
+        active: true,
+        adresse: "contact@wassou-services.fr",
+        signature: "— Équipe Wassou Multiservices 🌿\nGuadeloupe • 0690 67 30 85",
+        webhook_make: "",                       // URL Make.com
+      },
+      formulaire_web: {
+        active: true,
+        endpoint: "",                           // URL du formulaire public
+        webhook_make: "",
+      },
+    },
+
+    // ── ESCALADE & SUPERVISION ──────────────────────────────
+    escalade: {
+      mots_cles_urgence: [
+        "urgence", "urgent", "tout de suite", "immédiat",
+        "dégât", "fuite", "arbre tombé", "danger"
+      ],
+      mots_cles_reclamation: [
+        "remboursement", "avocat", "tribunal", "honteux",
+        "scandale", "porter plainte", "arnaque"
+      ],
+      notifier_admin_si: ["urgence", "reclamation", "client_recurrent_mecontent"],
+      admin_notification_canal: "sms",          // sms | email | push
+      admin_telephone: "0690 67 30 85",
+    },
+
+    // ── INTÉGRATIONS (où vont les données) ──────────────────
     integrations: {
-      make_webhook: "",                    // Pour automatiser via Make.com
-      n8n_webhook: "",
-      blotato_key: "",
+      make_webhook_url: "",                     // ⚠️ À coller après scénario Make
+      google_sheets_id: "",                     // ID du Sheet "base données"
+      google_calendar_id: "",                   // ID Calendar Wassou
+    },
+
+    // ── SUPERVISION (visible dans dashboard admin) ──────────
+    supervision: {
+      log_conversations: true,                  // Enregistre toutes les conv'
+      affiche_dashboard: true,                  // Onglet "Agent IA"
+      pause_active: false,                      // Mode "Je reprends la main"
+      stats_quotidiennes: true,                 // RDV pris, msg traités, coût
     },
   },
 
   // -----------------------------------------------------------
   // 11. AVANCÉ — Sécurité & développement
   // -----------------------------------------------------------
+  // -----------------------------------------------------------
+  //  🔧 MAINTENANCE NEXUSAI — CACHÉ DU CLIENT
+  //  Cette section gère le contrat de maintenance et alertes techniques
+  //  Le client (Wassou) ne voit RIEN de cette section dans le dashboard.
+  //  Accès au panneau caché : 6 clics rapides sur le logo Wassou.
+  // -----------------------------------------------------------
+  nexus_maintenance: {
+    active: true,
+    agency_name: "NexusAI Agency",
+    agency_email: "client.shopnova@gmail.com",   // ⚠️ Modifiable plus tard
+    agency_phone: "+596696531755",                // Numéro Obrayan (NexusAI)
+    
+    // Compte admin secret (login séparé pour panneau caché)
+    secret_admin: {
+      login: "nexus",
+      // Mot de passe par défaut "nexus2026" en SHA-256 — À CHANGER
+      password_sha256: "ff0a5f39b703f6d02441f3b42aa02af28bc400cd8193ffd8fb1f4c4d245444c5",
+      role_label: "Support technique"
+    },
+    
+    // Comment vous accédez au panneau caché
+    secret_unlock: {
+      methode: "logo_clicks",                     // 6 clics rapides sur le logo
+      nb_clics: 6,
+      delai_max_ms: 3000,                         // Dans les 3 secondes
+    },
+    
+    // Canaux d'alerte pour VOUS (NexusAI uniquement)
+    alertes_techniques: {
+      // 1. Push notifications PWA (gratuit, instantané)
+      push_notifications: {
+        active: true,
+        // Le navigateur de Obrayan reçoit les alertes
+      },
+      
+      // 2. Telegram Bot (gratuit, fiable, illimité — RECOMMANDÉ)
+      telegram: {
+        active: false,                            // À activer après configuration
+        bot_token: "",                            // Voir guide TELEGRAM_SETUP.md
+        chat_id: "",                              // Votre chat ID Telegram
+      },
+      
+      // 3. Email de fallback
+      email: {
+        active: true,
+        adresse: "client.shopnova@gmail.com",
+      },
+      
+      // 4. Webhook Make.com (relai pour multiples canaux)
+      make_webhook: "",                           // À coller depuis Make
+    },
+    
+    // Seuils de surveillance crédits Anthropic
+    surveillance_credits: {
+      budget_mensuel_eur: 20,                     // Budget mensuel prévu
+      seuils_alerte: {
+        attention: 50,                            // Alerte à 50% (10€ restant)
+        urgent: 25,                               // Urgent à 25% (5€ restant)
+        critique: 10,                             // Critique à 10% (2€ restant)
+      },
+      check_frequency_minutes: 30,                // Vérif toutes les 30 min
+      mode_silencieux_nuit: {
+        active: true,
+        debut: "22:00",
+        fin: "07:00",                             // Pas de SMS la nuit
+      },
+    },
+    
+    // Si crédits à 0 : mode dégradé
+    mode_degrade: {
+      message_client: "Bonjour, votre message a bien été reçu. Notre équipe vous rappelle dans la journée. Merci de votre patience 🌿\n— Équipe Wassou",
+      stocker_dans_sheet: true,                   // Sauve les msg pour traitement manuel
+      notifier_admin_immediat: true,              // SMS immédiat à NexusAI
+    },
+    
+    // Stats facturation (pour le contrat maintenance)
+    facturation: {
+      forfait_mensuel_eur: 49,
+      forfait_annuel_eur: 468,                    // 39€/mois si engagement annuel
+      inclus_dans_forfait: {
+        rdv_par_mois: 200,
+        sms_clients: 500,
+        stockage_photos_go: 5,
+        support_heures_mensuel: 2,
+      },
+      depassement: {
+        rdv_supplementaire: 0.50,                 // €/RDV au-delà de 200
+        heure_support_sup: 60,                    // €/heure
+      },
+    },
+  },
+
   avance: {
     debug: false,                          // Affiche les logs détaillés
     version: "2.0.0",
     annee_copyright: 2026,
     powered_by: "NexusAI Agency",
-    powered_by_url: "https://www.instagram.com/thakaribeanbwoysxm/",
+    powered_by_url: "https://github.com/drayk973",
     storage_prefix: "wassou_",             // Préfixe pour localStorage
     backup_auto: true,                     // Sauvegarde auto chaque jour
     firebase: {

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+  <title>🔧 NexusAI Maintenance Panel</title>
+  <meta name="theme-color" content="#0f172a"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Sora:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg2: #1e293b;
+      --line: #334155;
+      --text: #e2e8e4;
+      --text-muted: #94a3b8;
+      --cyan: #06b6d4;
+      --green: #10b981;
+      --orange: #f59e0b;
+      --red: #ef4444;
+      --purple: #a855f7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Sora', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 20px;
+      padding-top: max(20px, env(safe-area-inset-top));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 18px; margin-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    header h1 { font-size: 1.3rem; margin: 0; display: flex; align-items: center; gap: 10px; }
+    header .badge {
+      background: var(--cyan); color: var(--bg); font-size: .65rem;
+      padding: 4px 10px; border-radius: 6px; font-weight: 700; letter-spacing: .04em;
+    }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      padding: 9px 14px; border-radius: 9px; border: 1px solid var(--line);
+      background: var(--bg2); color: var(--text); cursor: pointer;
+      font-family: inherit; font-size: .85rem; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: all .15s;
+    }
+    .btn:hover { background: #334155; border-color: var(--cyan); }
+    .btn-primary { background: var(--cyan); color: var(--bg); border-color: var(--cyan); }
+    .btn-primary:hover { background: #0891b2; }
+    .btn-danger { background: var(--red); color: #fff; border-color: var(--red); }
+    .btn-success { background: var(--green); color: #fff; border-color: var(--green); }
+    
+    .grid { display: grid; gap: 18px; grid-template-columns: 1fr; }
+    @media (min-width: 800px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+    
+    .panel {
+      background: var(--bg2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .panel h2 {
+      font-size: 1rem; margin: 0 0 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    
+    .credit-display {
+      text-align: center;
+      padding: 18px 0;
+    }
+    .credit-amount {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.6rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+    }
+    .credit-amount .currency { color: var(--text-muted); font-size: .6em; }
+    .progress {
+      background: var(--bg);
+      height: 10px;
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      transition: width .4s ease, background .4s ease;
+      border-radius: 6px;
+    }
+    .credit-status {
+      font-size: .82rem;
+      padding: 6px 14px;
+      border-radius: 100px;
+      display: inline-block;
+      font-weight: 600;
+    }
+    .credit-status.ok { background: rgba(16,185,129,.15); color: var(--green); }
+    .credit-status.warning { background: rgba(245,158,11,.15); color: var(--orange); }
+    .credit-status.urgent { background: rgba(239,68,68,.15); color: var(--red); }
+    .credit-status.critical { background: var(--red); color: #fff; animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: .5; } }
+    
+    .stat-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .stat-mini {
+      background: var(--bg);
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+    }
+    .stat-mini .label { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+    .stat-mini .value { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 600; margin-top: 4px; }
+    
+    .alert-log {
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .alert-item {
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      border-left: 3px solid var(--line);
+      background: var(--bg);
+      font-size: .85rem;
+    }
+    .alert-item.warning { border-left-color: var(--orange); }
+    .alert-item.urgent { border-left-color: var(--red); }
+    .alert-item.critical { border-left-color: var(--red); background: rgba(239,68,68,.08); }
+    .alert-item .head { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .alert-item .title { font-weight: 600; font-size: .9rem; }
+    .alert-item .time { color: var(--text-muted); font-size: .75rem; font-family: 'JetBrains Mono', monospace; }
+    .alert-item .msg { color: var(--text-muted); font-size: .82rem; }
+    
+    .config-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--line);
+      gap: 12px;
+    }
+    .config-row:last-child { border-bottom: 0; }
+    .config-row .key { color: var(--text-muted); font-size: .85rem; }
+    .config-row .val {
+      font-family: 'JetBrains Mono', monospace; font-size: .85rem;
+      max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .config-row .val.on { color: var(--green); }
+    .config-row .val.off { color: var(--text-muted); }
+    
+    .billing-summary {
+      background: linear-gradient(135deg, var(--purple) 0%, var(--cyan) 100%);
+      padding: 18px;
+      border-radius: 12px;
+      color: #fff;
+      margin-bottom: 14px;
+    }
+    .billing-summary .amount {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    .billing-summary .label { opacity: .85; font-size: .85rem; }
+    
+    .empty {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 30px;
+      font-size: .85rem;
+    }
+    
+    a { color: var(--cyan); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    
+    .info-banner {
+      background: rgba(6,182,212,.1);
+      border: 1px solid var(--cyan);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: .82rem;
+      color: var(--cyan);
+      margin-bottom: 18px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>🔧 <span style="color:var(--cyan)">Nexus</span>AI <span class="badge">MAINTENANCE</span></h1>
+    <div class="actions">
+      <button class="btn" onclick="window.location.href='dashboard-admin.html'">← Retour à Wassou</button>
+      <button class="btn btn-danger" onclick="NexusGuard.logout()">🚪 Déconnexion</button>
+    </div>
+  </header>
+
+  <div class="info-banner">
+    🔒 Cette page est invisible pour le client. Site supervisé : <strong>Wassou Multiservices</strong>
+  </div>
+
+  <div class="grid grid-2">
+
+    <!-- CRÉDITS ANTHROPIC -->
+    <div class="panel">
+      <h2>💳 Crédits Anthropic</h2>
+      <div class="credit-display">
+        <div class="credit-amount" id="credit-remaining">— <span class="currency">€</span></div>
+        <div class="progress">
+          <div class="progress-fill" id="credit-bar" style="width:0%;background:var(--green)"></div>
+        </div>
+        <div class="credit-status ok" id="credit-status">— restant sur — €</div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-mini">
+          <div class="label">Dépensé aujourd'hui</div>
+          <div class="value" id="spent-today">— €</div>
+        </div>
+        <div class="stat-mini">
+          <div class="label">Dépensé ce mois</div>
+          <div class="value" id="spent-month">— €</div>
+        </div>
+        <div class="stat-mini">
+          <div class="label">Estimation restante</div>
+          <div class="value" id="days-left">— jours</div>
+        </div>
+        <div class="stat-mini">
+          <div class="label">Dernière MAJ</div>
+          <div class="value" id="last-update" style="font-size:.85rem">—</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <a href="https://console.anthropic.com/settings/billing" target="_blank" class="btn btn-primary" style="flex:1;justify-content:center">
+          🔋 Recharger crédits
+        </a>
+        <button class="btn" onclick="refreshCredits()">🔄</button>
+      </div>
+    </div>
+
+    <!-- FACTURATION CONTRAT MAINTENANCE -->
+    <div class="panel">
+      <h2>💼 Contrat maintenance</h2>
+      <div class="billing-summary">
+        <div class="label">Forfait mensuel Wassou</div>
+        <div class="amount" id="forfait-amount">49€</div>
+        <div class="label" id="forfait-period">/ mois</div>
+      </div>
+      <div class="config-row">
+        <span class="key">RDV inclus</span>
+        <span class="val" id="rdv-inclus">200/mois</span>
+      </div>
+      <div class="config-row">
+        <span class="key">RDV pris ce mois</span>
+        <span class="val" id="rdv-month">0</span>
+      </div>
+      <div class="config-row">
+        <span class="key">Marge ce mois</span>
+        <span class="val" id="margin-month" style="color:var(--green)">+49€</span>
+      </div>
+      <div class="config-row">
+        <span class="key">Statut paiement</span>
+        <span class="val on">✅ À jour</span>
+      </div>
+    </div>
+
+    <!-- ALERTES TECHNIQUES (LOG) -->
+    <div class="panel" style="grid-column: 1 / -1">
+      <h2 style="display:flex;justify-content:space-between">
+        <span>🔔 Journal des alertes techniques</span>
+        <button class="btn" onclick="clearAlerts()" style="font-size:.75rem;padding:5px 10px">🗑️ Vider</button>
+      </h2>
+      <div class="alert-log" id="alert-log">
+        <p class="empty">Aucune alerte. Tout fonctionne normalement ✅</p>
+      </div>
+    </div>
+
+    <!-- CONFIGURATION CANAUX -->
+    <div class="panel">
+      <h2>📡 Canaux d'alerte</h2>
+      <div class="config-row">
+        <span class="key">📱 Push (PWA)</span>
+        <span class="val" id="ch-push">—</span>
+      </div>
+      <div class="config-row">
+        <span class="key">✈️ Telegram</span>
+        <span class="val" id="ch-telegram">—</span>
+      </div>
+      <div class="config-row">
+        <span class="key">📧 Email</span>
+        <span class="val" id="ch-email">—</span>
+      </div>
+      <div class="config-row">
+        <span class="key">🔗 Webhook Make</span>
+        <span class="val" id="ch-make">—</span>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px">
+        <button class="btn btn-success" onclick="testAlert()" style="flex:1">📨 Test alerte</button>
+        <button class="btn" onclick="enablePush()">🔔 Activer push</button>
+      </div>
+    </div>
+
+    <!-- AGENT IA STATE -->
+    <div class="panel">
+      <h2>🤖 État Agent IA</h2>
+      <div class="config-row">
+        <span class="key">Modèle</span>
+        <span class="val" id="ia-model">—</span>
+      </div>
+      <div class="config-row">
+        <span class="key">Statut</span>
+        <span class="val" id="ia-status">—</span>
+      </div>
+      <div class="config-row">
+        <span class="key">Cap quotidien</span>
+        <span class="val" id="ia-cap">—</span>
+      </div>
+      <div class="config-row">
+        <span class="key">Mode dégradé</span>
+        <span class="val" id="ia-degraded">—</span>
+      </div>
+      <div style="margin-top:14px">
+        <button class="btn btn-danger" onclick="forceDegraded()" style="width:100%">⚠️ Forcer mode dégradé</button>
+      </div>
+    </div>
+
+    <!-- ACTIONS NEXUS -->
+    <div class="panel" style="grid-column: 1 / -1">
+      <h2>🛠️ Actions de maintenance</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+        <a href="https://console.anthropic.com/settings/keys" target="_blank" class="btn">🔑 Gérer les clés API</a>
+        <a href="https://console.anthropic.com/settings/usage" target="_blank" class="btn">📊 Console usage</a>
+        <a href="https://www.make.com/en/scenarios" target="_blank" class="btn">🟣 Scénarios Make</a>
+        <a href="https://github.com/drayk973" target="_blank" class="btn">📦 Dépôt GitHub</a>
+        <button class="btn" onclick="exportLogs()">📥 Exporter logs</button>
+        <button class="btn" onclick="resetAlerts()">🔄 Reset cooldowns</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script src="js/nexus-secret.js"></script>
+<script>
+// Garde de page
+const session = NexusGuard.require();
+if (!session) throw new Error('Unauthorized');
+
+const NEXUS = CONFIG.nexus_maintenance;
+
+// ============ CRÉDITS ============
+function loadCredits() {
+  const s = NexusCredits.getStatus();
+  document.getElementById('credit-remaining').innerHTML = s.remaining.toFixed(2) + ' <span class="currency">€</span>';
+  document.getElementById('credit-bar').style.width = s.pct + '%';
+  
+  let color = 'var(--green)';
+  let statusClass = 'ok';
+  let statusText = `${s.pct.toFixed(0)}% — Tout va bien`;
+  if (s.level === 'warning') { color = 'var(--orange)'; statusClass = 'warning'; statusText = `${s.pct.toFixed(0)}% — À surveiller`; }
+  else if (s.level === 'urgent') { color = 'var(--red)'; statusClass = 'urgent'; statusText = `${s.pct.toFixed(0)}% — Recharge rapide`; }
+  else if (s.level === 'critical') { color = 'var(--red)'; statusClass = 'critical'; statusText = `EPUISÉ — RECHARGE URGENTE`; }
+  
+  document.getElementById('credit-bar').style.background = color;
+  const statusEl = document.getElementById('credit-status');
+  statusEl.className = 'credit-status ' + statusClass;
+  statusEl.textContent = statusText;
+  
+  document.getElementById('spent-today').textContent = (s.details.day_spent_eur || 0).toFixed(2) + ' €';
+  document.getElementById('spent-month').textContent = s.spent.toFixed(2) + ' €';
+  
+  // Estimation jours restants
+  const daily = (s.details.day_spent_eur || 0.5);
+  const days = daily > 0 ? Math.floor(s.remaining / daily) : 999;
+  document.getElementById('days-left').textContent = days >= 999 ? '∞' : days + ' j';
+  
+  document.getElementById('last-update').textContent = s.last_update 
+    ? new Date(s.last_update).toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+    : 'Jamais';
+}
+
+function refreshCredits() {
+  // Dans la version finale, on pinguera Make/Anthropic ici
+  // Pour l'instant on relit le localStorage
+  loadCredits();
+  alert('Pour récupérer la conso réelle, configure le scénario "Anthropic Usage Sync" dans Make.com (voir guide).');
+}
+
+// ============ ALERTES LOG ============
+function loadAlerts() {
+  const logs = NexusAlerts.getLog();
+  const container = document.getElementById('alert-log');
+  if (!logs.length) {
+    container.innerHTML = '<p class="empty">Aucune alerte. Tout fonctionne normalement ✅</p>';
+    return;
+  }
+  container.innerHTML = logs.slice(0, 30).map(a => `
+    <div class="alert-item ${a.level}">
+      <div class="head">
+        <span class="title">${a.title}</span>
+        <span class="time">${new Date(a.timestamp).toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>
+      </div>
+      <div class="msg">${a.message}</div>
+    </div>
+  `).join('');
+}
+
+function clearAlerts() {
+  if (!confirm('Vider le journal des alertes ?')) return;
+  NexusAlerts.clearLog();
+  loadAlerts();
+}
+
+// ============ CANAUX ============
+function loadChannels() {
+  const a = NEXUS.alertes_techniques;
+  const set = (id, on, text) => {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'val ' + (on ? 'on' : 'off');
+  };
+  set('ch-push', a.push_notifications.active && 'Notification' in window && Notification.permission === 'granted', 
+      a.push_notifications.active ? (Notification.permission === 'granted' ? '✅ Actif' : '⚠️ Permission requise') : '⚪ Désactivé');
+  set('ch-telegram', a.telegram.active && a.telegram.bot_token,
+      a.telegram.active && a.telegram.bot_token ? '✅ Actif' : '⚪ Non configuré');
+  set('ch-email', a.email.active, a.email.adresse || '⚪ Désactivé');
+  set('ch-make', !!a.make_webhook, a.make_webhook ? '✅ Connecté' : '⚪ Non configuré');
+}
+
+async function enablePush() {
+  if (!('Notification' in window)) { alert('Push non supporté'); return; }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    new Notification('🔧 NexusAI', { body: 'Notifications activées avec succès', icon: 'icons/icon-192.png' });
+    loadChannels();
+  } else {
+    alert('Vous avez refusé. Activez dans les paramètres du navigateur.');
+  }
+}
+
+function testAlert() {
+  NexusAlerts.send('warning', 'Test alerte', 'Ceci est un test du système d\'alertes NexusAI. Si tu vois ce message, tout fonctionne ✅');
+  setTimeout(loadAlerts, 500);
+}
+
+// ============ AGENT IA ============
+function loadIaState() {
+  const ia = CONFIG.ia_agent;
+  document.getElementById('ia-model').textContent = ia.model;
+  document.getElementById('ia-status').innerHTML = ia.active 
+    ? '<span class="on">✅ Actif</span>' 
+    : '<span class="off">⚪ Inactif</span>';
+  document.getElementById('ia-cap').textContent = ia.max_cost_per_day_eur + ' €/jour';
+  document.getElementById('ia-degraded').innerHTML = NexusCredits.isDegraded()
+    ? '<span style="color:var(--red)">🔴 ACTIF</span>'
+    : '<span class="off">⚪ Inactif</span>';
+}
+
+function forceDegraded() {
+  if (!confirm('Forcer le mode dégradé ? L\'agent IA arrêtera de répondre aux clients.')) return;
+  NexusCredits.activateDegradedMode();
+  alert('Mode dégradé activé. L\'agent IA est en pause.');
+  loadIaState();
+}
+
+// ============ FACTURATION ============
+function loadBilling() {
+  const f = NEXUS.facturation;
+  document.getElementById('forfait-amount').textContent = f.forfait_mensuel_eur + '€';
+  document.getElementById('rdv-inclus').textContent = f.inclus_dans_forfait.rdv_par_mois + '/mois';
+  // RDV pris ce mois — depuis Data
+  let rdvCount = 0;
+  try { rdvCount = (Data.rdvs.all() || []).filter(r => {
+    const d = new Date(r.created || 0);
+    const now = new Date();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length; } catch(e) {}
+  document.getElementById('rdv-month').textContent = rdvCount;
+  
+  // Marge
+  const credits = NexusCredits.getStatus();
+  const margin = f.forfait_mensuel_eur - credits.spent;
+  document.getElementById('margin-month').textContent = (margin >= 0 ? '+' : '') + margin.toFixed(2) + '€';
+  document.getElementById('margin-month').style.color = margin >= 0 ? 'var(--green)' : 'var(--red)';
+}
+
+// ============ ACTIONS DIVERSES ============
+function exportLogs() {
+  const data = {
+    exported_at: new Date().toISOString(),
+    alerts: NexusAlerts.getLog(),
+    credits: NexusCredits.getStatus(),
+    ia_state: { degraded: NexusCredits.isDegraded() }
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `nexus-logs-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function resetAlerts() {
+  localStorage.removeItem('wassou_nexus_last_credit_alert');
+  alert('Cooldowns reset. Les alertes peuvent à nouveau se déclencher.');
+}
+
+// ============ INIT ============
+loadCredits();
+loadAlerts();
+loadChannels();
+loadIaState();
+loadBilling();
+
+// Refresh toutes les 30s
+setInterval(() => { loadCredits(); loadAlerts(); }, 30000);
+</script>
+</body>
+</html>

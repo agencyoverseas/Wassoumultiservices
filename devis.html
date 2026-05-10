@@ -1,67 +1,46 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <meta name="theme-color" content="#1b4332"/>
-  <title>Devis & Factures — Wassou Multiservices</title>
-  <link rel="stylesheet" href="css/style.css"/>
-  <link rel="manifest" href="manifest.json"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<title>Devis — Wassou</title>
+<meta name="theme-color" content="#1b4332"/>
+<link rel="manifest" href="manifest.json"/>
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css"/>
 </head>
 <body>
 <div id="overlay"></div>
 <div class="app-shell">
-  <nav class="sidebar" id="sidebar">
-    <div class="sidebar-logo"><span class="logo-icon">🌿</span><span class="logo-name">Wassou</span><span class="logo-sub">Multiservices — Guadeloupe</span></div>
-    <div class="nav-section">
-      <div class="nav-section-title">Principal</div>
-      <a href="index.html" class="nav-link"><span class="nav-icon">📊</span> Tableau de bord</a>
-      <a href="clients.html" class="nav-link"><span class="nav-icon">👥</span> Clients</a>
-      <a href="agents.html" class="nav-link"><span class="nav-icon">🧑‍🌾</span> Agents</a>
-      <a href="interventions.html" class="nav-link"><span class="nav-icon">📅</span> Interventions</a>
-      <div class="nav-section-title">Outils</div>
-      <a href="sms.html" class="nav-link"><span class="nav-icon">💬</span> SMS</a>
-      <a href="devis.html" class="nav-link"><span class="nav-icon">📄</span> Devis & Factures</a>
-      <a href="rapports.html" class="nav-link"><span class="nav-icon">📈</span> Rapports</a>
-    </div>
-    <div class="sidebar-footer"><a href="https://drayk973.github.io/Wassou-services-/" target="_blank">🌐 Site public</a></div>
-  </nav>
-
+  <nav class="sidebar" id="sidebar"></nav>
   <div class="main-content">
     <header class="top-header">
       <button class="burger-btn" id="burger">☰</button>
       <div class="page-title">📄 Devis & Factures</div>
       <div class="header-actions">
-        <button class="btn btn-primary btn-sm" onclick="openModal()">+ Nouveau devis</button>
+        <a href="devis-create.html" class="btn btn-primary btn-sm">+ Nouveau devis</a>
       </div>
     </header>
-
     <div class="page-body">
-      <div class="page-header">
-        <div class="filter-pills">
-          <button class="pill active" onclick="setFilter('all',this)">Tous</button>
-          <button class="pill" onclick="setFilter('brouillon',this)">📝 Brouillon</button>
-          <button class="pill" onclick="setFilter('envoyé',this)">📤 Envoyé</button>
-          <button class="pill" onclick="setFilter('accepté',this)">✅ Accepté</button>
-          <button class="pill" onclick="setFilter('refusé',this)">❌ Refusé</button>
-        </div>
+      <div class="filter-pills">
+        <button class="pill active" onclick="filterStatus('', this)">Tous</button>
+        <button class="pill" onclick="filterStatus('brouillon', this)">📝 Brouillon</button>
+        <button class="pill" onclick="filterStatus('envoyé', this)">📨 Envoyé</button>
+        <button class="pill" onclick="filterStatus('accepté', this)">✅ Accepté</button>
+        <button class="pill" onclick="filterStatus('soldé', this)">💰 Soldé</button>
+        <button class="pill" onclick="filterStatus('refusé', this)">❌ Refusé</button>
       </div>
 
-      <!-- Stats -->
-      <div class="stats-grid stagger mb-6">
-        <div class="stat-card green"><div class="stat-icon">📄</div><div class="stat-info"><div class="stat-value" id="s-total">—</div><div class="stat-label">Total devis</div></div></div>
-        <div class="stat-card gold"><div class="stat-icon">✅</div><div class="stat-info"><div class="stat-value" id="s-accepte">—</div><div class="stat-label">Acceptés</div></div></div>
-        <div class="stat-card blue"><div class="stat-icon">💶</div><div class="stat-info"><div class="stat-value" id="s-ca">—</div><div class="stat-label">CA devis acceptés</div></div></div>
-        <div class="stat-card orange"><div class="stat-icon">📤</div><div class="stat-info"><div class="stat-value" id="s-envoye">—</div><div class="stat-label">En attente réponse</div></div></div>
-      </div>
-
-      <!-- List -->
       <div class="card">
         <div class="table-wrapper">
           <table>
-            <thead><tr><th>Numéro</th><th>Client</th><th>Date</th><th>Échéance</th><th>Total</th><th>Statut</th><th>Actions</th></tr></thead>
+            <thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Total TTC</th><th>Reçu</th><th>Statut</th><th></th></tr></thead>
             <tbody id="tbody"></tbody>
           </table>
         </div>
@@ -71,330 +50,76 @@
   </div>
 </div>
 
-<!-- Modal créer/modifier devis -->
-<div class="modal-overlay" id="devisModal">
-  <div class="modal" style="max-width:680px">
-    <div class="modal-header">
-      <span>📄</span><h3 id="modal-title">Nouveau devis</h3>
-      <button class="modal-close" onclick="closeModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="edit-id"/>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Client <span>*</span></label>
-          <select class="form-control" id="f-client"></select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Statut</label>
-          <select class="form-control" id="f-statut">
-            <option value="brouillon">📝 Brouillon</option>
-            <option value="envoyé">📤 Envoyé</option>
-            <option value="accepté">✅ Accepté</option>
-            <option value="refusé">❌ Refusé</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Date</label>
-          <input class="form-control" id="f-date" type="date"/>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Validité</label>
-          <input class="form-control" id="f-echeance" type="date"/>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-      <h4 style="margin-bottom:14px;font-size:.9rem;color:var(--green-700);">📋 Lignes de devis</h4>
-
-      <div style="display:grid;grid-template-columns:1fr 70px 90px 60px;gap:8px;margin-bottom:8px;font-size:.75rem;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:.05em;">
-        <span>Description</span><span>Qté</span><span>PU (€)</span><span></span>
-      </div>
-      <div id="lignes"></div>
-      <button class="btn btn-outline btn-sm mt-4" onclick="addLigne()">+ Ajouter une ligne</button>
-
-      <div class="divider"></div>
-      <div class="devis-total-row">
-        <span>Total HT :</span>
-        <span class="amount" id="modal-total">0,00 €</span>
-      </div>
-
-      <div class="form-group mt-4">
-        <label class="form-label">Notes</label>
-        <textarea class="form-control" id="f-notes" rows="2" placeholder="Conditions, remarques…"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
-      <button class="btn btn-primary" onclick="saveDevis()">💾 Enregistrer</button>
-    </div>
-  </div>
-</div>
-
-<!-- Print preview modal -->
-<div class="modal-overlay" id="printModal">
-  <div class="modal" style="max-width:700px">
-    <div class="modal-header">
-      <span>🖨️</span><h3>Aperçu devis</h3>
-      <button class="modal-close" onclick="document.getElementById('printModal').classList.remove('open')">×</button>
-    </div>
-    <div class="modal-body" id="print-content"></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="document.getElementById('printModal').classList.remove('open')">Fermer</button>
-      <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimer</button>
-    </div>
-  </div>
-</div>
-
-<div id="confirmModal">
-  <div class="confirm-box">
-    <div class="confirm-icon">⚠️</div><div class="confirm-msg"></div>
-    <div class="confirm-actions">
-      <button class="btn btn-outline btn-cancel">Annuler</button>
-      <button class="btn btn-danger btn-confirm">Supprimer</button>
-    </div>
-  </div>
-</div>
-
+<script src="config.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
+<script src="js/nexus-secret.js"></script>
+<script src="js/payment.js"></script>
+<script src="js/sidebar.js"></script>
 <script>
-let currentFilter = 'all';
-let lignesData = [];
-
-function setFilter(f, el) {
-  currentFilter = f;
-  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  renderDevis();
+const session = App.initAdminPage(['admin','agent']);
+let currentStatus = '';
+if (session) {
+  document.addEventListener('DOMContentLoaded', () => {
+    Sidebar.inject('devis');
+    render();
+  });
 }
 
-function renderDevis() {
-  let all = WassouDB.devis.getAll();
-  let list = currentFilter === 'all' ? all : all.filter(d => d.statut === currentFilter);
+function visible() {
+  let list = session.role === 'admin' ? Data.devis.all() : Data.devis.forAgent(session.user_id);
+  if (currentStatus) list = list.filter(d => d.statut === currentStatus);
+  return list.sort((a,b) => (b.created || '').localeCompare(a.created || ''));
+}
 
-  document.getElementById('s-total').textContent = all.length;
-  document.getElementById('s-accepte').textContent = all.filter(d=>d.statut==='accepté').length;
-  document.getElementById('s-ca').textContent = App.formatMoney(all.filter(d=>d.statut==='accepté').reduce((s,d)=>s+App.devisTotal(d.services),0));
-  document.getElementById('s-envoye').textContent = all.filter(d=>d.statut==='envoyé').length;
-
+function render() {
+  const list = visible();
   document.getElementById('empty').style.display = list.length ? 'none' : 'block';
-  const tbody = document.getElementById('tbody');
-  tbody.innerHTML = '';
-  list.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(d => {
-    const client = WassouDB.clients.getById(d.clientId);
-    const total = App.devisTotal(d.services);
-    const statutBadge = {brouillon:'badge-default',envoyé:'badge-info',accepté:'badge-success',refusé:'badge-danger'}[d.statut];
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
+  document.getElementById('tbody').innerHTML = list.map(d => {
+    const c = Data.clients.get(d.client_id);
+    const recu = Data.paiements.forDevis(d.id).filter(p => p.statut === 'reçu').reduce((s,p) => s + p.montant, 0);
+    const cls = { brouillon:'badge-grey', envoyé:'badge-blue', accepté:'badge-green', refusé:'badge-red', soldé:'badge-green' }[d.statut] || 'badge-grey';
+    return `<tr>
       <td><strong>${d.numero}</strong></td>
-      <td>${client ? client.prenom+' '+client.nom : '—'}</td>
-      <td class="text-sm">${App.formatDate(d.date)}</td>
-      <td class="text-sm ${new Date(d.echeance) < new Date() && d.statut==='envoyé' ? 'text-danger' : 'text-muted'}">${App.formatDate(d.echeance)}</td>
-      <td><strong>${App.formatMoney(total)}</strong></td>
+      <td>${App.fmtDate(d.date)}</td>
+      <td><a href="client-detail.html?id=${c?.id}" style="color:var(--g);font-weight:600">${c?.prenom||''} ${c?.nom||'—'}</a></td>
+      <td>${App.fmtEur(d.total_ttc || 0)}</td>
+      <td>${App.fmtEur(recu)}</td>
+      <td><span class="badge ${cls}">${d.statut}</span></td>
       <td>
-        <select class="form-control" style="padding:5px 8px;font-size:.78rem;width:auto;" onchange="changeStatut('${d.id}',this.value)">
-          <option value="brouillon" ${d.statut==='brouillon'?'selected':''}>📝 Brouillon</option>
-          <option value="envoyé" ${d.statut==='envoyé'?'selected':''}>📤 Envoyé</option>
-          <option value="accepté" ${d.statut==='accepté'?'selected':''}>✅ Accepté</option>
-          <option value="refusé" ${d.statut==='refusé'?'selected':''}>❌ Refusé</option>
-        </select>
+        <a href="devis-create.html?id=${d.id}" class="action-btn" title="Voir/Modifier">✏️</a>
+        <button class="action-btn" onclick="duplicate('${d.id}')" title="Dupliquer">📋</button>
+        <a href="paiements.html?devis=${d.id}" class="action-btn" title="Encaisser">💳</a>
+        ${session.role==='admin' ? `<button class="action-btn danger" onclick="del('${d.id}')" title="Supprimer">🗑️</button>` : ''}
       </td>
-      <td>
-        <div class="td-actions">
-          <button class="btn btn-ghost btn-sm" onclick="previewDevis('${d.id}')">👁️</button>
-          <button class="btn btn-outline btn-sm" onclick="editDevis('${d.id}')">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteDevis('${d.id}')">🗑️</button>
-        </div>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+    </tr>`;
+  }).join('');
 }
 
-function changeStatut(id, statut) {
-  WassouDB.devis.update(id, { statut });
-  renderDevis();
-  App.toast('Statut mis à jour ✅');
+function filterStatus(s, btn) {
+  currentStatus = s;
+  document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  render();
 }
 
-function nextNumero() {
-  const all = WassouDB.devis.getAll();
-  const y = new Date().getFullYear();
-  const n = all.length + 1;
-  return `DEV-${y}-${String(n).padStart(3,'0')}`;
+function duplicate(id) {
+  const d = Data.devis.get(id); if (!d) return;
+  const copy = { ...d };
+  delete copy.id; delete copy.numero; delete copy.created;
+  copy.statut = 'brouillon';
+  Data.devis.add(copy);
+  App.toast('✅ Devis dupliqué', 'success');
+  render();
 }
 
-function addLigne(l = { label: '', qty: 1, pu: 0 }) {
-  lignesData.push(l);
-  renderLignes();
+function del(id) {
+  if (!confirm('Supprimer ce devis ?')) return;
+  Data.devis.remove(id);
+  App.toast('Devis supprimé');
+  render();
 }
-
-function renderLignes() {
-  const container = document.getElementById('lignes');
-  container.innerHTML = '';
-  lignesData.forEach((l, idx) => {
-    const div = document.createElement('div');
-    div.style.cssText = 'display:grid;grid-template-columns:1fr 70px 90px 60px;gap:8px;margin-bottom:8px;align-items:center;';
-    div.innerHTML = `
-      <input class="form-control" placeholder="Description du service" value="${l.label}" oninput="lignesData[${idx}].label=this.value;calcTotal()"/>
-      <input class="form-control" type="number" min="1" value="${l.qty}" oninput="lignesData[${idx}].qty=+this.value;calcTotal()"/>
-      <input class="form-control" type="number" min="0" step="5" value="${l.pu}" oninput="lignesData[${idx}].pu=+this.value;calcTotal()"/>
-      <button class="btn btn-danger btn-sm btn-icon" onclick="removeLigne(${idx})">×</button>
-    `;
-    container.appendChild(div);
-  });
-  calcTotal();
-}
-
-function removeLigne(idx) {
-  lignesData.splice(idx, 1);
-  renderLignes();
-}
-
-function calcTotal() {
-  const t = lignesData.reduce((s, l) => s + ((l.qty||1) * (l.pu||0)), 0);
-  document.getElementById('modal-total').textContent = App.formatMoney(t);
-}
-
-function openModal() {
-  document.getElementById('modal-title').textContent = 'Nouveau devis';
-  document.getElementById('edit-id').value = '';
-  populateClientSel();
-  const today = new Date().toISOString().split('T')[0];
-  const plus15 = new Date(Date.now() + 15*86400000).toISOString().split('T')[0];
-  document.getElementById('f-date').value = today;
-  document.getElementById('f-echeance').value = plus15;
-  document.getElementById('f-statut').value = 'brouillon';
-  document.getElementById('f-notes').value = '';
-  lignesData = [{ label: 'Entretien jardin', qty: 1, pu: 80 }];
-  renderLignes();
-  document.getElementById('devisModal').classList.add('open');
-
-  const params = new URLSearchParams(location.search);
-  if (params.get('clientId')) setTimeout(() => document.getElementById('f-client').value = params.get('clientId'), 50);
-}
-
-function editDevis(id) {
-  const d = WassouDB.devis.getById(id);
-  if (!d) return;
-  document.getElementById('modal-title').textContent = 'Modifier devis';
-  document.getElementById('edit-id').value = id;
-  populateClientSel();
-  setTimeout(() => {
-    document.getElementById('f-client').value = d.clientId || '';
-    document.getElementById('f-date').value = d.date || '';
-    document.getElementById('f-echeance').value = d.echeance || '';
-    document.getElementById('f-statut').value = d.statut || 'brouillon';
-    document.getElementById('f-notes').value = d.notes || '';
-    lignesData = JSON.parse(JSON.stringify(d.services || []));
-    renderLignes();
-  }, 50);
-  document.getElementById('devisModal').classList.add('open');
-}
-
-function saveDevis() {
-  const clientId = document.getElementById('f-client').value;
-  if (!clientId) { App.toast('Choisissez un client','error'); return; }
-  if (!lignesData.length) { App.toast('Ajoutez au moins une ligne','error'); return; }
-  const editId = document.getElementById('edit-id').value;
-  const data = {
-    clientId,
-    numero: editId ? WassouDB.devis.getById(editId).numero : nextNumero(),
-    date: document.getElementById('f-date').value,
-    echeance: document.getElementById('f-echeance').value,
-    statut: document.getElementById('f-statut').value,
-    services: JSON.parse(JSON.stringify(lignesData)),
-    notes: document.getElementById('f-notes').value.trim(),
-  };
-  if (editId) {
-    WassouDB.devis.update(editId, data);
-    App.toast('Devis mis à jour ✅');
-  } else {
-    WassouDB.devis.add(data);
-    App.toast('Devis créé ✅');
-  }
-  closeModal();
-  renderDevis();
-}
-
-function deleteDevis(id) {
-  App.confirm('Supprimer ce devis ?', () => {
-    WassouDB.devis.delete(id);
-    renderDevis();
-    App.toast('Devis supprimé','warning');
-  });
-}
-
-function previewDevis(id) {
-  const d = WassouDB.devis.getById(id);
-  const client = WassouDB.clients.getById(d.clientId);
-  const total = App.devisTotal(d.services);
-  const lines = d.services.map(l => `
-    <tr>
-      <td>${l.label}</td>
-      <td style="text-align:center">${l.qty}</td>
-      <td style="text-align:right">${App.formatMoney(l.pu)}</td>
-      <td style="text-align:right"><strong>${App.formatMoney(l.qty*l.pu)}</strong></td>
-    </tr>
-  `).join('');
-
-  document.getElementById('print-content').innerHTML = `
-    <div style="font-family:'DM Sans',sans-serif;max-width:600px;margin:0 auto;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;">
-        <div>
-          <div style="font-family:'Sora',sans-serif;font-size:1.6rem;font-weight:800;color:#1b4332;">🌿 Wassou Multiservices</div>
-          <div style="color:#4a6358;font-size:.88rem;">Guadeloupe · contact@wassou-services.fr</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:1.3rem;font-weight:700;color:#1b4332;">${d.numero}</div>
-          <div style="font-size:.82rem;color:#9aafa3;">Émis le ${App.formatDate(d.date)}</div>
-          <div style="font-size:.82rem;color:#9aafa3;">Valable jusqu'au ${App.formatDate(d.echeance)}</div>
-        </div>
-      </div>
-      <div style="background:#f8faf9;border-radius:12px;padding:18px;margin-bottom:24px;">
-        <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9aafa3;margin-bottom:8px;">Destinataire</div>
-        <strong>${client ? client.prenom+' '+client.nom : '—'}</strong><br/>
-        ${client && client.tel ? `📞 ${client.tel}<br/>` : ''}
-        ${client && client.adresse ? `📍 ${client.adresse}` : ''}
-      </div>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-        <thead>
-          <tr style="background:#1b4332;color:white;">
-            <th style="padding:10px 14px;text-align:left;border-radius:8px 0 0 0;">Description</th>
-            <th style="padding:10px 14px;text-align:center;">Qté</th>
-            <th style="padding:10px 14px;text-align:right;">PU</th>
-            <th style="padding:10px 14px;text-align:right;border-radius:0 8px 0 0;">Total</th>
-          </tr>
-        </thead>
-        <tbody>${lines}</tbody>
-      </table>
-      <div style="text-align:right;border-top:2px solid #1b4332;padding-top:14px;">
-        <span style="font-size:.9rem;color:#4a6358;">Total HT :</span>
-        <span style="font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:800;color:#1b4332;margin-left:16px;">${App.formatMoney(total)}</span>
-      </div>
-      ${d.notes ? `<div style="margin-top:20px;padding:14px;background:#f8faf9;border-radius:8px;font-size:.85rem;color:#4a6358;">${d.notes}</div>` : ''}
-    </div>
-  `;
-  document.getElementById('printModal').classList.add('open');
-}
-
-function populateClientSel() {
-  const sel = document.getElementById('f-client');
-  sel.innerHTML = '<option value="">— Choisir un client —</option>';
-  WassouDB.clients.getAll().forEach(c => {
-    sel.innerHTML += `<option value="${c.id}">${c.prenom || ''} ${c.nom}</option>`;
-  });
-}
-
-function closeModal() { document.getElementById('devisModal').classList.remove('open'); }
-document.addEventListener('DOMContentLoaded', () => {
-  renderDevis();
-  if (location.hash === '#add') openModal();
-});
 </script>
-<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").then(()=>console.log("SW registered")).catch(e=>console.error(e))}</script>
 </body>
 </html>

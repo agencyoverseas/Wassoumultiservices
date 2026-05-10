@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Connexion — Wassou Multiservices</title>
+<meta name="theme-color" content="#1b4332"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css"/>
+</head>
+<body class="login-page">
+
+<div class="login-box">
+  <div class="login-logo">
+    <div class="lg-icon"><img src="assets/logo.svg" alt="" style="width:100%;height:100%;border-radius:16px" onerror="this.outerHTML='🌿'"/></div>
+    <h1 id="b-name">Wassou Multiservices</h1>
+    <p>Espace professionnel</p>
+  </div>
+
+  <div class="role-tabs">
+    <button class="role-tab active" id="tab-admin" onclick="switchTab('admin')">👨‍💼 Admin</button>
+    <button class="role-tab" id="tab-agent" onclick="switchTab('agent')">🧑‍🌾 Agent</button>
+  </div>
+
+  <div id="login-error" class="login-error"></div>
+
+  <!-- ============ ADMIN ============ -->
+  <div id="form-admin">
+    <form onsubmit="doLoginAdmin(event)">
+      <div class="fg">
+        <label>Identifiant</label>
+        <input type="text" id="adm-login" autocomplete="username" required placeholder="admin"/>
+      </div>
+      <div class="fg">
+        <label>Mot de passe</label>
+        <input type="password" id="adm-pass" autocomplete="current-password" required placeholder="••••••••"/>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block btn-lg">🔓 Se connecter</button>
+    </form>
+  </div>
+
+  <!-- ============ AGENT ============ -->
+  <div id="form-agent" style="display:none">
+    <p style="font-size:.88rem;color:var(--text-soft);text-align:center;margin-bottom:14px">Choisis ton profil :</p>
+    <div class="agent-list" id="agent-picks"></div>
+    <div id="pin-area" style="display:none">
+      <p style="text-align:center;font-size:.92rem;margin-bottom:8px"><strong id="pin-agent-name">—</strong></p>
+      <p style="text-align:center;font-size:.82rem;color:var(--text-soft);margin-bottom:8px">Saisis ton code PIN</p>
+      <div class="pin-display">
+        <span class="pin-dot" id="d0"></span>
+        <span class="pin-dot" id="d1"></span>
+        <span class="pin-dot" id="d2"></span>
+        <span class="pin-dot" id="d3"></span>
+      </div>
+      <div class="pin-grid" id="pin-grid"></div>
+      <button class="btn btn-ghost btn-block mt-4" onclick="resetAgentPick()">← Changer d'agent</button>
+    </div>
+  </div>
+
+  <p style="text-align:center;font-size:.8rem;color:var(--text-soft);margin-top:20px">
+    <a href="index.html" style="color:var(--g);font-weight:600">← Retour au site</a>
+  </p>
+</div>
+
+<script src="config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+<script>
+// Si déjà connecté, redirige
+const existing = Auth.getSession();
+if (existing) {
+  window.location.href = CONFIG.auth.redirect_after_login[existing.role] || 'index.html';
+}
+
+document.getElementById('b-name').textContent = CONFIG.business.nom;
+
+function switchTab(role) {
+  document.getElementById('tab-admin').classList.toggle('active', role === 'admin');
+  document.getElementById('tab-agent').classList.toggle('active', role === 'agent');
+  document.getElementById('form-admin').style.display = role === 'admin' ? 'block' : 'none';
+  document.getElementById('form-agent').style.display = role === 'agent' ? 'block' : 'none';
+  hideError();
+  if (role === 'agent') buildAgentList();
+}
+
+function showError(msg) {
+  const e = document.getElementById('login-error');
+  e.textContent = msg; e.classList.add('show');
+  setTimeout(() => e.classList.remove('show'), 4000);
+}
+function hideError() { document.getElementById('login-error').classList.remove('show'); }
+
+// ============ ADMIN ============
+async function doLoginAdmin(e) {
+  e.preventDefault();
+  const id = document.getElementById('adm-login').value.trim();
+  const pw = document.getElementById('adm-pass').value;
+  const r = await Auth.loginAdmin(id, pw);
+  if (!r.ok) { showError(r.error); return; }
+  window.location.href = CONFIG.auth.redirect_after_login.admin;
+}
+
+// ============ AGENT ============
+let pickedAgent = null;
+let pinBuffer = '';
+
+function buildAgentList() {
+  const container = document.getElementById('agent-picks');
+  container.innerHTML = '';
+  CONFIG.auth.agents.filter(a => a.actif !== false).forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'agent-pick';
+    div.innerHTML = `<div class="av">${a.avatar}</div><div class="nm">${a.prenom || a.nom}</div>`;
+    div.onclick = () => selectAgent(a, div);
+    container.appendChild(div);
+  });
+  // Reset PIN area
+  document.getElementById('pin-area').style.display = 'none';
+}
+
+function selectAgent(agent, el) {
+  pickedAgent = agent;
+  document.querySelectorAll('.agent-pick').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('pin-area').style.display = 'block';
+  document.getElementById('pin-agent-name').textContent = agent.nom;
+  buildPinGrid();
+  resetPin();
+}
+
+function resetAgentPick() {
+  pickedAgent = null;
+  pinBuffer = '';
+  document.getElementById('pin-area').style.display = 'none';
+  document.querySelectorAll('.agent-pick').forEach(x => x.classList.remove('selected'));
+  hideError();
+}
+
+function buildPinGrid() {
+  const grid = document.getElementById('pin-grid');
+  if (grid.children.length) return; // déjà construit
+  const keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
+  keys.forEach(k => {
+    const b = document.createElement('div');
+    b.className = 'pin-key';
+    b.textContent = k;
+    if (k === '') b.style.visibility = 'hidden';
+    else if (k === '⌫') b.onclick = () => pinDelete();
+    else b.onclick = () => pinAdd(k);
+    grid.appendChild(b);
+  });
+}
+
+function pinAdd(d) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += d;
+  updatePinDisplay();
+  if (pinBuffer.length === 4) tryPin();
+}
+
+function pinDelete() {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDisplay();
+}
+
+function resetPin() { pinBuffer = ''; updatePinDisplay(); }
+
+function updatePinDisplay() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('d' + i).classList.toggle('filled', i < pinBuffer.length);
+  }
+}
+
+async function tryPin() {
+  const r = await Auth.loginAgent(pickedAgent.id, pinBuffer);
+  if (!r.ok) {
+    showError(r.error);
+    setTimeout(resetPin, 800);
+    return;
+  }
+  window.location.href = CONFIG.auth.redirect_after_login.agent;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Tableau de bord Admin — Wassou</title>
+<meta name="theme-color" content="#1b4332"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div id="overlay"></div>
+<div class="app-shell">
+
+  <!-- ========== SIDEBAR ========== -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-row">
+        <span class="logo-icon">🌿</span>
+        <span class="logo-name" id="brand-name">Wassou</span>
+      </div>
+      <span class="logo-sub">Admin — Guadeloupe</span>
+    </div>
+    <div id="user-pill-slot"></div>
+    <div class="nav-section">
+      <div class="nav-section-title">Principal</div>
+      <a href="dashboard-admin.html" class="nav-link side"><span class="nav-icon">📊</span> Tableau de bord</a>
+      <a href="clients.html" class="nav-link side"><span class="nav-icon">👥</span> Clients</a>
+      <a href="agents.html" class="nav-link side" data-role="admin"><span class="nav-icon">🧑‍🌾</span> Agents</a>
+      <a href="interventions.html" class="nav-link side"><span class="nav-icon">📅</span> Interventions</a>
+      <div class="nav-section-title">Outils</div>
+      <a href="sms.html" class="nav-link side"><span class="nav-icon">💬</span> SMS</a>
+      <a href="devis.html" class="nav-link side"><span class="nav-icon">📄</span> Devis & Factures</a>
+      <a href="paiements.html" class="nav-link side"><span class="nav-icon">💳</span> Paiements</a>
+      <a href="rapports.html" class="nav-link side" data-role="admin"><span class="nav-icon">📈</span> Rapports</a>
+      <div class="nav-section-title" data-role="admin">Configuration</div>
+      <a href="parametres.html" class="nav-link side" data-role="admin"><span class="nav-icon">⚙️</span> Paramètres</a>
+    </div>
+    <div class="sidebar-footer">
+      <a href="index.html" target="_blank">🌐 Site public</a>
+      <a href="#" class="logout-btn" onclick="Auth.logout();return false">🚪 Déconnexion</a>
+    </div>
+  </nav>
+
+  <!-- ========== MAIN ========== -->
+  <div class="main-content">
+    <header class="top-header">
+      <button class="burger-btn" id="burger">☰</button>
+      <div class="page-title">📊 Tableau de bord</div>
+      <div class="header-actions">
+        <a href="devis-create.html" class="btn btn-primary btn-sm">+ Nouveau devis</a>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <!-- KPIs -->
+      <div class="stats-grid stagger" id="kpis"></div>
+
+      <!-- Activité récente -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px" id="dash-grid">
+        <div class="card">
+          <h3 class="card-title">📅 Prochaines interventions</h3>
+          <div id="next-int"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">💌 Demandes RDV récentes</h3>
+          <div id="recent-rdv"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">📄 Derniers devis</h3>
+          <div id="recent-devis"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">💳 Encaissements à venir</h3>
+          <div id="pending-pay"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/payment.js"></script>
+<script>
+const session = App.initAdminPage(['admin']);
+if (session) {
+  document.getElementById('brand-name').textContent = CONFIG.business.nom.split(' ')[0];
+
+  setTimeout(() => {
+    // KPIs
+    const clients = Data.clients.all();
+    const ints = Data.interventions.all();
+    const devis = Data.devis.all();
+    const pays = Data.paiements.all();
+    const rdvs = Data.rdvs.all().filter(r => r.statut === 'à traiter');
+    const ca = pays.filter(p => p.statut === 'reçu').reduce((s, p) => s + p.montant, 0);
+
+    const kpis = document.getElementById('kpis');
+    kpis.innerHTML = `
+      <div class="stat-card green"><div class="stat-icon">👥</div><div class="stat-info"><div class="stat-value">${clients.length}</div><div class="stat-label">Clients</div></div></div>
+      <div class="stat-card gold"><div class="stat-icon">📅</div><div class="stat-info"><div class="stat-value">${ints.filter(i => i.statut !== 'terminé').length}</div><div class="stat-label">Interventions actives</div></div></div>
+      <div class="stat-card blue"><div class="stat-icon">📄</div><div class="stat-info"><div class="stat-value">${devis.length}</div><div class="stat-label">Devis</div></div></div>
+      <div class="stat-card orange"><div class="stat-icon">💶</div><div class="stat-info"><div class="stat-value">${App.fmtEur(ca)}</div><div class="stat-label">CA encaissé</div></div></div>
+    `;
+
+    // Prochaines interventions
+    const next = ints.filter(i => i.statut === 'planifié').sort((a,b) => (a.date || '').localeCompare(b.date || '')).slice(0, 5);
+    document.getElementById('next-int').innerHTML = next.length
+      ? next.map(i => {
+          const c = Data.clients.get(i.client_id);
+          const a = CONFIG.auth.agents.find(x => x.id === i.agent_id);
+          return `<div style="padding:10px;border-bottom:1px solid var(--line)">
+            <strong>${c?.prenom || ''} ${c?.nom || '—'}</strong>
+            <span class="badge badge-green" style="margin-left:8px">${i.service}</span>
+            <div style="font-size:.82rem;color:var(--text-soft);margin-top:4px">📅 ${App.fmtDate(i.date)} ${i.heure || ''} • 🧑 ${a?.nom || '—'}</div>
+          </div>`;
+        }).join('')
+      : '<p class="empty-state" style="padding:18px">Aucune intervention planifiée</p>';
+
+    // RDV récents
+    document.getElementById('recent-rdv').innerHTML = rdvs.length
+      ? rdvs.slice(0, 5).map(r => `
+        <div style="padding:10px;border-bottom:1px solid var(--line)">
+          <strong>${r.prenom || ''} ${r.nom}</strong>
+          <span class="badge badge-orange" style="margin-left:8px">À traiter</span>
+          <div style="font-size:.82rem;color:var(--text-soft);margin-top:4px">📞 ${r.tel} • ${r.service}</div>
+        </div>`).join('')
+      : '<p class="empty-state" style="padding:18px">Aucune nouvelle demande</p>';
+
+    // Derniers devis
+    const lastDev = devis.slice().sort((a,b) => (b.created || '').localeCompare(a.created || '')).slice(0, 5);
+    document.getElementById('recent-devis').innerHTML = lastDev.length
+      ? lastDev.map(d => {
+          const c = Data.clients.get(d.client_id);
+          const cls = { brouillon: 'badge-grey', envoyé: 'badge-blue', accepté: 'badge-green', refusé: 'badge-red', soldé: 'badge-green' }[d.statut] || 'badge-grey';
+          return `<div style="padding:10px;border-bottom:1px solid var(--line)">
+            <strong>${d.numero}</strong> <span class="badge ${cls}" style="margin-left:8px">${d.statut}</span>
+            <div style="font-size:.82rem;color:var(--text-soft);margin-top:4px">${c?.nom || '—'} • ${App.fmtEur(d.total_ttc || 0)}</div>
+          </div>`;
+        }).join('')
+      : '<p class="empty-state" style="padding:18px">Aucun devis</p>';
+
+    // Encaissements en attente
+    const pending = pays.filter(p => p.statut === 'en_attente' || p.statut === 'à_encaisser');
+    document.getElementById('pending-pay').innerHTML = pending.length
+      ? pending.slice(0, 5).map(p => {
+          const d = Data.devis.get(p.devis_id);
+          return `<div style="padding:10px;border-bottom:1px solid var(--line)">
+            <strong>${App.fmtEur(p.montant)}</strong>
+            <span class="badge badge-orange" style="margin-left:8px">${p.statut.replace('_',' ')}</span>
+            <div style="font-size:.82rem;color:var(--text-soft);margin-top:4px">${d?.numero || '—'} • ${p.methode}</div>
+          </div>`;
+        }).join('')
+      : '<p class="empty-state" style="padding:18px">Tous les paiements à jour</p>';
+  }, 100);
+}
+
+// Responsive grid
+const mediaQ = window.matchMedia('(max-width: 800px)');
+function updateGrid() { document.getElementById('dash-grid').style.gridTemplateColumns = mediaQ.matches ? '1fr' : '1fr 1fr'; }
+mediaQ.addEventListener('change', updateGrid); updateGrid();
+</script>
+</body>
+</html>

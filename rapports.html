@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Rapports — Wassou</title>
+<meta name="theme-color" content="#1b4332"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css"/>
+<style>
+  .chart-bar-row {
+    display: grid; grid-template-columns: 80px 1fr 90px;
+    align-items: center; gap: 12px; padding: 8px 0;
+  }
+  .chart-bar-row .lbl { font-size: .85rem; font-weight: 600; color: var(--g); }
+  .chart-bar-row .val { font-size: .85rem; font-weight: 700; text-align: right; color: var(--g); }
+  .chart-bar-track { background: var(--pale); border-radius: 8px; height: 24px; overflow: hidden; position: relative; }
+  .chart-bar-fill {
+    height: 100%; border-radius: 8px;
+    background: linear-gradient(90deg, var(--g3), var(--g));
+    transition: width .6s cubic-bezier(.4,1.4,.6,1);
+  }
+  .chart-bar-fill.gold { background: linear-gradient(90deg, var(--gold-l), var(--gold)); }
+  .ca-bars { display: flex; align-items: flex-end; gap: 6px; height: 220px; padding: 10px 0; }
+  .ca-bar {
+    flex: 1; background: linear-gradient(180deg, var(--g3), var(--g));
+    border-radius: 6px 6px 0 0; min-height: 4px;
+    position: relative; transition: .4s; cursor: pointer;
+  }
+  .ca-bar:hover { background: linear-gradient(180deg, var(--gold-l), var(--gold)); }
+  .ca-bar:hover::after {
+    content: attr(data-val); position: absolute; bottom: 100%; left: 50%;
+    transform: translateX(-50%); background: var(--g); color: #fff;
+    padding: 4px 8px; border-radius: 6px; font-size: .75rem; font-weight: 700;
+    white-space: nowrap; margin-bottom: 4px;
+  }
+  .ca-labels { display: flex; gap: 6px; }
+  .ca-labels span { flex: 1; text-align: center; font-size: .7rem; color: var(--text-soft); font-weight: 600; }
+  .export-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 12px; }
+  .export-btn {
+    background: #fff; border: 2px solid var(--line); padding: 16px;
+    border-radius: 12px; text-align: center; transition: .2s; cursor: pointer;
+  }
+  .export-btn:hover { border-color: var(--g); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .export-btn .ic { font-size: 2rem; margin-bottom: 6px; }
+  .export-btn .nm { font-weight: 700; color: var(--g); }
+  .export-btn .ct { font-size: .8rem; color: var(--text-soft); margin-top: 2px; }
+</style>
+</head>
+<body>
+<div id="overlay"></div>
+<div class="app-shell">
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="top-header">
+      <button class="burger-btn" id="burger">☰</button>
+      <div class="page-title">📈 Rapports</div>
+      <div class="header-actions">
+        <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Imprimer</button>
+      </div>
+    </header>
+    <div class="page-body">
+
+      <!-- KPIs principaux -->
+      <div class="stats-grid stagger" id="kpis"></div>
+
+      <!-- Graphique CA mensuel -->
+      <div class="card mb-4">
+        <h3 class="card-title">💰 Chiffre d'affaires (12 derniers mois)</h3>
+        <div class="ca-bars" id="ca-bars"></div>
+        <div class="ca-labels" id="ca-labels"></div>
+      </div>
+
+      <!-- 2 colonnes : Top services + Performance agents -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px" id="r-grid">
+        <div class="card">
+          <h3 class="card-title">🏆 Top services</h3>
+          <div id="top-services"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-title">🧑‍🌾 Performance agents</h3>
+          <div id="perf-agents"></div>
+        </div>
+      </div>
+
+      <!-- Conversion devis -->
+      <div class="card mb-4">
+        <h3 class="card-title">📄 Conversion des devis</h3>
+        <div id="conv-devis"></div>
+      </div>
+
+      <!-- Exports -->
+      <div class="card">
+        <h3 class="card-title">📥 Export des données (CSV)</h3>
+        <p style="color:var(--text-soft);font-size:.88rem;margin-bottom:14px">Télécharge tes données pour les exploiter dans Excel ou ton outil comptable.</p>
+        <div class="export-grid">
+          <button class="export-btn" onclick="exportCSV('clients')">
+            <div class="ic">👥</div><div class="nm">Clients</div><div class="ct" id="ct-clients">0</div>
+          </button>
+          <button class="export-btn" onclick="exportCSV('interventions')">
+            <div class="ic">📅</div><div class="nm">Interventions</div><div class="ct" id="ct-int">0</div>
+          </button>
+          <button class="export-btn" onclick="exportCSV('devis')">
+            <div class="ic">📄</div><div class="nm">Devis</div><div class="ct" id="ct-dev">0</div>
+          </button>
+          <button class="export-btn" onclick="exportCSV('paiements')">
+            <div class="ic">💳</div><div class="nm">Paiements</div><div class="ct" id="ct-pay">0</div>
+          </button>
+          <button class="export-btn" onclick="exportCSV('all')" style="border-color:var(--gold);background:linear-gradient(135deg,#fffbe6,#fff)">
+            <div class="ic">📦</div><div class="nm">Tout exporter</div><div class="ct">.zip</div>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+const session = App.initAdminPage(['admin']);
+if (session) {
+  document.addEventListener('DOMContentLoaded', () => {
+    Sidebar.inject('rapports');
+    setTimeout(render, 100);
+  });
+}
+
+function render() {
+  const clients = Data.clients.all();
+  const ints = Data.interventions.all();
+  const devis = Data.devis.all();
+  const pays = Data.paiements.all();
+
+  const caRecu = pays.filter(p => p.statut === 'reçu').reduce((s, p) => s + (p.montant || 0), 0);
+  const intsTermine = ints.filter(i => i.statut === 'terminé').length;
+  const panierMoyen = devis.length ? devis.reduce((s, d) => s + (d.total_ttc || 0), 0) / devis.length : 0;
+
+  // Mois en cours
+  const now = new Date();
+  const moisCourant = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  const caMois = pays.filter(p => p.statut === 'reçu' && (p.date || '').startsWith(moisCourant)).reduce((s, p) => s + p.montant, 0);
+
+  // KPIs
+  document.getElementById('kpis').innerHTML = `
+    <div class="stat-card green">
+      <div class="stat-icon">💰</div>
+      <div class="stat-info"><div class="stat-value">${App.fmtEur(caRecu)}</div><div class="stat-label">CA total reçu</div></div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-icon">📅</div>
+      <div class="stat-info"><div class="stat-value">${App.fmtEur(caMois)}</div><div class="stat-label">CA ce mois-ci</div></div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-icon">✅</div>
+      <div class="stat-info"><div class="stat-value">${intsTermine}</div><div class="stat-label">Interventions terminées</div></div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-icon">🧾</div>
+      <div class="stat-info"><div class="stat-value">${App.fmtEur(panierMoyen)}</div><div class="stat-label">Panier moyen</div></div>
+    </div>
+  `;
+
+  // Graphique 12 mois
+  renderCAChart(pays);
+
+  // Top services
+  const svcCount = {};
+  ints.forEach(i => { svcCount[i.service] = (svcCount[i.service] || 0) + 1; });
+  const svcSorted = Object.entries(svcCount).sort((a, b) => b[1] - a[1]);
+  const maxSvc = Math.max(...svcSorted.map(s => s[1]), 1);
+  document.getElementById('top-services').innerHTML = svcSorted.length
+    ? svcSorted.map(([id, count]) => {
+        const s = CONFIG.services.find(x => x.id === id);
+        const pct = (count / maxSvc) * 100;
+        return `<div class="chart-bar-row">
+          <div class="lbl">${s ? s.icone + ' ' + s.nom : id}</div>
+          <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${pct}%"></div></div>
+          <div class="val">${count}</div>
+        </div>`;
+      }).join('')
+    : '<p class="empty-state" style="padding:20px">Aucune donnée</p>';
+
+  // Performance agents
+  const agentStats = {};
+  CONFIG.auth.agents.forEach(a => { agentStats[a.id] = { nom: a.nom, ints: 0, ca: 0 }; });
+  ints.forEach(i => {
+    if (i.statut === 'terminé' && agentStats[i.agent_id]) agentStats[i.agent_id].ints++;
+  });
+  pays.forEach(p => {
+    if (p.statut === 'reçu' && agentStats[p.agent_id]) agentStats[p.agent_id].ca += p.montant;
+  });
+  const agentArr = Object.values(agentStats).sort((a, b) => b.ca - a.ca);
+  const maxCa = Math.max(...agentArr.map(a => a.ca), 1);
+  document.getElementById('perf-agents').innerHTML = agentArr.length
+    ? agentArr.map(a => {
+        const pct = (a.ca / maxCa) * 100;
+        return `<div class="chart-bar-row">
+          <div class="lbl">${a.nom}</div>
+          <div class="chart-bar-track"><div class="chart-bar-fill gold" style="width:${pct}%"></div></div>
+          <div class="val">${App.fmtEur(a.ca)}</div>
+        </div>
+        <div style="font-size:.75rem;color:var(--text-soft);margin-top:-4px;margin-bottom:6px">${a.ints} intervention(s) terminée(s)</div>`;
+      }).join('')
+    : '<p class="empty-state" style="padding:20px">Aucun agent</p>';
+
+  // Conversion devis
+  const total = devis.length;
+  const accepted = devis.filter(d => d.statut === 'accepté' || d.statut === 'soldé').length;
+  const refused = devis.filter(d => d.statut === 'refusé').length;
+  const sent = devis.filter(d => d.statut === 'envoyé').length;
+  const draft = devis.filter(d => d.statut === 'brouillon').length;
+  const txConv = total ? Math.round((accepted / total) * 100) : 0;
+  document.getElementById('conv-devis').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+      <div style="text-align:center;padding:14px;background:var(--pale);border-radius:12px"><div style="font-size:1.6rem;font-weight:800;color:var(--g);font-family:var(--font-titre)">${total}</div><div style="font-size:.78rem;color:var(--text-soft)">Total devis</div></div>
+      <div style="text-align:center;padding:14px;background:#dbeafe;border-radius:12px"><div style="font-size:1.6rem;font-weight:800;color:#1e40af;font-family:var(--font-titre)">${draft}</div><div style="font-size:.78rem;color:var(--text-soft)">Brouillons</div></div>
+      <div style="text-align:center;padding:14px;background:#dbeafe;border-radius:12px"><div style="font-size:1.6rem;font-weight:800;color:#1e40af;font-family:var(--font-titre)">${sent}</div><div style="font-size:.78rem;color:var(--text-soft)">Envoyés</div></div>
+      <div style="text-align:center;padding:14px;background:#d1fae5;border-radius:12px"><div style="font-size:1.6rem;font-weight:800;color:var(--g);font-family:var(--font-titre)">${accepted}</div><div style="font-size:.78rem;color:var(--text-soft)">Acceptés</div></div>
+      <div style="text-align:center;padding:14px;background:#fee2e2;border-radius:12px"><div style="font-size:1.6rem;font-weight:800;color:var(--danger);font-family:var(--font-titre)">${refused}</div><div style="font-size:.78rem;color:var(--text-soft)">Refusés</div></div>
+      <div style="text-align:center;padding:14px;background:linear-gradient(135deg,#fff8e1,#ffe082);border-radius:12px"><div style="font-size:1.6rem;font-weight:800;color:var(--gold);font-family:var(--font-titre)">${txConv}%</div><div style="font-size:.78rem;color:var(--text-soft)">Taux conversion</div></div>
+    </div>
+  `;
+
+  // Compteurs export
+  document.getElementById('ct-clients').textContent = clients.length;
+  document.getElementById('ct-int').textContent = ints.length;
+  document.getElementById('ct-dev').textContent = devis.length;
+  document.getElementById('ct-pay').textContent = pays.length;
+}
+
+function renderCAChart(pays) {
+  const months = [];
+  const now = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    const label = d.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '');
+    months.push({ key, label, value: 0 });
+  }
+  pays.filter(p => p.statut === 'reçu').forEach(p => {
+    const k = (p.date || '').slice(0, 7);
+    const m = months.find(x => x.key === k);
+    if (m) m.value += p.montant;
+  });
+  const max = Math.max(...months.map(m => m.value), 1);
+  document.getElementById('ca-bars').innerHTML = months.map(m => {
+    const h = (m.value / max) * 100;
+    return `<div class="ca-bar" style="height:${h}%" data-val="${App.fmtEur(m.value)}"></div>`;
+  }).join('');
+  document.getElementById('ca-labels').innerHTML = months.map(m => `<span>${m.label}</span>`).join('');
+}
+
+function csvEscape(v) {
+  if (v == null) return '';
+  const s = String(v).replace(/"/g, '""');
+  return /[",\n;]/.test(s) ? `"${s}"` : s;
+}
+
+function downloadCSV(filename, rows) {
+  const csv = rows.map(r => r.map(csvEscape).join(';')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportCSV(type) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (type === 'clients') {
+    const rows = [['ID', 'Nom', 'Prénom', 'Téléphone', 'Email', 'Adresse', 'Notes', 'Créé le']];
+    Data.clients.all().forEach(c => rows.push([c.id, c.nom, c.prenom, c.tel, c.email, c.adresse, c.notes, c.created]));
+    downloadCSV(`wassou_clients_${today}.csv`, rows);
+  } else if (type === 'interventions') {
+    const rows = [['ID', 'Date', 'Heure', 'Client', 'Service', 'Agent', 'Adresse', 'Statut', 'Notes']];
+    Data.interventions.all().forEach(i => {
+      const c = Data.clients.get(i.client_id);
+      const a = CONFIG.auth.agents.find(x => x.id === i.agent_id);
+      rows.push([i.id, i.date, i.heure, c ? c.prenom + ' ' + c.nom : '', i.service, a?.nom || '', i.adresse, i.statut, i.notes]);
+    });
+    downloadCSV(`wassou_interventions_${today}.csv`, rows);
+  } else if (type === 'devis') {
+    const rows = [['Numéro', 'Date', 'Client', 'Total HT', 'TVA', 'Total TTC', 'Acompte', 'Statut']];
+    Data.devis.all().forEach(d => {
+      const c = Data.clients.get(d.client_id);
+      rows.push([d.numero, d.date, c ? c.prenom + ' ' + c.nom : '', d.total_ht, d.tva, d.total_ttc, d.acompte, d.statut]);
+    });
+    downloadCSV(`wassou_devis_${today}.csv`, rows);
+  } else if (type === 'paiements') {
+    const rows = [['ID', 'Date', 'Devis', 'Client', 'Montant', 'Méthode', 'Type', 'Statut']];
+    Data.paiements.all().forEach(p => {
+      const d = Data.devis.get(p.devis_id);
+      const c = Data.clients.get(p.client_id);
+      rows.push([p.id, p.date, d?.numero || '', c ? c.prenom + ' ' + c.nom : '', p.montant, p.methode, p.type, p.statut]);
+    });
+    downloadCSV(`wassou_paiements_${today}.csv`, rows);
+  } else if (type === 'all') {
+    exportCSV('clients');
+    setTimeout(() => exportCSV('interventions'), 200);
+    setTimeout(() => exportCSV('devis'), 400);
+    setTimeout(() => exportCSV('paiements'), 600);
+  }
+  App.toast('✅ Export téléchargé', 'success');
+}
+
+// Responsive
+const mq = window.matchMedia('(max-width: 800px)');
+function up() { document.getElementById('r-grid').style.gridTemplateColumns = mq.matches ? '1fr' : '1fr 1fr'; }
+mq.addEventListener('change', up); up();
+</script>
+</body>
+</html>

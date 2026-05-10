@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Wassou Multiservices — Guadeloupe</title>
+<meta name="description" content="Jardinage, Kärcher et services à domicile en Guadeloupe. Réservez en ligne — confirmation par SMS."/>
+<meta name="theme-color" content="#1b4332"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Wassou"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<!-- =================== NAV =================== -->
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a href="#top" class="nav-brand">
+      <span class="nav-brand-logo" id="brand-logo"><img src="assets/logo.svg" alt="Wassou" onerror="this.outerHTML='🌿'"/></span>
+      <span id="brand-name">Wassou Multiservices</span>
+    </a>
+    <div class="nav-menu">
+      <div class="nav-item">
+        <a href="#services" class="nav-link">Services <span class="chev">▾</span></a>
+        <div class="dropdown">
+          <a href="#services"><span class="di">🌱</span> Entretien jardin</a>
+          <a href="#services"><span class="di">💦</span> Nettoyage Kärcher</a>
+          <a href="#services"><span class="di">🔧</span> Sur mesure</a>
+        </div>
+      </div>
+      <a href="#agents" class="nav-link">Équipe</a>
+      <a href="#avis" class="nav-link">Avis</a>
+      <a href="#contact" class="nav-link">Contact</a>
+      <a href="#rdv" class="nav-link nav-cta">📅 Prendre RDV</a>
+      <a href="login.html" class="nav-link" title="Espace pro">⚙️</a>
+    </div>
+    <button class="burger" id="burger" aria-label="Menu">☰</button>
+  </div>
+  <div class="mobile-drawer" id="mobile-drawer">
+    <a href="#services" onclick="closeMobile()"><span>🌱</span> Services</a>
+    <div class="submenu">
+      <a href="#services" onclick="closeMobile()">🌱 Entretien jardin</a>
+      <a href="#services" onclick="closeMobile()">💦 Nettoyage Kärcher</a>
+      <a href="#services" onclick="closeMobile()">🔧 Sur mesure</a>
+    </div>
+    <a href="#agents" onclick="closeMobile()"><span>👥</span> Notre équipe</a>
+    <a href="#avis" onclick="closeMobile()"><span>⭐</span> Avis clients</a>
+    <a href="#rdv" onclick="closeMobile()"><span>📅</span> Prendre RDV</a>
+    <a href="#contact" onclick="closeMobile()"><span>📞</span> Contact</a>
+    <a href="login.html" onclick="closeMobile()" style="margin-top:12px;background:rgba(212,160,23,.2);color:#fff"><span>⚙️</span> Espace pro</a>
+  </div>
+</nav>
+
+<!-- =================== HERO =================== -->
+<header class="hero" id="top">
+  <span class="hero-emoji" id="hero-emoji">🌿</span>
+  <h1>Services à domicile<br/><em>en Guadeloupe</em></h1>
+  <p id="hero-desc">Jardinage, nettoyage Kärcher et entretien extérieur. Réservation en ligne, confirmation par SMS.</p>
+  <div class="hero-btns">
+    <a href="#rdv" class="btn btn-gold btn-lg">📅 Prendre rendez-vous</a>
+    <a href="#services" class="btn btn-outline btn-lg">Voir nos services</a>
+  </div>
+  <div class="container">
+    <div class="stats-bar">
+      <div class="stat"><b>100+</b><span>Clients satisfaits</span></div>
+      <div class="stat"><b>3</b><span>Services</span></div>
+      <div class="stat"><b>📍</b><span>Toute la Guadeloupe</span></div>
+      <div class="stat"><b>24h</b><span>Délai d'intervention</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- =================== SERVICES =================== -->
+<section class="section" id="services">
+  <div class="container">
+    <h2 class="s-title">Nos services</h2>
+    <p class="s-sub">Interventions professionnelles partout en Guadeloupe</p>
+    <div class="cards-grid stagger" id="services-grid"></div>
+  </div>
+</section>
+
+<!-- =================== POURQUOI =================== -->
+<section class="section why">
+  <div class="container">
+    <h2 class="s-title">Pourquoi choisir Wassou ?</h2>
+    <div class="w-grid">
+      <div class="w-card"><span>⚡</span><h4>Réactivité</h4><p>Intervention sous 24 à 48h après confirmation.</p></div>
+      <div class="w-card"><span>📱</span><h4>Suivi SMS</h4><p>Confirmation RDV et rappel automatique la veille.</p></div>
+      <div class="w-card"><span>📸</span><h4>Photos avant/après</h4><p>Transparence totale sur chaque prestation.</p></div>
+      <div class="w-card"><span>📄</span><h4>Devis gratuit</h4><p>Tarif clair, sans mauvaise surprise.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== ÉQUIPE =================== -->
+<section class="section" id="agents">
+  <div class="container">
+    <h2 class="s-title">Notre équipe</h2>
+    <p class="s-sub">Des agents qualifiés et formés pour chaque prestation</p>
+    <div class="ag-grid" id="agents-grid"></div>
+  </div>
+</section>
+
+<!-- =================== RDV =================== -->
+<section class="section rdv-bg" id="rdv">
+  <div class="container">
+    <h2 class="s-title">📅 Prendre rendez-vous</h2>
+    <p class="s-sub">Remplissez le formulaire — confirmation sous 2h par SMS</p>
+    <div id="rdvFormWrap">
+      <form class="rdv-form" id="rdvForm" onsubmit="submitRDV(event)">
+        <div class="f-row">
+          <div class="fg"><label>Nom *</label><input type="text" id="rnom" placeholder="Votre nom" required/></div>
+          <div class="fg"><label>Prénom</label><input type="text" id="rprenom" placeholder="Votre prénom"/></div>
+        </div>
+        <div class="fg"><label>Téléphone *</label><input type="tel" id="rtel" placeholder="0690 XX XX XX" required/></div>
+        <div class="fg"><label>Adresse d'intervention *</label><input type="text" id="radr" placeholder="12 Rue des Fleurs, Le Lamentin" required/></div>
+        <div class="f-row">
+          <div class="fg">
+            <label>Service souhaité *</label>
+            <select id="rservice" required></select>
+          </div>
+          <div class="fg"><label>Date souhaitée *</label><input type="date" id="rdate" required/></div>
+        </div>
+        <div class="fg"><label>Message (facultatif)</label><textarea id="rmsg" rows="3" placeholder="Précisez : surface, accès, particularités..."></textarea></div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="rdvBtn">📅 Envoyer ma demande</button>
+      </form>
+    </div>
+    <div id="rdvSuccess" style="display:none">
+      <span class="suc-icon">✅</span>
+      <h3 style="font-size:1.5rem;margin-bottom:10px">Demande envoyée !</h3>
+      <p style="color:var(--text-soft);margin-bottom:20px">Nous vous confirmons votre rendez-vous par SMS sous 2h.</p>
+      <button onclick="resetRDV()" class="btn btn-primary">Nouvelle demande</button>
+    </div>
+  </div>
+</section>
+
+<!-- =================== AVIS =================== -->
+<section class="section" id="avis">
+  <div class="container">
+    <h2 class="s-title">Avis clients</h2>
+    <p class="s-sub">Ce que pensent nos clients de nos prestations</p>
+    <div class="av-grid">
+      <div class="av-card"><div class="av-stars">★★★★★</div><p>"Très professionnel, jardin impeccable. Je recommande !"</p><strong>— Jean D., Le Lamentin</strong></div>
+      <div class="av-card"><div class="av-stars">★★★★★</div><p>"Kärcher très efficace, terrasse comme neuve. Bravo !"</p><strong>— Claire M., Sainte-Anne</strong></div>
+      <div class="av-card"><div class="av-stars">★★★★★</div><p>"Réactifs, soigneux. La confirmation SMS est très pratique."</p><strong>— Thomas L., Deshaies</strong></div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== CONTACT =================== -->
+<section class="section ct-bg" id="contact">
+  <div class="container">
+    <h2 class="s-title">Contact</h2>
+    <p class="s-sub">Une question ? Contactez-nous directement</p>
+    <div class="ct-grid">
+      <div class="ct-card">
+        <h3>📞 Nos coordonnées</h3>
+        <div class="ct-item"><span>📞</span><div><strong>Téléphone</strong><span id="ct-tel">—</span></div></div>
+        <div class="ct-item"><span>📧</span><div><strong>Email</strong><span id="ct-email">—</span></div></div>
+        <div class="ct-item"><span>📍</span><div><strong>Zone</strong><span id="ct-zone">—</span></div></div>
+        <div class="ct-item"><span>⏰</span><div><strong>Horaires</strong><span id="ct-horaires">—</span></div></div>
+        <a href="#" class="btn btn-wa btn-block" id="ct-wa">💬 Nous contacter sur WhatsApp</a>
+      </div>
+      <div class="ct-form">
+        <h3 style="color:#fff;margin-bottom:14px">✉️ Envoyer un message</h3>
+        <input type="text" id="cnom" placeholder="Votre nom"/>
+        <input type="tel" id="ctel" placeholder="Votre téléphone"/>
+        <textarea id="cmsg" rows="4" placeholder="Votre message..."></textarea>
+        <button class="btn btn-gold btn-block" onclick="sendContact()">Envoyer →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================== FOOTER =================== -->
+<footer class="site-footer">
+  <strong id="ft-name">Wassou Multiservices</strong><br/>
+  <span id="ft-slogan">Services jardinage & Kärcher</span>
+  <div class="social-row" id="social-row"></div>
+  <small>© <span id="ft-year">2026</span> — Tous droits réservés • Powered by <a href="https://github.com/drayk973" target="_blank">NexusAI Agency</a></small>
+</footer>
+
+<script src="config.js"></script>
+<script src="js/app.js"></script>
+<script src="js/data.js"></script>
+<script src="js/pwa-install.js"></script>
+<script>
+// =================== INJECTION CONFIG ===================
+document.addEventListener('DOMContentLoaded', () => {
+  const c = CONFIG.business;
+  // Brand
+  document.getElementById('brand-name').textContent = c.nom;
+  document.getElementById('hero-desc').textContent = c.description;
+  // Contact
+  document.getElementById('ct-tel').textContent = c.telephone;
+  document.getElementById('ct-email').textContent = c.email;
+  document.getElementById('ct-zone').textContent = c.zone;
+  document.getElementById('ct-horaires').textContent = c.horaires;
+  document.getElementById('ct-wa').href = CONFIG.liens.whatsapp;
+  // Footer
+  document.getElementById('ft-name').textContent = '🌿 ' + c.nom;
+  document.getElementById('ft-slogan').textContent = c.slogan;
+  document.getElementById('ft-year').textContent = CONFIG.avance.annee_copyright;
+  // Réseaux sociaux
+  const social = document.getElementById('social-row');
+  const links = CONFIG.liens;
+  const social_map = [
+    ['facebook', '📘', 'Facebook'],
+    ['instagram', '📷', 'Instagram'],
+    ['tiktok', '🎵', 'TikTok'],
+    ['youtube', '▶️', 'YouTube'],
+    ['linkedin', '💼', 'LinkedIn'],
+    ['google_maps', '📍', 'Google Maps'],
+  ];
+  social_map.forEach(([k, ic, lab]) => {
+    if (links[k]) {
+      const a = document.createElement('a');
+      a.href = links[k]; a.target = '_blank'; a.title = lab;
+      a.textContent = ic;
+      social.appendChild(a);
+    }
+  });
+  // SERVICES dynamiques
+  const sg = document.getElementById('services-grid');
+  CONFIG.services.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 's-card' + (s.featured ? ' featured' : '');
+    card.innerHTML = `
+      <div class="s-icon">${s.icone}</div>
+      <h3>${s.nom}</h3>
+      <p>${s.description}</p>
+      <ul>${s.inclus.map(i => `<li>${i}</li>`).join('')}</ul>
+      <div class="s-price">${s.prix_base > 0 ? 'À partir de ' + s.prix_base + ' €' : 'Sur devis gratuit'}</div>
+      <a href="#rdv" class="btn btn-primary btn-block">📅 Réserver</a>
+    `;
+    sg.appendChild(card);
+  });
+  // SELECT services dans formulaire
+  const sel = document.getElementById('rservice');
+  sel.innerHTML = '<option value="">— Choisir —</option>' +
+    CONFIG.services.map(s => `<option value="${s.id}">${s.icone} ${s.nom}</option>`).join('');
+  // ÉQUIPE dynamique
+  const ag = document.getElementById('agents-grid');
+  CONFIG.auth.agents.filter(a => a.actif !== false).forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'ag-card';
+    card.innerHTML = `
+      <div class="ag-avatar">${a.avatar}</div>
+      <h3>${a.nom}</h3>
+      <div class="role">${a.role}</div>
+      <div class="ag-tags">${a.specialites.map(s => `<span class="ag-tag">${getSpecLabel(s)}</span>`).join('')}</div>
+      <div class="ag-status">✓ Disponible</div>
+    `;
+    ag.appendChild(card);
+  });
+  // Désactiver dates passées
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('rdate').min = today;
+  // Service Worker
+  App.registerSW();
+});
+
+function getSpecLabel(id) {
+  const s = CONFIG.services.find(x => x.id === id);
+  return s ? `${s.icone} ${s.nom}` : id;
+}
+
+// =================== MOBILE DRAWER ===================
+const burger = document.getElementById('burger');
+const drawer = document.getElementById('mobile-drawer');
+burger.addEventListener('click', () => drawer.classList.toggle('show'));
+function closeMobile() { drawer.classList.remove('show'); }
+
+// =================== RDV ===================
+function submitRDV(e) {
+  e.preventDefault();
+  const btn = document.getElementById('rdvBtn');
+  btn.disabled = true; btn.innerHTML = '⏳ Envoi...';
+  const r = {
+    nom: document.getElementById('rnom').value,
+    prenom: document.getElementById('rprenom').value,
+    tel: document.getElementById('rtel').value,
+    adresse: document.getElementById('radr').value,
+    service: document.getElementById('rservice').value,
+    date: document.getElementById('rdate').value,
+    message: document.getElementById('rmsg').value,
+  };
+  Data.rdvs.add(r);
+  setTimeout(() => {
+    document.getElementById('rdvFormWrap').style.display = 'none';
+    document.getElementById('rdvSuccess').style.display = 'block';
+    App.toast('✅ Demande enregistrée !', 'success');
+  }, 800);
+}
+function resetRDV() {
+  document.getElementById('rdvFormWrap').style.display = 'block';
+  document.getElementById('rdvSuccess').style.display = 'none';
+  const btn = document.getElementById('rdvBtn');
+  btn.disabled = false; btn.innerHTML = '📅 Envoyer ma demande';
+  document.getElementById('rdvForm').reset();
+}
+function sendContact() {
+  const n = document.getElementById('cnom').value;
+  const t = document.getElementById('ctel').value;
+  const m = document.getElementById('cmsg').value;
+  if (!n || !t || !m) { App.toast('⚠️ Remplissez tous les champs', 'warn'); return; }
+  // On enregistre comme un RDV simplifié de type "contact"
+  Data.rdvs.add({ nom: n, tel: t, message: m, service: 'autre', adresse: '', date: '', source: 'contact' });
+  App.toast('✅ Message envoyé ! Nous vous répondrons vite.', 'success');
+  document.getElementById('cnom').value = '';
+  document.getElementById('ctel').value = '';
+  document.getElementById('cmsg').value = '';
+}
+</script>
+</body>
+</html>

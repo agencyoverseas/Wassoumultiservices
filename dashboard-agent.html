@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Mon espace agent — Wassou</title>
+<meta name="theme-color" content="#1b4332"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div id="overlay"></div>
+<div class="app-shell">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-row"><span class="logo-icon">🌿</span><span class="logo-name">Wassou</span></div>
+      <span class="logo-sub">Agent — Guadeloupe</span>
+    </div>
+    <div id="user-pill-slot"></div>
+    <div class="nav-section">
+      <div class="nav-section-title">Mon espace</div>
+      <a href="dashboard-agent.html" class="nav-link side"><span class="nav-icon">🏠</span> Accueil</a>
+      <a href="interventions.html" class="nav-link side"><span class="nav-icon">📅</span> Mes interventions</a>
+      <a href="clients.html" class="nav-link side"><span class="nav-icon">👥</span> Mes clients</a>
+      <a href="devis.html" class="nav-link side"><span class="nav-icon">📄</span> Mes devis</a>
+      <a href="paiements.html" class="nav-link side"><span class="nav-icon">💳</span> Encaissements</a>
+      <a href="sms.html" class="nav-link side"><span class="nav-icon">💬</span> SMS</a>
+    </div>
+    <div class="sidebar-footer">
+      <a href="index.html" target="_blank">🌐 Site public</a>
+      <a href="#" class="logout-btn" onclick="Auth.logout();return false">🚪 Déconnexion</a>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <header class="top-header">
+      <button class="burger-btn" id="burger">☰</button>
+      <div class="page-title">🏠 Mon espace</div>
+      <div class="header-actions">
+        <a href="devis-create.html" class="btn btn-primary btn-sm">+ Devis</a>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <h2 style="margin-bottom:6px;font-size:1.4rem" id="hello">Bonjour</h2>
+      <p style="color:var(--text-soft);margin-bottom:22px">Voici ton activité du moment</p>
+
+      <div class="stats-grid stagger" id="kpis"></div>
+
+      <div class="card mt-4">
+        <h3 class="card-title">📅 Tes prochaines interventions</h3>
+        <div id="my-int"></div>
+      </div>
+
+      <div class="card mt-4">
+        <h3 class="card-title">💵 À encaisser</h3>
+        <div id="my-pay"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+const session = App.initAdminPage(['agent']);
+if (session) {
+  setTimeout(() => {
+    document.getElementById('hello').textContent = `Bonjour ${session.nom.split(' ')[0]} 👋`;
+
+    const myInts = Data.interventions.forAgent(session.user_id);
+    const myDevis = Data.devis.forAgent(session.user_id);
+    const myPays = Data.paiements.forAgent(session.user_id);
+    const ca = myPays.filter(p => p.statut === 'reçu').reduce((s, p) => s + p.montant, 0);
+    const aEnc = myPays.filter(p => p.statut === 'à_encaisser' || p.statut === 'en_attente').reduce((s, p) => s + p.montant, 0);
+
+    document.getElementById('kpis').innerHTML = `
+      <div class="stat-card green"><div class="stat-icon">📅</div><div class="stat-info"><div class="stat-value">${myInts.filter(i=>i.statut==='planifié').length}</div><div class="stat-label">À venir</div></div></div>
+      <div class="stat-card gold"><div class="stat-icon">✅</div><div class="stat-info"><div class="stat-value">${myInts.filter(i=>i.statut==='terminé').length}</div><div class="stat-label">Terminées</div></div></div>
+      <div class="stat-card blue"><div class="stat-icon">📄</div><div class="stat-info"><div class="stat-value">${myDevis.length}</div><div class="stat-label">Mes devis</div></div></div>
+      <div class="stat-card orange"><div class="stat-icon">💵</div><div class="stat-info"><div class="stat-value">${App.fmtEur(aEnc)}</div><div class="stat-label">À encaisser</div></div></div>
+    `;
+
+    const next = myInts.filter(i => i.statut !== 'terminé').sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(0,5);
+    document.getElementById('my-int').innerHTML = next.length
+      ? next.map(i => {
+        const c = Data.clients.get(i.client_id);
+        return `<div style="padding:12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div>
+            <strong>${c?.prenom || ''} ${c?.nom || '—'}</strong>
+            <span class="badge badge-green" style="margin-left:6px">${i.service}</span>
+            <div style="font-size:.82rem;color:var(--text-soft);margin-top:4px">📍 ${i.adresse || c?.adresse || '—'}</div>
+            <div style="font-size:.82rem;color:var(--text-soft)">📅 ${App.fmtDate(i.date)} ${i.heure || ''}</div>
+          </div>
+          <a href="interventions.html" class="btn btn-ghost btn-sm">Voir →</a>
+        </div>`}).join('')
+      : '<p class="empty-state" style="padding:22px">Aucune intervention planifiée</p>';
+
+    const pending = myPays.filter(p => p.statut === 'à_encaisser' || p.statut === 'en_attente');
+    document.getElementById('my-pay').innerHTML = pending.length
+      ? pending.map(p => {
+        const d = Data.devis.get(p.devis_id);
+        const c = d ? Data.clients.get(d.client_id) : null;
+        return `<div style="padding:12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <strong>${App.fmtEur(p.montant)}</strong>
+            <span class="badge badge-orange" style="margin-left:6px">${p.statut.replace('_',' ')}</span>
+            <div style="font-size:.82rem;color:var(--text-soft);margin-top:4px">${c?.nom || '—'} • ${d?.numero || ''} • ${p.methode}</div>
+          </div>
+        </div>`}).join('')
+      : '<p class="empty-state" style="padding:22px">Tout est à jour 👍</p>';
+  }, 100);
+}
+</script>
+</body>
+</html>

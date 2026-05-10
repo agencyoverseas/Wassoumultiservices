@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Clients — Wassou</title>
+<meta name="theme-color" content="#1b4332"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div id="overlay"></div>
+<div class="app-shell">
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="top-header">
+      <button class="burger-btn" id="burger">☰</button>
+      <div class="page-title">👥 Clients</div>
+      <div class="header-actions">
+        <button class="btn btn-primary btn-sm" onclick="openClientModal()" data-role="admin">+ Nouveau client</button>
+      </div>
+    </header>
+    <div class="page-body">
+      <input type="search" class="search-input mb-4" id="search" placeholder="🔎 Rechercher (nom, téléphone, adresse)..."/>
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Nom</th><th>Téléphone</th><th>Adresse</th><th>Interventions</th><th>Actions</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div id="empty" class="empty-state" style="display:none"><div class="empty-icon">👥</div><p>Aucun client</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal client -->
+<div class="modal-overlay" id="m-client">
+  <div class="modal">
+    <div class="modal-header"><h3 id="m-title">Nouveau client</h3><button class="modal-close" onclick="App.closeModal('m-client')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="cli-id"/>
+      <div class="f-row">
+        <div class="fg"><label>Nom *</label><input id="cli-nom" required/></div>
+        <div class="fg"><label>Prénom</label><input id="cli-prenom"/></div>
+      </div>
+      <div class="fg"><label>Téléphone *</label><input type="tel" id="cli-tel" required placeholder="0690 XX XX XX"/></div>
+      <div class="fg"><label>Email</label><input type="email" id="cli-email"/></div>
+      <div class="fg"><label>Adresse</label><input id="cli-adresse"/></div>
+      <div class="fg"><label>Notes</label><textarea id="cli-notes" rows="3"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="App.closeModal('m-client')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveClient()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+const session = App.initAdminPage(['admin','agent']);
+if (session) {
+  document.addEventListener('DOMContentLoaded', () => {
+    Sidebar.inject('clients');
+    render();
+    document.getElementById('search').addEventListener('input', render);
+  });
+}
+
+function visibleClients() {
+  let list = Data.clients.all();
+  if (session.role === 'agent') {
+    // Agent : ne voit que les clients ayant au moins une intervention/devis avec lui
+    const myInts = Data.interventions.forAgent(session.user_id);
+    const myDevis = Data.devis.forAgent(session.user_id);
+    const ids = new Set([...myInts.map(i=>i.client_id), ...myDevis.map(d=>d.client_id)]);
+    list = list.filter(c => ids.has(c.id));
+  }
+  const q = document.getElementById('search')?.value?.toLowerCase() || '';
+  if (q) list = list.filter(c => `${c.nom} ${c.prenom||''} ${c.tel||''} ${c.adresse||''}`.toLowerCase().includes(q));
+  return list;
+}
+
+function render() {
+  const list = visibleClients();
+  const tbody = document.getElementById('tbody');
+  document.getElementById('empty').style.display = list.length ? 'none' : 'block';
+  tbody.innerHTML = list.map(c => {
+    const nbInts = Data.interventions.forClient(c.id).length;
+    return `<tr>
+      <td><a href="client-detail.html?id=${c.id}" style="color:var(--g);font-weight:700">${c.prenom || ''} ${c.nom}</a></td>
+      <td>${c.tel || '—'}</td>
+      <td>${c.adresse || '—'}</td>
+      <td><span class="badge badge-green">${nbInts}</span></td>
+      <td>
+        <a href="client-detail.html?id=${c.id}" class="action-btn" title="Voir">👁️</a>
+        ${session.role==='admin' ? `<button class="action-btn" onclick="editClient('${c.id}')" title="Modifier">✏️</button>
+        <button class="action-btn danger" onclick="deleteClient('${c.id}')" title="Supprimer">🗑️</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openClientModal() {
+  document.getElementById('m-title').textContent = 'Nouveau client';
+  document.getElementById('cli-id').value = '';
+  ['cli-nom','cli-prenom','cli-tel','cli-email','cli-adresse','cli-notes'].forEach(id => document.getElementById(id).value = '');
+  App.openModal('m-client');
+}
+function editClient(id) {
+  const c = Data.clients.get(id); if (!c) return;
+  document.getElementById('m-title').textContent = 'Modifier le client';
+  document.getElementById('cli-id').value = c.id;
+  document.getElementById('cli-nom').value = c.nom || '';
+  document.getElementById('cli-prenom').value = c.prenom || '';
+  document.getElementById('cli-tel').value = c.tel || '';
+  document.getElementById('cli-email').value = c.email || '';
+  document.getElementById('cli-adresse').value = c.adresse || '';
+  document.getElementById('cli-notes').value = c.notes || '';
+  App.openModal('m-client');
+}
+function saveClient() {
+  const id = document.getElementById('cli-id').value;
+  const data = {
+    nom: document.getElementById('cli-nom').value.trim(),
+    prenom: document.getElementById('cli-prenom').value.trim(),
+    tel: document.getElementById('cli-tel').value.trim(),
+    email: document.getElementById('cli-email').value.trim(),
+    adresse: document.getElementById('cli-adresse').value.trim(),
+    notes: document.getElementById('cli-notes').value.trim(),
+  };
+  if (!data.nom || !data.tel) { App.toast('⚠️ Nom et téléphone requis', 'warn'); return; }
+  if (id) Data.clients.update(id, data); else Data.clients.add(data);
+  App.closeModal('m-client');
+  App.toast('✅ Client enregistré', 'success');
+  render();
+}
+function deleteClient(id) {
+  if (!confirm('Supprimer ce client et son historique ?')) return;
+  Data.clients.remove(id);
+  App.toast('Client supprimé');
+  render();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Paiements — Wassou</title>
+<meta name="theme-color" content="#1b4332"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div id="overlay"></div>
+<div class="app-shell">
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="top-header">
+      <button class="burger-btn" id="burger">☰</button>
+      <div class="page-title">💳 Paiements</div>
+      <div class="header-actions">
+        <button class="btn btn-primary btn-sm" onclick="openModal()">+ Encaisser</button>
+      </div>
+    </header>
+    <div class="page-body">
+
+      <!-- KPIs -->
+      <div class="stats-grid stagger" id="kpis"></div>
+
+      <!-- Filtres -->
+      <div class="filter-pills">
+        <button class="pill active" onclick="filterStatus('', this)">Tous</button>
+        <button class="pill" onclick="filterStatus('reçu', this)">✅ Reçus</button>
+        <button class="pill" onclick="filterStatus('en_attente', this)">⏳ En attente</button>
+        <button class="pill" onclick="filterStatus('à_encaisser', this)">💵 À encaisser</button>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>Devis</th><th>Client</th><th>Montant</th><th>Méthode</th><th>Type</th><th>Statut</th><th>Actions</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div id="empty" class="empty-state" style="display:none"><div class="empty-icon">💳</div><p>Aucun paiement enregistré</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal encaissement -->
+<div class="modal-overlay" id="m-pay">
+  <div class="modal">
+    <div class="modal-header"><h3>💳 Encaisser un paiement</h3><button class="modal-close" onclick="App.closeModal('m-pay')">×</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Devis *</label>
+        <select id="p-devis" onchange="updateInfos()" required></select>
+      </div>
+
+      <div id="p-info" style="background:var(--pale);padding:14px;border-radius:12px;font-size:.88rem;margin-bottom:14px;display:none"></div>
+
+      <div class="f-row">
+        <div class="fg"><label>Type *</label>
+          <select id="p-type" onchange="updateMontantSuggere()">
+            <option value="acompte">💰 Acompte</option>
+            <option value="solde">💎 Solde</option>
+            <option value="total">💯 Total</option>
+          </select>
+        </div>
+        <div class="fg"><label>Montant (€) *</label><input type="number" step="0.01" id="p-montant" required/></div>
+      </div>
+
+      <div class="fg"><label>Méthode *</label>
+        <div id="p-methodes" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <div id="p-info-meth" style="background:#fff8e1;padding:12px;border-radius:10px;font-size:.85rem;color:#8b6914;display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="App.closeModal('m-pay')">Annuler</button>
+      <button class="btn btn-primary" onclick="encaisser()">💳 Encaisser</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal infos virement (affichée après encaissement virement) -->
+<div class="modal-overlay" id="m-virement">
+  <div class="modal">
+    <div class="modal-header"><h3>🏦 Coordonnées bancaires</h3><button class="modal-close" onclick="App.closeModal('m-virement')">×</button></div>
+    <div class="modal-body">
+      <p style="margin-bottom:14px">Communique ces informations au client pour qu'il effectue le virement :</p>
+      <div id="virement-html"></div>
+      <button class="btn btn-ghost btn-block mt-4" onclick="copyVirement()">📋 Copier les infos</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="App.closeModal('m-virement')">OK</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/payment.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+const session = App.initAdminPage(['admin','agent']);
+let currentStatus = '';
+const params = new URLSearchParams(location.search);
+
+if (session) {
+  document.addEventListener('DOMContentLoaded', () => {
+    Sidebar.inject('paiements');
+    render();
+    if (params.get('devis')) {
+      setTimeout(() => openModal(params.get('devis')), 300);
+    }
+  });
+}
+
+function visiblePaiements() {
+  let list = session.role === 'admin' ? Data.paiements.all() : Data.paiements.forAgent(session.user_id);
+  if (currentStatus) list = list.filter(p => p.statut === currentStatus);
+  return list.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+}
+
+function render() {
+  // KPIs
+  const all = session.role === 'admin' ? Data.paiements.all() : Data.paiements.forAgent(session.user_id);
+  const recu = all.filter(p => p.statut === 'reçu').reduce((s, p) => s + (p.montant || 0), 0);
+  const enAttente = all.filter(p => p.statut === 'en_attente').reduce((s, p) => s + (p.montant || 0), 0);
+  const aEnc = all.filter(p => p.statut === 'à_encaisser').reduce((s, p) => s + (p.montant || 0), 0);
+
+  document.getElementById('kpis').innerHTML = `
+    <div class="stat-card green">
+      <div class="stat-icon">✅</div>
+      <div class="stat-info"><div class="stat-value">${App.fmtEur(recu)}</div><div class="stat-label">Total reçu</div></div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-info"><div class="stat-value">${App.fmtEur(enAttente)}</div><div class="stat-label">En attente</div></div>
+    </div>
+    <div class="stat-card gold">
+      <div class="stat-icon">💵</div>
+      <div class="stat-info"><div class="stat-value">${App.fmtEur(aEnc)}</div><div class="stat-label">À encaisser</div></div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-icon">📊</div>
+      <div class="stat-info"><div class="stat-value">${all.length}</div><div class="stat-label">Total transactions</div></div>
+    </div>
+  `;
+
+  // Liste
+  const list = visiblePaiements();
+  document.getElementById('empty').style.display = list.length ? 'none' : 'block';
+  document.getElementById('tbody').innerHTML = list.map(p => {
+    const d = Data.devis.get(p.devis_id);
+    const c = Data.clients.get(p.client_id);
+    const cls = { reçu: 'badge-green', en_attente: 'badge-orange', à_encaisser: 'badge-orange' }[p.statut] || 'badge-grey';
+    const methodeLabel = CONFIG.paiement.methodes[p.methode]?.label || p.methode;
+    const canConfirm = session.role === 'admin' && (p.statut === 'en_attente' || p.statut === 'à_encaisser');
+    return `<tr>
+      <td>${App.fmtDate(p.date)}</td>
+      <td><a href="devis-create.html?id=${d?.id||''}" style="color:var(--g);font-weight:600">${d?.numero || '—'}</a></td>
+      <td>${c ? (c.prenom||'') + ' ' + c.nom : '—'}</td>
+      <td><strong>${App.fmtEur(p.montant)}</strong></td>
+      <td>${methodeLabel}</td>
+      <td><span class="badge badge-grey">${p.type || 'acompte'}</span></td>
+      <td><span class="badge ${cls}">${(p.statut || '').replace('_', ' ')}</span></td>
+      <td>
+        ${canConfirm ? `<button class="action-btn" onclick="confirmer('${p.id}')" title="Confirmer reçu">✅</button>` : ''}
+        ${session.role === 'admin' ? `<button class="action-btn danger" onclick="del('${p.id}')" title="Supprimer">🗑️</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterStatus(s, btn) {
+  currentStatus = s;
+  document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function openModal(prefDevisId) {
+  // Liste de devis non soldés
+  let devisList = session.role === 'admin' ? Data.devis.all() : Data.devis.forAgent(session.user_id);
+  devisList = devisList.filter(d => d.statut !== 'refusé');
+
+  document.getElementById('p-devis').innerHTML = '<option value="">— Choisir un devis —</option>' +
+    devisList.map(d => {
+      const c = Data.clients.get(d.client_id);
+      return `<option value="${d.id}" ${d.id === prefDevisId ? 'selected' : ''}>${d.numero} — ${c?.nom || '?'} — ${App.fmtEur(d.total_ttc || 0)}</option>`;
+    }).join('');
+
+  // Méthodes actives
+  const methodes = Payment.methodesActives();
+  document.getElementById('p-methodes').innerHTML = methodes.map((m, i) => `
+    <label style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--pale);border:2px solid transparent;border-radius:12px;cursor:pointer" onclick="selectMethode('${m.key}', this)">
+      <input type="radio" name="methode" value="${m.key}" ${i === 0 ? 'checked' : ''}/>
+      <span style="font-weight:700">${m.label}</span>
+    </label>
+  `).join('');
+
+  document.getElementById('p-type').value = 'acompte';
+  document.getElementById('p-montant').value = '';
+  document.getElementById('p-info').style.display = 'none';
+  document.getElementById('p-info-meth').style.display = 'none';
+
+  if (prefDevisId) updateInfos();
+  App.openModal('m-pay');
+}
+
+function selectMethode(key, el) {
+  document.querySelectorAll('#p-methodes label').forEach(l => l.style.borderColor = 'transparent');
+  el.style.borderColor = 'var(--g)';
+}
+
+function updateInfos() {
+  const id = document.getElementById('p-devis').value;
+  const d = Data.devis.get(id);
+  const info = document.getElementById('p-info');
+  if (!d) { info.style.display = 'none'; return; }
+
+  const c = Data.clients.get(d.client_id);
+  const recu = Data.paiements.forDevis(d.id).filter(p => p.statut === 'reçu').reduce((s, p) => s + p.montant, 0);
+  const solde = Math.max(0, (d.total_ttc || 0) - recu);
+
+  info.style.display = 'block';
+  info.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div><strong>Client :</strong> ${c?.prenom||''} ${c?.nom||'—'}</div>
+      <div><strong>Total TTC :</strong> ${App.fmtEur(d.total_ttc || 0)}</div>
+      <div><strong>Acompte demandé :</strong> ${App.fmtEur(d.acompte || 0)}</div>
+      <div><strong>Déjà reçu :</strong> ${App.fmtEur(recu)}</div>
+      <div style="grid-column:1/-1;color:var(--g);font-weight:700">Solde restant : ${App.fmtEur(solde)}</div>
+    </div>
+  `;
+  updateMontantSuggere();
+}
+
+function updateMontantSuggere() {
+  const id = document.getElementById('p-devis').value;
+  const d = Data.devis.get(id); if (!d) return;
+  const type = document.getElementById('p-type').value;
+  const recu = Data.paiements.forDevis(d.id).filter(p => p.statut === 'reçu').reduce((s, p) => s + p.montant, 0);
+  const solde = Math.max(0, (d.total_ttc || 0) - recu);
+  let m = 0;
+  if (type === 'acompte') m = d.acompte || 0;
+  else if (type === 'solde') m = solde;
+  else if (type === 'total') m = d.total_ttc || 0;
+  document.getElementById('p-montant').value = m.toFixed(2);
+}
+
+async function encaisser() {
+  const devisId = document.getElementById('p-devis').value;
+  const montant = parseFloat(document.getElementById('p-montant').value);
+  const methode = document.querySelector('input[name=methode]:checked')?.value;
+  const type = document.getElementById('p-type').value;
+
+  if (!devisId) { App.toast('⚠️ Sélectionne un devis', 'warn'); return; }
+  if (!montant || montant <= 0) { App.toast('⚠️ Montant invalide', 'warn'); return; }
+  if (!methode) { App.toast('⚠️ Choisis une méthode', 'warn'); return; }
+
+  const result = await Payment.pay(devisId, montant, methode, type);
+  if (!result.ok) {
+    App.toast(result.error || 'Erreur', 'error');
+    return;
+  }
+
+  App.closeModal('m-pay');
+
+  // Si virement : afficher coordonnées
+  if (methode === 'virement' && result.info) {
+    document.getElementById('virement-html').innerHTML = result.info;
+    App.openModal('m-virement');
+  } else {
+    App.toast('✅ Paiement enregistré', 'success');
+  }
+
+  render();
+}
+
+function confirmer(id) {
+  if (!confirm('Confirmer la réception de ce paiement ?')) return;
+  Payment.confirmer(id);
+  App.toast('✅ Paiement confirmé', 'success');
+  render();
+}
+
+function del(id) {
+  if (!confirm('Supprimer ce paiement ?')) return;
+  Data.paiements.remove(id);
+  App.toast('Paiement supprimé');
+  render();
+}
+
+function copyVirement() {
+  const v = CONFIG.paiement.methodes.virement;
+  const txt = `Titulaire : ${v.titulaire}\nIBAN : ${v.iban}\nBIC : ${v.bic}\nBanque : ${v.banque}`;
+  navigator.clipboard.writeText(txt);
+  App.toast('📋 Copié !', 'success');
+}
+</script>
+</body>
+</html>

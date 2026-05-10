@@ -1,10 +1,16 @@
 // ============================================================
-// WASSOU MULTISERVICES — APP LOGIC
+//  WASSOU MULTISERVICES — APP LOGIC v2.1
+//  - Navigation
+//  - Toasts + Confirms
+//  - Helpers (date, money, etc.)
+//  - PWA install (Android + iOS)
+//  - Anti-zoom (pinch-zoom désactivé)
+//  - Auth helpers pour pages protégées
 // ============================================================
 
 const App = {
 
-  // ── Navigation active state ───────────────────────────────
+  // ── Navigation : highlight de la page active ──────────────
   initNav() {
     const page = location.pathname.split('/').pop() || 'index.html';
     document.querySelectorAll('.nav-link').forEach(link => {
@@ -27,10 +33,51 @@ const App = {
         sidebar.classList.remove('open');
         overlay.classList.remove('show');
       });
+      // Fermer la sidebar quand on clique un lien (mobile)
+      sidebar.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth <= 900) {
+            sidebar.classList.remove('open');
+            overlay?.classList.remove('show');
+          }
+        });
+      });
+    }
+
+    // Filtrer liens selon le rôle (data-role="admin")
+    const session = window.Auth?.getSession?.();
+    if (session) {
+      document.querySelectorAll('[data-role]').forEach(el => {
+        const required = el.dataset.role;
+        if (required && session.role !== required) {
+          el.style.display = 'none';
+        }
+      });
+      // Afficher le pill utilisateur connecté
+      const slot = document.getElementById('user-pill-slot');
+      if (slot && !slot.innerHTML.trim()) {
+        slot.innerHTML = `
+          <div class="user-pill">
+            <div class="av">${session.avatar || '👤'}</div>
+            <div class="info">
+              <strong>${session.nom || 'Utilisateur'}</strong>
+              <small>${session.role_label || session.role}</small>
+            </div>
+          </div>
+        `;
+      }
     }
   },
 
-  // ── Toast notifications ───────────────────────────────────
+  // ── Page protégée : initialisation auth ──────────────────
+  initAdminPage(allowedRoles = ['admin', 'agent']) {
+    if (typeof Auth === 'undefined') return null;
+    const session = Auth.requireAuth(allowedRoles);
+    if (!session) return null;
+    return session;
+  },
+
+  // ── Toast notifications ──────────────────────────────────
   toast(msg, type = 'success') {
     const container = document.getElementById('toasts') || (() => {
       const d = document.createElement('div');
@@ -62,9 +109,11 @@ const App = {
     const dt = new Date(d);
     return dt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   },
+  fmtDate(d) { return App.formatDate(d); },
   formatMoney(n) {
     return (n || 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
   },
+  fmtEur(n) { return App.formatMoney(n); },
   timeAgo(d) {
     const diff = Date.now() - new Date(d).getTime();
     const days = Math.floor(diff / 86400000);
@@ -73,19 +122,16 @@ const App = {
     return `Il y a ${days} jours`;
   },
 
-  // ── Search/filter helper ──────────────────────────────────
   filterList(items, query, fields) {
     if (!query) return items;
     const q = query.toLowerCase();
     return items.filter(item => fields.some(f => (item[f] || '').toLowerCase().includes(q)));
   },
 
-  // ── Render star rating ────────────────────────────────────
   stars(n) {
     return '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
   },
 
-  // ── SMS template builder ──────────────────────────────────
   smsTemplate(type, data = {}) {
     const templates = {
       confirmation: `Bonjour ${data.prenom || ''}, votre RDV Wassou est confirmé le ${data.date || ''} à ${data.heure || ''}. À bientôt ! 🌿`,
@@ -97,17 +143,14 @@ const App = {
     return templates[type] || '';
   },
 
-  // ── Generate ID ───────────────────────────────────────────
   genId(prefix = 'x') {
     return prefix + Date.now() + Math.random().toString(36).slice(2, 6);
   },
 
-  // ── Devis total ───────────────────────────────────────────
   devisTotal(services) {
     return services.reduce((s, l) => s + ((l.qty || 1) * (l.pu || 0)), 0);
   },
 
-  // ── Export CSV ────────────────────────────────────────────
   exportCSV(data, filename) {
     if (!data.length) return;
     const keys = Object.keys(data[0]);
@@ -118,7 +161,6 @@ const App = {
     a.click();
   },
 
-  // ── Print helper ─────────────────────────────────────────
   printSection(id) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -128,44 +170,44 @@ const App = {
     win.print();
   },
 
-  // ── PWA Install Prompt ────────────────────────────────────
+  // ============================================================
+  //  📲 PWA INSTALL — Android + iOS
+  // ============================================================
   initInstallPrompt() {
     let deferredPrompt = null;
 
-    // Si déjà installée, ne rien faire
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
       console.log('[PWA] App already installed');
       return;
     }
 
-    // Capture l'événement (Chrome/Edge/Android)
+    const dismissed = localStorage.getItem('wassou-install-dismissed');
+    if (dismissed) {
+      const days = (Date.now() - parseInt(dismissed)) / 86400000;
+      if (days < 7) return;
+    }
+
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
       console.log('[PWA] beforeinstallprompt captured ✅');
-      App.showInstallButton(deferredPrompt);
+      setTimeout(() => App.showInstallButton(deferredPrompt), 2000);
     });
 
-    // Confirmation après installation
     window.addEventListener('appinstalled', () => {
-      console.log('[PWA] App installed ✅');
       deferredPrompt = null;
       const banner = document.getElementById('install-banner');
       if (banner) banner.remove();
       App.toast('Application installée 🌿', 'success');
     });
 
-    // iOS : pas de beforeinstallprompt → bannière manuelle
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    const isInStandalone = window.navigator.standalone;
-    if (isIOS && !isInStandalone) {
+    if (isIOS && !window.navigator.standalone) {
       setTimeout(() => App.showIOSInstallHint(), 3000);
     }
   },
 
-  // ── Bouton/bannière "Installer l'app" ─────────────────────
   showInstallButton(deferredPrompt) {
-    // Évite les doublons
     if (document.getElementById('install-banner')) return;
 
     const banner = document.createElement('div');
@@ -188,7 +230,6 @@ const App = {
       banner.classList.remove('show');
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      console.log('[PWA] User choice:', outcome);
       if (outcome === 'accepted') {
         App.toast('Merci ! Installation en cours…', 'success');
       }
@@ -198,12 +239,10 @@ const App = {
     document.getElementById('install-close').addEventListener('click', () => {
       banner.classList.remove('show');
       setTimeout(() => banner.remove(), 300);
-      // Mémoriser le refus pour 7 jours
       localStorage.setItem('wassou-install-dismissed', Date.now());
     });
   },
 
-  // ── Hint d'installation iOS (Safari) ──────────────────────
   showIOSInstallHint() {
     if (localStorage.getItem('wassou-ios-hint-dismissed')) return;
     if (document.getElementById('install-banner')) return;
@@ -230,10 +269,31 @@ const App = {
     });
   },
 
+  // ============================================================
+  //  🚫 Anti-zoom : pinch-zoom + double-tap zoom désactivés
+  // ============================================================
+  initAntiZoom() {
+    document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+    document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+    document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+  },
+
 };
 
-// Auto-init nav + PWA install on every page
+// Auto-init
 document.addEventListener('DOMContentLoaded', () => {
   App.initNav();
   App.initInstallPrompt();
+  App.initAntiZoom();
 });
+
+if (typeof window !== 'undefined') window.App = App;

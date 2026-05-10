@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+  <title>Paiements — Wassou</title>
+  <meta name="theme-color" content="#1b4332"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    @media (max-width: 600px) {
+      .header-actions .btn { padding: 7px 10px; font-size: .8rem; }
+      .header-actions .btn .lbl { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div id="overlay"></div>
+<div class="app-shell">
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="top-header">
+      <button class="burger-btn" id="burger">☰</button>
+      <div class="page-title">💳 Paiements</div>
+      <div class="header-actions">
+        <button class="btn btn-outline btn-sm" onclick="exportCsv()" title="Exporter">
+          <span>📥</span><span class="lbl"> Export</span>
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openModal()" title="Nouvel encaissement">
+          <span>+</span><span class="lbl"> Encaisser</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <div class="filter-pills">
+        <button class="pill active" onclick="filterStatus('', this)">Tous</button>
+        <button class="pill" onclick="filterStatus('reçu', this)">✅ Reçus</button>
+        <button class="pill" onclick="filterStatus('en_attente', this)">⏳ En attente</button>
+        <button class="pill" onclick="filterStatus('à_encaisser', this)">💴 À encaisser</button>
+      </div>
+
+      <div class="stats-grid stagger mb-6">
+        <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-info"><div class="stat-value" id="s-recu">0€</div><div class="stat-label">Reçu</div></div></div>
+        <div class="stat-card orange"><div class="stat-icon">⏳</div><div class="stat-info"><div class="stat-value" id="s-attente">0€</div><div class="stat-label">En attente</div></div></div>
+        <div class="stat-card blue"><div class="stat-icon">💳</div><div class="stat-info"><div class="stat-value" id="s-count">0</div><div class="stat-label">Transactions</div></div></div>
+        <div class="stat-card gold"><div class="stat-icon">📊</div><div class="stat-info"><div class="stat-value" id="s-month">0€</div><div class="stat-label">Ce mois</div></div></div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Date</th><th>Client</th><th>Devis</th><th>Montant</th><th>Méthode</th><th>Statut</th><th>Actions</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div id="empty" class="empty-state" style="display:none">
+          <div class="empty-icon">💳</div>
+          <p>Aucun paiement enregistré</p>
+          <button class="btn btn-primary mt-2" onclick="openModal()">+ Premier encaissement</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal encaisser -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <span>💳</span><h3>Nouvel encaissement</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id"/>
+      <div class="form-group">
+        <label class="form-label">Devis associé</label>
+        <select class="form-control" id="f-devis">
+          <option value="">— Aucun —</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Montant <span>*</span></label>
+          <input type="number" class="form-control" id="f-montant" min="0" step="0.01" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-control" id="f-date"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Méthode</label>
+          <select class="form-control" id="f-methode">
+            <option value="especes">💵 Espèces</option>
+            <option value="cb">💳 Carte bancaire</option>
+            <option value="virement">🏦 Virement</option>
+            <option value="cheque">📝 Chèque</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Statut</label>
+          <select class="form-control" id="f-statut">
+            <option value="reçu">✅ Reçu</option>
+            <option value="en_attente">⏳ En attente</option>
+            <option value="à_encaisser">💴 À encaisser</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" id="f-notes" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="save()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div>
+    <div class="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline btn-cancel">Annuler</button>
+      <button class="btn btn-danger btn-confirm">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/nexus-secret.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+const session = App.initAdminPage(['admin']);
+let currentStatus = '';
+
+if (session) {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof Sidebar !== 'undefined') Sidebar.inject('paiements');
+    populateDevis();
+    render();
+    // Si ?devis=xxx → ouvrir modal pré-rempli
+    const params = new URLSearchParams(location.search);
+    if (params.get('devis')) {
+      openModal();
+      document.getElementById('f-devis').value = params.get('devis');
+      const d = Data.devis?.get?.(params.get('devis'));
+      if (d) document.getElementById('f-montant').value = d.total_ttc || 0;
+    }
+  });
+}
+
+function populateDevis() {
+  const sel = document.getElementById('f-devis');
+  const devis = (Data.devis?.all?.() || []).sort((a,b) => (b.created||'').localeCompare(a.created||''));
+  sel.innerHTML = '<option value="">— Aucun —</option>' +
+    devis.map(d => {
+      const c = Data.clients?.get?.(d.client_id);
+      return `<option value="${d.id}">${d.numero} — ${c?.nom||'?'} — ${App.fmtEur(d.total_ttc||0)}</option>`;
+    }).join('');
+}
+
+function visible() {
+  let list = Data.paiements?.all?.() || [];
+  if (currentStatus) list = list.filter(p => p.statut === currentStatus);
+  return list.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+}
+
+function render() {
+  const list = visible();
+  const all = Data.paiements?.all?.() || [];
+  
+  const recu = all.filter(p => p.statut === 'reçu').reduce((s,p) => s + (p.montant||0), 0);
+  const attente = all.filter(p => p.statut === 'en_attente' || p.statut === 'à_encaisser').reduce((s,p) => s + (p.montant||0), 0);
+  const now = new Date();
+  const month = all.filter(p => {
+    const d = new Date(p.date || 0);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && p.statut === 'reçu';
+  }).reduce((s,p) => s + (p.montant||0), 0);
+  
+  document.getElementById('s-recu').textContent = App.fmtEur(recu);
+  document.getElementById('s-attente').textContent = App.fmtEur(attente);
+  document.getElementById('s-count').textContent = all.length;
+  document.getElementById('s-month').textContent = App.fmtEur(month);
+  
+  document.getElementById('empty').style.display = list.length ? 'none' : 'block';
+  document.getElementById('tbody').innerHTML = list.map(p => {
+    const d = p.devis_id ? Data.devis?.get?.(p.devis_id) : null;
+    const c = d ? Data.clients?.get?.(d.client_id) : null;
+    const cls = { 'reçu':'badge-success', 'en_attente':'badge-warning', 'à_encaisser':'badge-info' }[p.statut] || 'badge-gray';
+    const icon = { 'especes':'💵', 'cb':'💳', 'virement':'🏦', 'cheque':'📝' }[p.methode] || '💰';
+    return `<tr>
+      <td data-label="Date">${App.fmtDate(p.date)}</td>
+      <td data-label="Client">${c ? `${c.prenom||''} ${c.nom||''}` : '—'}</td>
+      <td data-label="Devis">${d?.numero || '—'}</td>
+      <td data-label="Montant"><strong>${App.fmtEur(p.montant)}</strong></td>
+      <td data-label="Méthode">${icon} ${p.methode || ''}</td>
+      <td data-label="Statut"><span class="badge ${cls}">${(p.statut||'').replace('_',' ')}</span></td>
+      <td data-label="Actions" class="td-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('${p.id}')" title="Modifier">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="del('${p.id}')" title="Supprimer" style="color:var(--danger)">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterStatus(s, btn) {
+  currentStatus = s;
+  document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function openModal(id = null) {
+  if (id) {
+    const p = Data.paiements?.get?.(id);
+    if (p) {
+      document.getElementById('edit-id').value = p.id;
+      document.getElementById('f-devis').value = p.devis_id || '';
+      document.getElementById('f-montant').value = p.montant || '';
+      document.getElementById('f-date').value = p.date || '';
+      document.getElementById('f-methode').value = p.methode || 'especes';
+      document.getElementById('f-statut').value = p.statut || 'reçu';
+      document.getElementById('f-notes').value = p.notes || '';
+    }
+  } else {
+    document.getElementById('edit-id').value = '';
+    document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('f-montant').value = '';
+    document.getElementById('f-devis').value = '';
+    document.getElementById('f-methode').value = 'especes';
+    document.getElementById('f-statut').value = 'reçu';
+    document.getElementById('f-notes').value = '';
+  }
+  document.getElementById('payModal').classList.add('open');
+}
+function closeModal() { document.getElementById('payModal').classList.remove('open'); }
+
+function save() {
+  const montant = parseFloat(document.getElementById('f-montant').value) || 0;
+  if (montant <= 0) { App.toast('Montant invalide', 'error'); return; }
+  
+  const data = {
+    devis_id: document.getElementById('f-devis').value || null,
+    montant,
+    date: document.getElementById('f-date').value || new Date().toISOString().slice(0,10),
+    methode: document.getElementById('f-methode').value,
+    statut: document.getElementById('f-statut').value,
+    notes: document.getElementById('f-notes').value || '',
+  };
+  
+  const id = document.getElementById('edit-id').value;
+  if (id && Data.paiements?.update) {
+    Data.paiements.update(id, data);
+    App.toast('✅ Paiement modifié');
+  } else {
+    Data.paiements?.add?.(data);
+    App.toast('✅ Paiement enregistré');
+  }
+  closeModal();
+  render();
+}
+
+function del(id) {
+  App.confirm('Supprimer ce paiement ?', () => {
+    Data.paiements?.remove?.(id);
+    App.toast('Paiement supprimé');
+    render();
+  });
+}
+
+function exportCsv() {
+  const list = Data.paiements?.all?.() || [];
+  if (!list.length) { App.toast('Rien à exporter', 'error'); return; }
+  const data = list.map(p => {
+    const d = p.devis_id ? Data.devis?.get?.(p.devis_id) : null;
+    const c = d ? Data.clients?.get?.(d.client_id) : null;
+    return {
+      Date: p.date, Client: c ? `${c.prenom||''} ${c.nom||''}` : '',
+      Devis: d?.numero || '', Montant: p.montant, Methode: p.methode, Statut: p.statut
+    };
+  });
+  App.exportCSV(data, `paiements-${new Date().toISOString().slice(0,10)}.csv`);
+  App.toast('Export terminé 📥');
+}
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(e=>console.error(e))}</script>
+</body>
+</html>

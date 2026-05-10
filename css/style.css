@@ -942,11 +942,193 @@ select.form-control { cursor: pointer; }
 }
 
 /* ============================================================
-   PWA INSTALL BANNER
+   ✨ CORRECTIONS MOBILE & PWA — v2.1
+   - Plein écran sans zoom forcé
+   - Tables → cards en mobile
+   - Modals adaptées au téléphone
+   - Bannière install PWA
+   - Safe areas iOS
+   ============================================================ */
+
+/* ── Empêcher le zoom indésirable sur iOS au focus des inputs ── */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="password"],
+  input[type="date"],
+  input[type="time"],
+  input[type="search"],
+  textarea,
+  select,
+  .form-control {
+    font-size: 16px !important; /* CRUCIAL : sous 16px iOS zoom */
+  }
+}
+
+/* ── Page entière non zoomable + scroll vertical naturel ─────── */
+html, body {
+  overscroll-behavior-y: contain;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  /* Empêche le scroll horizontal indésirable */
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* ── Safe areas iPhone (notch + home indicator) ──────────────── */
+.app-shell {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.top-header {
+  padding-top: max(0px, env(safe-area-inset-top));
+}
+
+/* ── Tables responsives : deviennent des CARDS sur mobile ────── */
+@media (max-width: 700px) {
+  .table-wrapper {
+    overflow-x: visible;
+  }
+  table, thead, tbody, th, td, tr {
+    display: block;
+    width: 100%;
+  }
+  thead {
+    /* Cacher l'en-tête mais le garder accessible */
+    position: absolute;
+    left: -9999px;
+  }
+  tbody tr {
+    display: block;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.04);
+  }
+  tbody tr:hover {
+    background: var(--white);
+  }
+  tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: .92rem;
+    text-align: right;
+  }
+  tbody td:last-child {
+    border-bottom: 0;
+  }
+  /* Ajouter le label depuis l'attribut data-label="..." */
+  tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--gray-600);
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    text-align: left;
+    margin-right: 12px;
+    flex: 0 0 auto;
+  }
+  .td-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+/* ── Modals adaptées mobile ──────────────────────────────────── */
+@media (max-width: 600px) {
+  .modal-overlay {
+    align-items: center;          /* Centré vertical */
+    justify-content: center;
+    padding: 12px;
+  }
+  .modal {
+    border-radius: var(--radius-lg) !important;
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px); /* Dynamic VH (mobile correct) */
+    width: 100%;
+    margin: 0 auto;
+  }
+  .modal-header { padding: 18px 18px 14px; }
+  .modal-body { padding: 16px 18px; }
+  .modal-footer {
+    padding: 12px 18px 16px;
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .modal-footer .btn { width: 100%; }
+}
+
+/* ── Header sticky propre sur mobile ─────────────────────────── */
+@media (max-width: 900px) {
+  .top-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .header-actions {
+    gap: 6px;
+  }
+  .header-actions .btn-sm {
+    padding: 7px 10px;
+    font-size: .82rem;
+  }
+}
+
+/* ── Page body : plus aéré sur mobile ────────────────────────── */
+@media (max-width: 600px) {
+  .page-body {
+    padding: 12px !important;
+  }
+  .card {
+    border-radius: var(--radius);
+  }
+  .card-header {
+    padding: 16px 18px 12px;
+  }
+  .card-body {
+    padding: 14px 18px 18px;
+  }
+  .dashboard-welcome h1 {
+    font-size: 1.4rem;
+  }
+}
+
+/* ── Filter pills scrollable horizontal proprement ──────────── */
+@media (max-width: 700px) {
+  .filter-pills {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .filter-pills::-webkit-scrollbar { display: none; }
+  .pill {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}
+
+/* ============================================================
+   📲 BANNIÈRE INSTALL PWA
    ============================================================ */
 #install-banner {
   position: fixed;
-  bottom: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
   left: 16px;
   right: 16px;
   z-index: 9999;
@@ -954,7 +1136,7 @@ select.form-control { cursor: pointer; }
   border-radius: 14px;
   box-shadow: 0 12px 40px rgba(0,0,0,.18);
   border: 1px solid rgba(27,67,50,.12);
-  transform: translateY(120%);
+  transform: translateY(150%);
   opacity: 0;
   transition: transform .35s ease, opacity .35s ease;
   max-width: 480px;
@@ -968,7 +1150,7 @@ select.form-control { cursor: pointer; }
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 14px;
+  padding: 14px;
 }
 .install-icon {
   font-size: 28px;
@@ -1004,6 +1186,252 @@ select.form-control { cursor: pointer; }
   line-height: 1;
   flex-shrink: 0;
 }
-#install-close:hover {
-  color: #1b4332;
+#install-close:hover { color: #1b4332; }
+
+/* ============================================================
+   🔐 PAGE LOGIN — Centrée et adaptée mobile
+   ============================================================ */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 20px;
+  padding-top: max(20px, env(safe-area-inset-top));
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
 }
+.login-box {
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.login-logo {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.login-logo .lg-icon {
+  width: 72px; height: 72px;
+  margin: 0 auto 14px;
+  background: var(--green-100);
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 38px;
+}
+.login-logo h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: 1.4rem;
+  color: var(--green-700);
+  margin-bottom: 4px;
+  font-weight: 800;
+}
+.login-logo p {
+  color: var(--gray-600);
+  font-size: .92rem;
+}
+.role-tabs {
+  display: flex;
+  background: var(--gray-100);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 22px;
+  gap: 4px;
+}
+.role-tab {
+  flex: 1;
+  border: 0;
+  padding: 10px 8px;
+  background: transparent;
+  border-radius: 9px;
+  font-weight: 600;
+  font-size: .92rem;
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: all .2s;
+}
+.role-tab.active {
+  background: #fff;
+  color: var(--green-700);
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+.fg { margin-bottom: 14px; }
+.fg label {
+  display: block;
+  font-size: .82rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--gray-600);
+}
+.fg input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 12px;
+  font-size: 16px; /* anti-zoom iOS */
+  background: var(--off-white);
+  transition: all .2s;
+}
+.fg input:focus {
+  outline: none;
+  border-color: var(--green-500);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(82,183,136,.15);
+}
+.btn-block { width: 100%; }
+.btn-lg {
+  padding: 14px 20px;
+  font-size: 1rem;
+  border-radius: 12px;
+}
+.login-error {
+  display: none;
+  padding: 10px 14px;
+  background: #fee;
+  color: var(--danger);
+  border-radius: 10px;
+  font-size: .88rem;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.login-error.show { display: block; }
+
+/* Agent picks */
+.agent-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.agent-pick {
+  background: var(--gray-100);
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 16px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+}
+.agent-pick:hover { background: var(--green-100); }
+.agent-pick.selected {
+  background: var(--green-100);
+  border-color: var(--green-500);
+}
+.agent-pick .av { font-size: 36px; margin-bottom: 6px; }
+.agent-pick .nm { font-weight: 600; font-size: .92rem; color: var(--green-700); }
+
+/* PIN keypad */
+.pin-display {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.pin-dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--gray-400);
+  transition: all .15s;
+}
+.pin-dot.filled {
+  background: var(--green-500);
+  border-color: var(--green-500);
+  transform: scale(1.15);
+}
+.pin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+.pin-key {
+  background: var(--gray-100);
+  border-radius: 14px;
+  padding: 18px 0;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--green-700);
+  cursor: pointer;
+  user-select: none;
+  transition: all .1s;
+}
+.pin-key:active {
+  background: var(--green-100);
+  transform: scale(.96);
+}
+
+/* ============================================================
+   🔘 LIENS DE CONNEXION sur sidebar
+   ============================================================ */
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid var(--gray-100);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sidebar-footer a,
+.sidebar-footer .logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: .88rem;
+  color: var(--gray-600);
+  text-decoration: none;
+  transition: all .15s;
+}
+.sidebar-footer a:hover,
+.sidebar-footer .logout-btn:hover {
+  background: var(--gray-100);
+  color: var(--green-700);
+}
+.logout-btn {
+  color: var(--danger) !important;
+  cursor: pointer;
+}
+.logout-btn:hover { background: #fee !important; }
+
+/* User pill (admin/agent connecté) */
+#user-pill-slot:not(:empty) {
+  margin: 14px;
+  padding: 12px 14px;
+  background: var(--green-100);
+  border-radius: 12px;
+}
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.user-pill .av {
+  width: 38px; height: 38px;
+  background: var(--green-500);
+  color: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.user-pill .info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.user-pill .info strong {
+  font-size: .88rem;
+  color: var(--green-700);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-pill .info small {
+  font-size: .72rem;
+  color: var(--gray-600);
+}
+

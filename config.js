@@ -310,10 +310,10 @@ const CONFIG = {
   //     Active "active: true" + remplis les clés quand tu seras prêt.
   // -----------------------------------------------------------
   ia_agent: {
-    active: false,                         // ⚠️ Mets true quand tu veux l'activer
+    active: true,                         // ⚠️ Mets true quand tu veux l'activer
     provider: "anthropic",                 // "anthropic" | "openai" | "make"
     model: "claude-sonnet-4-5",
-    api_key: "",                           // sk-ant-xxx
+    api_key: "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",                           // sk-ant-xxx
     prompt_systeme: `Tu es l'assistant IA de Wassou Multiservices en Guadeloupe.
 Tu prends les rendez-vous, vérifies les disponibilités sur l'agenda Google,
 réponds aux clients en français, et programmes les interventions.
@@ -352,7 +352,7 @@ Sois chaleureux, professionnel et concis.`,
     version: "2.0.0",
     annee_copyright: 2026,
     powered_by: "NexusAI Agency",
-    powered_by_url: "https://github.com/drayk973",
+    powered_by_url: "https://www.instagram.com/thakaribeanbwoysxm/",
     storage_prefix: "wassou_",             // Préfixe pour localStorage
     backup_auto: true,                     // Sauvegarde auto chaque jour
     firebase: {

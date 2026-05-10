@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+  <title>Devis & Factures — Wassou</title>
+  <meta name="theme-color" content="#1b4332"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    /* Header actions multi-boutons (style Paiements) */
+    .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    @media (max-width: 600px) {
+      .header-actions .btn { padding: 7px 10px; font-size: .8rem; }
+      .header-actions .btn .lbl { display: none; }
+    }
+    /* Lignes devis */
+    .devis-line { padding: 14px; border: 1px solid var(--gray-200); border-radius: 12px; margin-bottom: 10px; background: #fff; }
+    .devis-line.empty { opacity: .6; }
+    .line-grid { display: grid; grid-template-columns: 2fr 80px 100px 60px; gap: 10px; align-items: center; margin-bottom: 8px; }
+    .line-grid input { padding: 8px 10px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 16px; }
+    .line-grid .qty, .line-grid .pu { text-align: right; }
+    .line-total { font-weight: 700; color: var(--green-700); font-size: .92rem; }
+    .line-del { background: transparent; border: 0; color: var(--danger); cursor: pointer; font-size: 1.2rem; }
+    .totals-box { background: var(--green-100); padding: 14px; border-radius: 10px; margin-top: 10px; }
+    .totals-box .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: .92rem; }
+    .totals-box .row.total { font-weight: 700; font-size: 1.1rem; color: var(--green-700); border-top: 1px solid var(--green-300); padding-top: 8px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+<div id="overlay"></div>
+<div class="app-shell">
+  <nav class="sidebar" id="sidebar"></nav>
+  <div class="main-content">
+    <header class="top-header">
+      <button class="burger-btn" id="burger">☰</button>
+      <div class="page-title">📄 Devis & Factures</div>
+      <div class="header-actions">
+        <button class="btn btn-outline btn-sm" onclick="exportCsv()" title="Exporter CSV">
+          <span>📥</span><span class="lbl"> Export</span>
+        </button>
+        <button class="btn btn-gold btn-sm" onclick="openModal('facture')" title="Nouvelle facture">
+          <span>🧾</span><span class="lbl"> Facture</span>
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openModal('devis')" title="Nouveau devis">
+          <span>+</span><span class="lbl"> Nouveau devis</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="page-body">
+      <div class="filter-pills">
+        <button class="pill active" onclick="filterStatus('', this)">Tous</button>
+        <button class="pill" onclick="filterStatus('brouillon', this)">📝 Brouillon</button>
+        <button class="pill" onclick="filterStatus('envoyé', this)">📨 Envoyé</button>
+        <button class="pill" onclick="filterStatus('accepté', this)">✅ Accepté</button>
+        <button class="pill" onclick="filterStatus('soldé', this)">💰 Soldé</button>
+        <button class="pill" onclick="filterStatus('refusé', this)">❌ Refusé</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid stagger mb-6">
+        <div class="stat-card green"><div class="stat-icon">📄</div><div class="stat-info"><div class="stat-value" id="s-total">0</div><div class="stat-label">Total devis</div></div></div>
+        <div class="stat-card gold"><div class="stat-icon">✅</div><div class="stat-info"><div class="stat-value" id="s-accepte">0</div><div class="stat-label">Acceptés</div></div></div>
+        <div class="stat-card blue"><div class="stat-icon">💶</div><div class="stat-info"><div class="stat-value" id="s-ca">0€</div><div class="stat-label">CA acceptés</div></div></div>
+        <div class="stat-card orange"><div class="stat-icon">📨</div><div class="stat-info"><div class="stat-value" id="s-envoye">0</div><div class="stat-label">En attente</div></div></div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Total TTC</th><th>Reçu</th><th>Statut</th><th>Actions</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div id="empty" class="empty-state" style="display:none">
+          <div class="empty-icon">📄</div>
+          <p>Aucun devis pour l'instant</p>
+          <button class="btn btn-primary mt-2" onclick="openModal('devis')">+ Créer le premier devis</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL CRÉER/MODIFIER ============ -->
+<div class="modal-overlay" id="devisModal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <span id="modal-icon">📄</span>
+      <h3 id="modal-title">Nouveau devis</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id"/>
+      <input type="hidden" id="edit-type" value="devis"/>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Client <span>*</span></label>
+          <select class="form-control" id="f-client" required>
+            <option value="">— Sélectionner —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date <span>*</span></label>
+          <input type="date" class="form-control" id="f-date" required/>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Échéance</label>
+          <input type="date" class="form-control" id="f-echeance"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Statut</label>
+          <select class="form-control" id="f-statut">
+            <option value="brouillon">📝 Brouillon</option>
+            <option value="envoyé">📨 Envoyé</option>
+            <option value="accepté">✅ Accepté</option>
+            <option value="refusé">❌ Refusé</option>
+            <option value="soldé">💰 Soldé</option>
+          </select>
+        </div>
+      </div>
+
+      <h4 style="margin:16px 0 10px;color:var(--green-700)">📋 Lignes</h4>
+      <div id="lines"></div>
+      <button class="btn btn-outline btn-sm" onclick="addLine()" style="margin-top:6px">+ Ajouter une ligne</button>
+
+      <div class="totals-box">
+        <div class="row"><span>Total HT</span><span id="t-ht">0,00 €</span></div>
+        <div class="row"><span>TVA (<span id="t-tva-rate">0</span>%)</span><span id="t-tva">0,00 €</span></div>
+        <div class="row total"><span>Total TTC</span><span id="t-ttc">0,00 €</span></div>
+      </div>
+
+      <div class="form-group" style="margin-top:14px">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" id="f-notes" rows="2" placeholder="Conditions, remarques..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="save()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div>
+    <div class="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline btn-cancel">Annuler</button>
+      <button class="btn btn-danger btn-confirm">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/nexus-secret.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+const session = App.initAdminPage(['admin','agent']);
+let currentStatus = '';
+let editType = 'devis';
+
+if (session) {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof Sidebar !== 'undefined') Sidebar.inject('devis');
+    populateClients();
+    render();
+    // Hash #add ouvre direct le modal
+    if (location.hash === '#add') openModal('devis');
+  });
+}
+
+function populateClients() {
+  const sel = document.getElementById('f-client');
+  const clients = (Data.clients?.all?.() || []).sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
+  sel.innerHTML = '<option value="">— Sélectionner —</option>' +
+    clients.map(c => `<option value="${c.id}">${c.prenom||''} ${c.nom||''}</option>`).join('');
+}
+
+function visible() {
+  let list = session.role === 'admin' ? (Data.devis?.all?.() || []) : (Data.devis?.forAgent?.(session.user_id) || []);
+  if (currentStatus) list = list.filter(d => d.statut === currentStatus);
+  return list.sort((a,b) => (b.created || '').localeCompare(a.created || ''));
+}
+
+function render() {
+  const list = visible();
+  const allDevis = Data.devis?.all?.() || [];
+  
+  // Stats
+  document.getElementById('s-total').textContent = allDevis.length;
+  document.getElementById('s-accepte').textContent = allDevis.filter(d => d.statut === 'accepté' || d.statut === 'soldé').length;
+  const ca = allDevis.filter(d => d.statut === 'accepté' || d.statut === 'soldé').reduce((s,d) => s + (d.total_ttc || 0), 0);
+  document.getElementById('s-ca').textContent = App.fmtEur(ca);
+  document.getElementById('s-envoye').textContent = allDevis.filter(d => d.statut === 'envoyé').length;
+  
+  document.getElementById('empty').style.display = list.length ? 'none' : 'block';
+  document.getElementById('tbody').innerHTML = list.map(d => {
+    const c = Data.clients?.get?.(d.client_id);
+    const recu = (Data.paiements?.forDevis?.(d.id) || []).filter(p => p.statut === 'reçu').reduce((s,p) => s + p.montant, 0);
+    const cls = { brouillon:'badge-gray', envoyé:'badge-info', accepté:'badge-success', refusé:'badge-danger', soldé:'badge-success' }[d.statut] || 'badge-gray';
+    return `<tr>
+      <td data-label="N°"><strong>${d.numero || '—'}</strong></td>
+      <td data-label="Date">${App.fmtDate(d.date)}</td>
+      <td data-label="Client"><strong>${c?.prenom||''} ${c?.nom||'—'}</strong></td>
+      <td data-label="Total">${App.fmtEur(d.total_ttc || 0)}</td>
+      <td data-label="Reçu">${App.fmtEur(recu)}</td>
+      <td data-label="Statut"><span class="badge ${cls}">${d.statut}</span></td>
+      <td data-label="Actions" class="td-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openModal('${d.type || 'devis'}', '${d.id}')" title="Modifier">✏️</button>
+        <button class="btn btn-ghost btn-sm" onclick="duplicate('${d.id}')" title="Dupliquer">📋</button>
+        <a href="paiements.html?devis=${d.id}" class="btn btn-ghost btn-sm" title="Encaisser">💳</a>
+        ${session.role==='admin' ? `<button class="btn btn-ghost btn-sm" onclick="del('${d.id}')" title="Supprimer" style="color:var(--danger)">🗑️</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterStatus(s, btn) {
+  currentStatus = s;
+  document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+// ============ MODAL ============
+function openModal(type = 'devis', editId = null) {
+  editType = type;
+  document.getElementById('edit-type').value = type;
+  document.getElementById('modal-icon').textContent = type === 'facture' ? '🧾' : '📄';
+  document.getElementById('modal-title').textContent = editId 
+    ? (type === 'facture' ? 'Modifier la facture' : 'Modifier le devis')
+    : (type === 'facture' ? 'Nouvelle facture' : 'Nouveau devis');
+  
+  if (editId) {
+    const d = Data.devis?.get?.(editId);
+    if (d) {
+      document.getElementById('edit-id').value = d.id;
+      document.getElementById('f-client').value = d.client_id || '';
+      document.getElementById('f-date').value = d.date || '';
+      document.getElementById('f-echeance').value = d.echeance || '';
+      document.getElementById('f-statut').value = d.statut || 'brouillon';
+      document.getElementById('f-notes').value = d.notes || '';
+      document.getElementById('lines').innerHTML = '';
+      (d.lignes || []).forEach(l => addLine(l));
+    }
+  } else {
+    document.getElementById('edit-id').value = '';
+    document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('f-statut').value = 'brouillon';
+    document.getElementById('f-client').value = '';
+    document.getElementById('f-echeance').value = '';
+    document.getElementById('f-notes').value = '';
+    document.getElementById('lines').innerHTML = '';
+    addLine(); // 1 ligne vide par défaut
+  }
+  
+  // TVA
+  const tvaRate = CONFIG?.paiement?.tva_taux || 0;
+  document.getElementById('t-tva-rate').textContent = tvaRate;
+  
+  document.getElementById('devisModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('devisModal').classList.remove('open');
+}
+
+function addLine(data = {}) {
+  const div = document.createElement('div');
+  div.className = 'devis-line';
+  div.innerHTML = `
+    <div class="line-grid">
+      <input type="text" placeholder="Description (ex: Tonte 200m²)" class="desc" value="${data.desc || ''}"/>
+      <input type="number" placeholder="Qté" class="qty" min="1" step="1" value="${data.qty || 1}" oninput="updateTotals()"/>
+      <input type="number" placeholder="Prix €" class="pu" min="0" step="0.01" value="${data.pu || ''}" oninput="updateTotals()"/>
+      <button class="line-del" onclick="this.closest('.devis-line').remove(); updateTotals()" title="Supprimer">🗑️</button>
+    </div>
+    <div class="line-total">Sous-total : <span class="sub">0,00 €</span></div>
+  `;
+  document.getElementById('lines').appendChild(div);
+  updateTotals();
+}
+
+function updateTotals() {
+  const tvaRate = (CONFIG?.paiement?.tva_taux || 0) / 100;
+  let ht = 0;
+  document.querySelectorAll('.devis-line').forEach(line => {
+    const qty = parseFloat(line.querySelector('.qty').value) || 0;
+    const pu = parseFloat(line.querySelector('.pu').value) || 0;
+    const sub = qty * pu;
+    line.querySelector('.sub').textContent = App.fmtEur(sub);
+    ht += sub;
+  });
+  const tva = ht * tvaRate;
+  const ttc = ht + tva;
+  document.getElementById('t-ht').textContent = App.fmtEur(ht);
+  document.getElementById('t-tva').textContent = App.fmtEur(tva);
+  document.getElementById('t-ttc').textContent = App.fmtEur(ttc);
+}
+
+function save() {
+  const id = document.getElementById('edit-id').value;
+  const client_id = document.getElementById('f-client').value;
+  const date = document.getElementById('f-date').value;
+  const type = document.getElementById('edit-type').value;
+  
+  if (!client_id) { App.toast('Sélectionne un client', 'error'); return; }
+  if (!date) { App.toast('Date obligatoire', 'error'); return; }
+  
+  const lignes = [];
+  document.querySelectorAll('.devis-line').forEach(line => {
+    const desc = line.querySelector('.desc').value.trim();
+    const qty = parseFloat(line.querySelector('.qty').value) || 0;
+    const pu = parseFloat(line.querySelector('.pu').value) || 0;
+    if (desc && qty > 0 && pu > 0) lignes.push({ desc, qty, pu });
+  });
+  
+  if (!lignes.length) { App.toast('Ajoute au moins une ligne', 'error'); return; }
+  
+  const tvaRate = (CONFIG?.paiement?.tva_taux || 0) / 100;
+  const total_ht = lignes.reduce((s, l) => s + (l.qty * l.pu), 0);
+  const total_tva = total_ht * tvaRate;
+  const total_ttc = total_ht + total_tva;
+  
+  const data = {
+    client_id, date,
+    echeance: document.getElementById('f-echeance').value || null,
+    statut: document.getElementById('f-statut').value,
+    notes: document.getElementById('f-notes').value || '',
+    lignes, total_ht, total_tva, total_ttc,
+    type, // 'devis' ou 'facture'
+  };
+  
+  if (id && Data.devis?.update) {
+    Data.devis.update(id, data);
+    App.toast('✅ ' + (type === 'facture' ? 'Facture' : 'Devis') + ' modifié(e)');
+  } else {
+    if (!data.numero) {
+      const prefix = type === 'facture' ? 'F' : 'D';
+      const year = new Date().getFullYear();
+      const count = (Data.devis?.all?.() || []).filter(d => (d.type || 'devis') === type).length + 1;
+      data.numero = `${prefix}${year}-${String(count).padStart(4,'0')}`;
+    }
+    data.created = new Date().toISOString();
+    Data.devis?.add?.(data);
+    App.toast('✅ ' + (type === 'facture' ? 'Facture' : 'Devis') + ' créé(e)');
+  }
+  
+  closeModal();
+  render();
+}
+
+function duplicate(id) {
+  const d = Data.devis?.get?.(id); if (!d) return;
+  const copy = { ...d };
+  delete copy.id; delete copy.numero; delete copy.created;
+  copy.statut = 'brouillon';
+  copy.date = new Date().toISOString().slice(0,10);
+  Data.devis?.add?.(copy);
+  App.toast('✅ Devis dupliqué', 'success');
+  render();
+}
+
+function del(id) {
+  App.confirm('Supprimer ce devis ?', () => {
+    Data.devis?.remove?.(id);
+    App.toast('Devis supprimé');
+    render();
+  });
+}
+
+function exportCsv() {
+  const list = Data.devis?.all?.() || [];
+  if (!list.length) { App.toast('Aucun devis à exporter', 'error'); return; }
+  const data = list.map(d => {
+    const c = Data.clients?.get?.(d.client_id);
+    return {
+      Numero: d.numero, Date: d.date, Client: `${c?.prenom||''} ${c?.nom||''}`,
+      Statut: d.statut, 'Total HT': d.total_ht || 0, 'Total TTC': d.total_ttc || 0,
+    };
+  });
+  App.exportCSV(data, `devis-${new Date().toISOString().slice(0,10)}.csv`);
+  App.toast('Export terminé 📥');
+}
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(e=>console.error(e))}</script>
+</body>
+</html>

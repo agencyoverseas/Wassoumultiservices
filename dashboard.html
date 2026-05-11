@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<meta name="theme-color" content="#1b4332"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>Tableau de bord — Wassou</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" type="image/png" href="icons/favicon-32.png"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="stylesheet" href="css/app.css"/>
+</head>
+<body>
+<div class="status-spacer"></div>
+<header class="app-header" id="header"></header>
+
+<main class="page fade-in" id="main">
+  <!-- KPI 2x2 -->
+  <div class="kpi-grid" id="kpis"></div>
+
+  <!-- Interventions du jour -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><span class="ic">📅</span> Interventions du jour</div>
+      <a href="interventions.html" class="see-all">Voir tout →</a>
+    </div>
+    <div id="todayList"></div>
+  </div>
+
+  <!-- Dernières photos -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><span class="ic">📸</span> Dernières photos</div>
+      <a href="interventions.html" class="see-all">Voir tout →</a>
+    </div>
+    <div id="photosList"><p class="empty-state">Aucune photo encore.</p></div>
+  </div>
+
+  <!-- SMS récents -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><span class="ic">💬</span> SMS récents</div>
+      <a href="sms.html" class="see-all">Voir tout →</a>
+    </div>
+    <div id="smsList"></div>
+  </div>
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+if (!App.init('dashboard','Tableau de bord', `Aujourd'hui — ${Fmt.dateLong(new Date())}`)) {} else {
+
+  const s = DB.stats();
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-icon blue">${App.icons.calendar}</div>
+      <div class="kpi-info">
+        <div class="kpi-value">${s.interventionsToday}</div>
+        <div class="kpi-label">Interventions aujo…</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon green">${App.icons.users}</div>
+      <div class="kpi-info">
+        <div class="kpi-value">${s.agentsDispo}</div>
+        <div class="kpi-label">Agents disponibles</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon orange">${App.icons.warning}</div>
+      <div class="kpi-info">
+        <div class="kpi-value">${s.interventionsNonAssignees}</div>
+        <div class="kpi-label">Non assignées</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon purple">${App.icons.trending}</div>
+      <div class="kpi-info">
+        <div class="kpi-value">${Fmt.eur(s.caMonth)}</div>
+        <div class="kpi-label">CA ce mois</div>
+      </div>
+    </div>
+  `;
+
+  // Interventions du jour
+  const today = new Date().toISOString().slice(0,10);
+  const todayInts = DB.interventions.all().filter(i => i.date === today);
+  const todayEl = document.getElementById('todayList');
+  if (todayInts.length === 0) {
+    todayEl.innerHTML = `<p class="empty-state">Aucune intervention planifiée aujourd'hui</p>`;
+  } else {
+    todayEl.innerHTML = todayInts.map(i => {
+      const c = DB.clients.get(i.clientId);
+      const a = DB.agents.get(i.agentId);
+      return `<a href="intervention-detail.html?id=${i.id}" class="list-item" style="margin-bottom:8px">
+        <div class="li-head">
+          <div>
+            <div class="li-name">${(c?.prenom||'')} ${c?.nom||'—'}</div>
+            <div style="font-size:13.5px;color:var(--text-soft);margin-top:4px">${i.service || ''}</div>
+          </div>
+          <span class="li-status status-${i.statut}">${i.statut || ''}</span>
+        </div>
+        <div class="li-row">${App.icons.calendar}<span>${Fmt.date(i.date)} ${i.heure||''}</span></div>
+        ${a ? `<div class="li-row">${App.icons.agent}<span>${a.prenom} ${a.nom}</span></div>` : ''}
+      </a>`;
+    }).join('');
+  }
+
+  // SMS récents
+  const smsList = DB.sms.all().slice(-3).reverse();
+  document.getElementById('smsList').innerHTML = smsList.length
+    ? smsList.map(s => `
+      <div style="padding:10px 0;border-bottom:1px solid var(--border-soft)">
+        <div style="font-weight:600;font-size:14px">${s.tel||''}</div>
+        <div style="font-size:13px;color:var(--text-soft);margin-top:2px">${(s.message||'').slice(0,80)}${(s.message||'').length>80?'…':''}</div>
+      </div>`).join('')
+    : `<p class="empty-state">Aucun SMS envoyé.</p>`;
+}
+</script>
+</body>
+</html>

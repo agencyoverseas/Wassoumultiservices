@@ -1,377 +1,88 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
-  <title>Agent IA — Wassou</title>
-  <meta name="theme-color" content="#1b4332"/>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="css/style.css"/>
-  <style>
-    .ia-status-card {
-      background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);
-      color: #fff;
-      padding: 24px;
-      border-radius: 16px;
-      margin-bottom: 18px;
-    }
-    .ia-status-card h2 { color: #fff; margin: 0 0 6px; font-size: 1.3rem; }
-    .ia-pulse { display: inline-block; width: 10px; height: 10px; background: #52b788; border-radius: 50%; box-shadow: 0 0 0 0 rgba(82,183,136,.7); animation: pulse 2s infinite; }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(82,183,136,.7); }
-      70% { box-shadow: 0 0 0 12px rgba(82,183,136,0); }
-      100% { box-shadow: 0 0 0 0 rgba(82,183,136,0); }
-    }
-    .ia-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 14px;
-      margin-top: 16px;
-    }
-    .ia-stat-mini {
-      background: rgba(255,255,255,.15);
-      padding: 14px;
-      border-radius: 12px;
-      backdrop-filter: blur(4px);
-    }
-    .ia-stat-mini .num { font-size: 1.6rem; font-weight: 800; font-family: 'Sora', sans-serif; }
-    .ia-stat-mini .lbl { font-size: .82rem; opacity: .85; }
-    .conversation-item {
-      padding: 14px;
-      border-bottom: 1px solid var(--gray-100);
-      display: flex;
-      gap: 12px;
-    }
-    .conversation-item:last-child { border-bottom: 0; }
-    .conv-avatar {
-      width: 38px; height: 38px;
-      border-radius: 50%;
-      background: var(--green-100);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      font-size: 18px;
-    }
-    .conv-content { flex: 1; min-width: 0; }
-    .conv-content .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .conv-content strong { font-size: .92rem; color: var(--green-700); }
-    .conv-content .time { font-size: .78rem; color: var(--gray-600); }
-    .conv-msg { font-size: .88rem; color: var(--gray-800); margin-bottom: 4px; }
-    .conv-reply { font-size: .85rem; color: var(--gray-600); padding-left: 12px; border-left: 3px solid var(--green-300); }
-    .pause-btn {
-      background: var(--warning); color: #fff; padding: 10px 18px;
-      border-radius: 10px; border: 0; cursor: pointer; font-weight: 600;
-    }
-    .pause-btn.active { background: var(--danger); }
-    .pause-btn:hover { opacity: .9; }
-    .channel-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
-    }
-    .channel-card {
-      background: var(--white);
-      border: 1px solid var(--gray-200);
-      border-radius: 12px;
-      padding: 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .channel-card .ico { font-size: 28px; }
-    .channel-card .info strong { display: block; font-size: .9rem; color: var(--green-700); }
-    .channel-card .info small { color: var(--gray-600); font-size: .78rem; }
-    .channel-card.on { border-color: var(--green-500); background: var(--green-100); }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<meta name="theme-color" content="#1b4332"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Agent IA — Wassou</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" type="image/png" href="icons/favicon-32.png"/>
+<link rel="stylesheet" href="css/app.css"/>
+<style>
+.chat-list{padding:14px;padding-bottom:200px}
+.bub{max-width:80%;padding:12px 14px;border-radius:18px;margin-bottom:10px;font-size:14.5px;line-height:1.45;word-wrap:break-word}
+.bub.user{background:var(--green-dark);color:#fff;margin-left:auto;border-bottom-right-radius:4px}
+.bub.bot{background:var(--surface);color:var(--text);border-bottom-left-radius:4px;box-shadow:var(--shadow-sm);border:1px solid var(--border-soft)}
+.chat-input-bar{position:fixed;bottom:calc(var(--nav-h) + var(--safe-bottom));left:0;right:0;background:var(--surface);border-top:1px solid var(--border-soft);padding:10px;display:flex;gap:8px;z-index:90}
+.chat-input-bar input{flex:1;padding:12px 14px;border:1px solid var(--border);border-radius:100px;font-size:14px}
+.chat-input-bar button{background:var(--green-dark);color:#fff;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.chat-input-bar button svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2}
+.suggest{display:flex;gap:8px;overflow-x:auto;padding:0 14px 10px;scrollbar-width:none}
+.suggest::-webkit-scrollbar{display:none}
+.suggest button{background:var(--green-soft);color:var(--green-text);padding:8px 14px;border-radius:100px;font-size:13px;font-weight:500;white-space:nowrap;flex-shrink:0;border:1px solid var(--green-soft)}
+</style>
 </head>
 <body>
-<div id="overlay"></div>
-<div class="app-shell">
+<div class="status-spacer"></div>
+<header class="app-header" id="header"></header>
 
-  <!-- ========== SIDEBAR ========== -->
-  <nav class="sidebar" id="sidebar"></nav>
-
-  <div class="main-content">
-    <header class="top-header">
-      <button class="burger-btn" id="burger">☰</button>
-      <div class="page-title">🤖 Agent IA</div>
-      <div class="header-actions">
-        <button id="pause-btn" class="pause-btn" onclick="togglePause()">⏸️ Pause</button>
-      </div>
-    </header>
-
-    <div class="page-body">
-
-      <!-- Statut global -->
-      <div class="ia-status-card">
-        <h2><span class="ia-pulse"></span> <span id="status-text">Agent actif et opérationnel</span></h2>
-        <p style="opacity:.9;margin-bottom:0">Votre assistant IA répond automatiquement aux clients par WhatsApp et email</p>
-        
-        <div class="ia-stats">
-          <div class="ia-stat-mini">
-            <div class="num" id="msg-today">0</div>
-            <div class="lbl">Messages traités aujourd'hui</div>
-          </div>
-          <div class="ia-stat-mini">
-            <div class="num" id="rdv-today">0</div>
-            <div class="lbl">RDV pris automatiquement</div>
-          </div>
-          <div class="ia-stat-mini">
-            <div class="num" id="urgences-today">0</div>
-            <div class="lbl">Urgences détectées</div>
-          </div>
-          <div class="ia-stat-mini">
-            <div class="num" id="response-time">~30s</div>
-            <div class="lbl">Temps de réponse moyen</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Canaux actifs -->
-      <div class="card">
-        <div class="card-header"><h3>📡 Canaux actifs</h3></div>
-        <div class="card-body">
-          <div class="channel-grid" id="channels-list"></div>
-        </div>
-      </div>
-
-      <!-- Conversations récentes -->
-      <div class="card mt-4">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
-          <h3>💬 Conversations récentes</h3>
-          <button class="btn btn-ghost btn-sm" onclick="refreshConversations()">🔄 Rafraîchir</button>
-        </div>
-        <div id="conversations-list">
-          <p class="empty-state" style="padding:40px 20px">
-            Aucune conversation pour le moment.<br>
-            <small style="color:var(--gray-600)">Les messages s'afficheront ici dès que des clients contacteront votre agent IA.</small>
-          </p>
-        </div>
-      </div>
-
-      <!-- Configuration prompt -->
-      <div class="card mt-4">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
-          <h3>⚙️ Personnaliser la voix de l'agent</h3>
-          <button class="btn btn-outline btn-sm" onclick="openPromptEditor()">Modifier</button>
-        </div>
-        <div class="card-body">
-          <p style="font-size:.88rem;color:var(--gray-600);margin-bottom:10px">
-            Le ton, les expressions et les règles que suit votre agent quand il répond aux clients.
-          </p>
-          <div style="background:var(--gray-100);padding:12px;border-radius:10px;font-size:.85rem;font-family:monospace;max-height:120px;overflow:auto;color:var(--gray-800)" id="prompt-preview">
-            Chargement...
-          </div>
-        </div>
-      </div>
-
-      <!-- Mots-clés urgence -->
-      <div class="card mt-4">
-        <div class="card-header"><h3>🚨 Mots-clés d'escalade urgence</h3></div>
-        <div class="card-body">
-          <p style="font-size:.88rem;color:var(--gray-600);margin-bottom:12px">
-            Quand un client utilise un de ces mots, vous êtes alerté immédiatement par SMS.
-          </p>
-          <div id="emergency-keywords" style="display:flex;flex-wrap:wrap;gap:8px"></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
+<div class="chat-list" id="chatList"></div>
+<div class="suggest" id="suggest">
+  <button data-q="Combien j'ai de clients ?">Combien de clients ?</button>
+  <button data-q="Quel est mon CA ?">Mon CA ?</button>
+  <button data-q="Interventions aujourd'hui">RDV aujourd'hui</button>
+  <button data-q="Agents disponibles">Agents dispo</button>
 </div>
 
-<!-- Modal éditeur prompt -->
-<div class="modal-overlay" id="promptModal">
-  <div class="modal" style="max-width:680px">
-    <div class="modal-header">
-      <span>🤖</span><h3>Personnaliser votre agent IA</h3>
-      <button class="modal-close" onclick="closePromptEditor()">×</button>
-    </div>
-    <div class="modal-body">
-      <label class="form-label">Comment votre agent doit parler aux clients</label>
-      <textarea id="prompt-edit" class="form-control" rows="14" style="font-family:monospace;font-size:.85rem"></textarea>
-      <p style="font-size:.78rem;color:var(--gray-600);margin-top:8px">
-        💡 Astuce : Soyez précis. Plus vous donnez de règles, mieux l'agent répond. Mentionnez votre style (formel/familier), vos services, vos horaires, et ce qu'il doit dire dans les cas spéciaux.
-      </p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closePromptEditor()">Annuler</button>
-      <button class="btn btn-primary" onclick="savePrompt()">💾 Sauvegarder</button>
-    </div>
-  </div>
+<div class="chat-input-bar">
+  <input id="inp" type="text" placeholder="Posez votre question…" autocomplete="off"/>
+  <button id="send" aria-label="Envoyer"></button>
 </div>
 
-<div id="confirmModal">
-  <div class="confirm-box">
-    <div class="confirm-icon">⚠️</div>
-    <div class="confirm-msg"></div>
-    <div class="confirm-actions">
-      <button class="btn btn-outline btn-cancel">Annuler</button>
-      <button class="btn btn-danger btn-confirm">Confirmer</button>
-    </div>
-  </div>
-</div>
-
-<script src="config.js"></script>
-<script src="js/auth.js"></script>
 <script src="js/data.js"></script>
-<script src="js/data-bridge.js"></script>
 <script src="js/app.js"></script>
-<script src="js/sidebar.js"></script>
-<script src="js/nexus-secret.js"></script>
+<script src="js/auth.js"></script>
 <script>
-const session = App.initAdminPage(['admin']);
+if (!App.init('dashboard','Agent IA', 'Assistant Wassou')) {} else {
 
-if (session) {
-  loadStats();
-  loadChannels();
-  loadConversations();
-  loadPromptPreview();
-  loadKeywords();
-  initPauseState();
-  setInterval(loadStats, 30000);    // Refresh stats toutes les 30s
+document.getElementById('send').innerHTML = App.icons.send;
+
+const chat = document.getElementById('chatList');
+function addBub(txt, who){
+  const b = document.createElement('div');
+  b.className = 'bub ' + who;
+  b.textContent = txt;
+  chat.appendChild(b);
+  window.scrollTo(0, document.body.scrollHeight);
 }
+addBub("Bonjour 🌿 ! Je suis votre assistant Wassou. Posez-moi des questions sur vos clients, RDV, CA ou agents.", 'bot');
 
-function loadStats() {
-  // Lire les conversations du jour depuis localStorage (rempli par Make webhook)
-  const today = new Date().toISOString().slice(0,10);
-  const log = JSON.parse(localStorage.getItem('wassou_ia_log_' + today) || '{"messages":0,"rdv":0,"urgences":0}');
-  document.getElementById('msg-today').textContent = log.messages;
-  document.getElementById('rdv-today').textContent = log.rdv;
-  document.getElementById('urgences-today').textContent = log.urgences;
-}
-
-function loadChannels() {
-  const c = CONFIG.ia_agent.canaux;
-  const list = document.getElementById('channels-list');
-  const channels = [
-    { key: 'whatsapp_business', label: 'WhatsApp Business', icon: '📱', config: c.whatsapp_business },
-    { key: 'email', label: 'Email', icon: '📧', config: c.email },
-    { key: 'formulaire_web', label: 'Formulaire site', icon: '🌐', config: c.formulaire_web },
-  ];
-  list.innerHTML = channels.map(ch => `
-    <div class="channel-card ${ch.config.active ? 'on' : ''}">
-      <div class="ico">${ch.icon}</div>
-      <div class="info">
-        <strong>${ch.label}</strong>
-        <small>${ch.config.active ? '✅ Actif' : '⚪ Inactif'}</small>
-      </div>
-    </div>
-  `).join('');
+function answer(q){
+  const s = DB.stats();
+  const ql = q.toLowerCase();
+  if (/client/.test(ql) && /combien|nombre/.test(ql)) return `Vous avez ${s.clients} clients enregistrés.`;
+  if (/agent/.test(ql) && /dispo/.test(ql)) return `${s.agentsDispo} agent(s) disponible(s) sur ${s.agents} au total.`;
+  if (/ca|chiffre|revenu/.test(ql)) return `Votre CA encaissé ce mois : ${Fmt.eur(s.caMonth)} · total : ${Fmt.eur(s.caTotal)}.`;
+  if (/aujourd|jour/.test(ql)) return `${s.interventionsToday} intervention(s) prévue(s) aujourd'hui.`;
+  if (/intervention/.test(ql)) return `${s.interventionsTotal} intervention(s) au total. ${s.interventionsNonAssignees} non assignée(s).`;
+  if (/sms/.test(ql)) return `${s.sms} SMS envoyé(s) au total.`;
+  if (/devis/.test(ql)) return `${s.devis} devis enregistré(s).`;
+  if (/bonjour|salut|hello/.test(ql)) return `Bonjour ! Comment puis-je vous aider aujourd'hui ?`;
+  return "Je peux vous renseigner sur : clients, agents, interventions, CA, SMS, devis. Reformulez votre question 🙂";
 }
 
-function loadConversations() {
-  // Charge depuis localStorage (rempli par webhook Make ou polling Sheet)
-  const conv = JSON.parse(localStorage.getItem('wassou_ia_conversations') || '[]');
-  const list = document.getElementById('conversations-list');
-  if (!conv.length) return;
-
-  list.innerHTML = conv.slice(0, 10).map(c => `
-    <div class="conversation-item">
-      <div class="conv-avatar">${c.canal === 'whatsapp' ? '📱' : c.canal === 'email' ? '📧' : '🌐'}</div>
-      <div class="conv-content">
-        <div class="head">
-          <strong>${c.client_nom || c.client_id || 'Client'}</strong>
-          <span class="time">${App.timeAgo(c.date)}</span>
-        </div>
-        <div class="conv-msg">💬 "${(c.message || '').slice(0, 120)}${(c.message || '').length > 120 ? '…' : ''}"</div>
-        <div class="conv-reply">🤖 ${(c.reponse || '').slice(0, 140)}${(c.reponse || '').length > 140 ? '…' : ''}</div>
-        ${c.rdv_pris ? '<span class="badge badge-success" style="margin-top:6px">✅ RDV pris</span>' : ''}
-        ${c.urgence ? '<span class="badge badge-danger" style="margin-top:6px">🚨 Urgence</span>' : ''}
-      </div>
-    </div>
-  `).join('');
+function send(q){
+  q = (q||document.getElementById('inp').value).trim();
+  if (!q) return;
+  addBub(q, 'user');
+  document.getElementById('inp').value = '';
+  setTimeout(() => addBub(answer(q), 'bot'), 400);
 }
-
-function refreshConversations() {
-  App.toast('Actualisation...', 'info');
-  loadConversations();
-  loadStats();
-}
-
-function loadPromptPreview() {
-  const prompt = CONFIG.ia_agent.prompt_systeme || '';
-  document.getElementById('prompt-preview').textContent = prompt.slice(0, 400) + (prompt.length > 400 ? '...' : '');
-}
-
-function loadKeywords() {
-  const kw = CONFIG.ia_agent.escalade?.mots_cles_urgence || [];
-  document.getElementById('emergency-keywords').innerHTML = kw.map(k =>
-    `<span class="badge badge-danger" style="padding:6px 12px;font-size:.85rem">🚨 ${k}</span>`
-  ).join('');
-}
-
-// === MODAL PROMPT ===
-function openPromptEditor() {
-  document.getElementById('prompt-edit').value = CONFIG.ia_agent.prompt_systeme || '';
-  document.getElementById('promptModal').classList.add('open');
-}
-function closePromptEditor() {
-  document.getElementById('promptModal').classList.remove('open');
-}
-function savePrompt() {
-  const newPrompt = document.getElementById('prompt-edit').value.trim();
-  if (!newPrompt) { App.toast('Le prompt ne peut pas être vide', 'error'); return; }
-  
-  // Sauvegarde dans config_override (lu au prochain reload)
-  const override = JSON.parse(localStorage.getItem('wassou_config_override') || '{}');
-  if (!override.ia_agent) override.ia_agent = {};
-  override.ia_agent.prompt_systeme = newPrompt;
-  localStorage.setItem('wassou_config_override', JSON.stringify(override));
-  
-  App.toast('Voix de l\'agent mise à jour ✅');
-  loadPromptPreview();
-  closePromptEditor();
-}
-
-// === PAUSE ===
-function initPauseState() {
-  const paused = localStorage.getItem('wassou_ia_paused') === '1';
-  updatePauseUI(paused);
-}
-function togglePause() {
-  const paused = localStorage.getItem('wassou_ia_paused') === '1';
-  if (paused) {
-    localStorage.removeItem('wassou_ia_paused');
-    updatePauseUI(false);
-    App.toast('Agent IA réactivé ✅');
-  } else {
-    App.confirm('Mettre l\'agent IA en pause ? Vous devrez répondre manuellement aux clients pendant ce temps.', () => {
-      localStorage.setItem('wassou_ia_paused', '1');
-      updatePauseUI(true);
-      App.toast('Agent IA en pause ⏸️');
-    });
-  }
-}
-function updatePauseUI(paused) {
-  const btn = document.getElementById('pause-btn');
-  const status = document.getElementById('status-text');
-  if (paused) {
-    btn.textContent = '▶️ Réactiver';
-    btn.classList.add('active');
-    status.textContent = 'Agent en pause — réponses manuelles requises';
-    document.querySelector('.ia-pulse').style.background = '#f39c12';
-  } else {
-    btn.textContent = '⏸️ Pause';
-    btn.classList.remove('active');
-    status.textContent = 'Agent actif et opérationnel';
-    document.querySelector('.ia-pulse').style.background = '#52b788';
-  }
+document.getElementById('send').addEventListener('click', () => send());
+document.getElementById('inp').addEventListener('keydown', e => { if (e.key==='Enter') send(); });
+document.querySelectorAll('#suggest button').forEach(b => b.addEventListener('click', ()=>send(b.dataset.q)));
 }
 </script>
-<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(e=>console.error(e))}</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof Sidebar !== 'undefined') Sidebar.inject('agent-ia');
-});
-</script>
-
 </body>
 </html>

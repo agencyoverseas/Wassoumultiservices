@@ -3,393 +3,92 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
-<title>Paramètres — Wassou</title>
 <meta name="theme-color" content="#1b4332"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Paramètres — Wassou</title>
 <link rel="manifest" href="manifest.json"/>
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<link rel="apple-touch-icon" href="icons/icon-192.png"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="css/style.css"/>
-<style>
-  .accordion-item { background: #fff; border: 1px solid var(--line); border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
-  .accordion-head {
-    padding: 16px 20px; cursor: pointer;
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    transition: background .15s; font-family: var(--font-titre); font-weight: 700; color: var(--g);
-  }
-  .accordion-head:hover { background: var(--pale); }
-  .accordion-head .ic { font-size: 1.3rem; }
-  .accordion-head .chev { transition: transform .2s; opacity: .6; }
-  .accordion-item.open .chev { transform: rotate(180deg); }
-  .accordion-body { padding: 0 20px 20px; display: none; border-top: 1px solid var(--line); padding-top: 18px; }
-  .accordion-item.open .accordion-body { display: block; }
-  .color-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-  .color-row input[type=color] { width: 50px; height: 36px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; padding: 2px; }
-  .color-row label { flex: 1; font-size: .9rem; }
-  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); }
-  .toggle-row:last-child { border: none; }
-  .switch { position: relative; width: 50px; height: 26px; }
-  .switch input { opacity: 0; width: 0; height: 0; }
-  .switch span {
-    position: absolute; cursor: pointer; inset: 0;
-    background: #ccc; border-radius: 26px; transition: .3s;
-  }
-  .switch span::before {
-    content: ""; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px;
-    background: #fff; border-radius: 50%; transition: .3s;
-  }
-  .switch input:checked + span { background: var(--g); }
-  .switch input:checked + span::before { transform: translateX(24px); }
-  .service-row {
-    background: var(--pale); border-radius: 12px; padding: 12px;
-    display: grid; grid-template-columns: 60px 1fr 100px 60px; gap: 10px; align-items: center;
-    margin-bottom: 8px;
-  }
-  .service-row input { padding: 8px; border: 1px solid var(--line); border-radius: 8px; font-size: .9rem; background: #fff; }
-  .save-bar {
-    position: sticky; bottom: 0; background: #fff;
-    border-top: 1px solid var(--line); padding: 14px 0;
-    display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;
-  }
-</style>
+<link rel="icon" type="image/png" href="icons/favicon-32.png"/>
+<link rel="stylesheet" href="css/app.css"/>
 </head>
 <body>
-<div id="overlay"></div>
-<div class="app-shell">
-  <nav class="sidebar" id="sidebar"></nav>
-  <div class="main-content">
-    <header class="top-header">
-      <button class="burger-btn" id="burger">☰</button>
-      <div class="page-title">⚙️ Paramètres</div>
-      <div class="header-actions">
-        <button class="btn btn-ghost btn-sm" onclick="resetOverride()">↺ Réinitialiser</button>
-      </div>
-    </header>
-    <div class="page-body">
+<div class="status-spacer"></div>
+<header class="app-header" id="header"></header>
 
-      <!-- ====== ENTREPRISE ====== -->
-      <div class="accordion-item open">
-        <div class="accordion-head" onclick="this.parentElement.classList.toggle('open')">
-          <span><span class="ic">🏢</span> Entreprise</span>
-          <span class="chev">▾</span>
-        </div>
-        <div class="accordion-body">
-          <div class="f-row">
-            <div class="fg"><label>Nom *</label><input id="b-nom" data-path="business.nom"/></div>
-            <div class="fg"><label>Slogan</label><input id="b-slogan" data-path="business.slogan"/></div>
-          </div>
-          <div class="fg"><label>Description</label><textarea id="b-desc" rows="2" data-path="business.description"></textarea></div>
-          <div class="f-row">
-            <div class="fg"><label>Téléphone affiché</label><input id="b-tel" data-path="business.telephone"/></div>
-            <div class="fg"><label>Téléphone international</label><input id="b-telc" data-path="business.telephone_clean" placeholder="+590..."/></div>
-          </div>
-          <div class="f-row">
-            <div class="fg"><label>Email</label><input id="b-email" data-path="business.email"/></div>
-            <div class="fg"><label>Zone d'intervention</label><input id="b-zone" data-path="business.zone"/></div>
-          </div>
-          <div class="f-row">
-            <div class="fg"><label>SIRET</label><input id="b-siret" data-path="business.siret"/></div>
-            <div class="fg"><label>Horaires</label><input id="b-horaires" data-path="business.horaires"/></div>
-          </div>
-          <div class="fg"><label>Adresse</label><input id="b-adr" data-path="business.adresse"/></div>
-        </div>
-      </div>
+<main class="page fade-in" id="main"></main>
 
-      <!-- ====== BRANDING ====== -->
-      <div class="accordion-item">
-        <div class="accordion-head" onclick="this.parentElement.classList.toggle('open')">
-          <span><span class="ic">🎨</span> Branding (couleurs)</span>
-          <span class="chev">▾</span>
-        </div>
-        <div class="accordion-body">
-          <div class="color-row"><input type="color" id="c-primary" data-path="branding.couleurs.primary"/><label>Couleur principale (vert)</label></div>
-          <div class="color-row"><input type="color" id="c-gold" data-path="branding.couleurs.gold"/><label>Couleur accent (or)</label></div>
-          <p style="font-size:.85rem;color:var(--text-soft);margin-top:10px">💡 Les changements seront appliqués au prochain rechargement.</p>
-        </div>
-      </div>
-
-      <!-- ====== LIENS / SOCIAL ====== -->
-      <div class="accordion-item">
-        <div class="accordion-head" onclick="this.parentElement.classList.toggle('open')">
-          <span><span class="ic">🔗</span> Réseaux sociaux & liens</span>
-          <span class="chev">▾</span>
-        </div>
-        <div class="accordion-body">
-          <div class="fg"><label>Facebook</label><input id="l-fb" data-path="liens.facebook" placeholder="https://facebook.com/..."/></div>
-          <div class="fg"><label>Instagram</label><input id="l-ig" data-path="liens.instagram"/></div>
-          <div class="fg"><label>TikTok</label><input id="l-tt" data-path="liens.tiktok"/></div>
-          <div class="fg"><label>YouTube</label><input id="l-yt" data-path="liens.youtube"/></div>
-          <div class="fg"><label>LinkedIn</label><input id="l-li" data-path="liens.linkedin"/></div>
-          <div class="fg"><label>Google Maps</label><input id="l-gm" data-path="liens.google_maps"/></div>
-          <div class="fg"><label>Google Avis</label><input id="l-gr" data-path="liens.google_reviews"/></div>
-          <div class="fg"><label>WhatsApp</label><input id="l-wa" data-path="liens.whatsapp"/></div>
-        </div>
-      </div>
-
-      <!-- ====== PWA ====== -->
-      <div class="accordion-item">
-        <div class="accordion-head" onclick="this.parentElement.classList.toggle('open')">
-          <span><span class="ic">📲</span> Popup PWA</span>
-          <span class="chev">▾</span>
-        </div>
-        <div class="accordion-body">
-          <div class="toggle-row">
-            <div><strong>Popup d'installation</strong><div style="font-size:.85rem;color:var(--text-soft)">Affiche la popup d'installation aux visiteurs</div></div>
-            <label class="switch"><input type="checkbox" id="p-active" data-path="pwa.popup_active"/><span></span></label>
-          </div>
-          <div class="f-row mt-4">
-            <div class="fg"><label>Délai avant popup (ms)</label><input type="number" id="p-delay" data-path="pwa.delai_avant_popup_ms"/></div>
-            <div class="fg"><label>Cooldown si refus (jours)</label><input type="number" id="p-cool" data-path="pwa.refus_cooldown_jours"/></div>
-          </div>
-          <div class="fg"><label>Titre</label><input id="p-titre" data-path="pwa.titre"/></div>
-          <div class="fg"><label>Sous-titre</label><input id="p-sub" data-path="pwa.sous_titre"/></div>
-        </div>
-      </div>
-
-      <!-- ====== PAIEMENT ====== -->
-      <div class="accordion-item">
-        <div class="accordion-head" onclick="this.parentElement.classList.toggle('open')">
-          <span><span class="ic">💳</span> Paiement</span>
-          <span class="chev">▾</span>
-        </div>
-        <div class="accordion-body">
-          <div class="f-row">
-            <div class="fg"><label>Acompte minimum (%)</label><input type="number" id="pa-acompte" data-path="paiement.acompte_min_pct"/></div>
-            <div class="fg"><label>Taux TVA (%)</label><input type="number" step="0.1" id="pa-tva" data-path="paiement.tva_taux"/></div>
-          </div>
-
-          <h4 style="margin:16px 0 8px;color:var(--g)">Méthodes actives</h4>
-          <div class="toggle-row">
-            <div><strong>💳 Stripe (CB)</strong></div>
-            <label class="switch"><input type="checkbox" id="m-stripe" data-path="paiement.methodes.stripe.active"/><span></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><strong>🏦 Virement</strong></div>
-            <label class="switch"><input type="checkbox" id="m-vir" data-path="paiement.methodes.virement.active"/><span></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><strong>💵 Espèces</strong></div>
-            <label class="switch"><input type="checkbox" id="m-esp" data-path="paiement.methodes.especes.active"/><span></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><strong>🅿️ PayPal</strong></div>
-            <label class="switch"><input type="checkbox" id="m-pp" data-path="paiement.methodes.paypal.active"/><span></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><strong>🟣 Alma (3x/4x)</strong></div>
-            <label class="switch"><input type="checkbox" id="m-alma" data-path="paiement.methodes.alma.active"/><span></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><strong>🌸 Klarna</strong></div>
-            <label class="switch"><input type="checkbox" id="m-klr" data-path="paiement.methodes.klarna.active"/><span></span></label>
-          </div>
-          <div class="toggle-row">
-            <div><strong>✏️ Chèque</strong></div>
-            <label class="switch"><input type="checkbox" id="m-chq" data-path="paiement.methodes.cheque.active"/><span></span></label>
-          </div>
-
-          <h4 style="margin:18px 0 8px;color:var(--g)">Stripe</h4>
-          <div class="fg"><label>Clé publique Stripe</label><input id="s-pk" data-path="paiement.methodes.stripe.public_key" placeholder="pk_live_... ou pk_test_..."/></div>
-          <div class="fg"><label>Lien de paiement Stripe</label><input id="s-link" data-path="paiement.methodes.stripe.lien_paiement_template" placeholder="https://buy.stripe.com/..."/></div>
-
-          <h4 style="margin:18px 0 8px;color:var(--g)">Virement bancaire</h4>
-          <div class="fg"><label>Titulaire</label><input id="v-tit" data-path="paiement.methodes.virement.titulaire"/></div>
-          <div class="fg"><label>IBAN</label><input id="v-iban" data-path="paiement.methodes.virement.iban"/></div>
-          <div class="f-row">
-            <div class="fg"><label>BIC</label><input id="v-bic" data-path="paiement.methodes.virement.bic"/></div>
-            <div class="fg"><label>Banque</label><input id="v-banq" data-path="paiement.methodes.virement.banque"/></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ====== SERVICES ====== -->
-      <div class="accordion-item">
-        <div class="accordion-head" onclick="this.parentElement.classList.toggle('open')">
-          <span><span class="ic">🛠️</span> Services proposés</span>
-          <span class="chev">▾</span>
-        </div>
-        <div class="accordion-body">
-          <div id="services-list"></div>
-          <button class="btn btn-ghost btn-sm mt-4" onclick="addService()">+ Ajouter un service</button>
-        </div>
-      </div>
-
-      <!-- ====== AGENT IA ====== -->
-      <div class="accordion-item">
-        <div class="accordion-head" onclick="this.parentElement.classList.toggle('open')">
-          <span><span class="ic">🤖</span> Agent IA (prise de RDV automatique)</span>
-          <span class="chev">▾</span>
-        </div>
-        <div class="accordion-body">
-          <div class="toggle-row">
-            <div><strong>Activer l'agent IA</strong><div style="font-size:.85rem;color:var(--text-soft)">Réservé aux utilisateurs avancés</div></div>
-            <label class="switch"><input type="checkbox" id="ia-active" data-path="ia_agent.active"/><span></span></label>
-          </div>
-          <div class="fg mt-4"><label>Modèle</label>
-            <select id="ia-model" data-path="ia_agent.model">
-              <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
-              <option value="claude-opus-4-7">Claude Opus 4.7</option>
-              <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
-            </select>
-          </div>
-          <div class="fg"><label>Clé API Anthropic</label><input id="ia-key" type="password" data-path="ia_agent.api_key" placeholder="sk-ant-..."/></div>
-          <div class="fg"><label>Webhook Make.com</label><input id="ia-make" data-path="ia_agent.integrations.make_webhook"/></div>
-          <p style="font-size:.85rem;color:var(--text-soft);margin-top:10px">⚠️ La logique IA n'est pas encore branchée — cette section prépare la configuration.</p>
-        </div>
-      </div>
-
-      <!-- BARRE DE SAUVEGARDE -->
-      <div class="save-bar">
-        <button class="btn btn-ghost" onclick="location.reload()">Annuler</button>
-        <button class="btn btn-primary" onclick="saveAll()">💾 Enregistrer les modifications</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="config.js"></script>
-<script src="js/auth.js"></script>
 <script src="js/data.js"></script>
-<script src="js/data-bridge.js"></script>
 <script src="js/app.js"></script>
-<script src="js/nexus-secret.js"></script>
-<script src="js/sidebar.js"></script>
+<script src="js/auth.js"></script>
 <script>
-const session = App.initAdminPage(['admin']);
-const PRE = (window.CONFIG?.avance?.storage_prefix || 'wassou_');
-const OVERRIDE_KEY = PRE + 'config_override';
+if (!App.init('dashboard','Paramètres', 'Configuration')) {} else {
+  const session = Auth.getSession();
+  const settings = DB.settings.get();
 
-if (session) {
-  document.addEventListener('DOMContentLoaded', () => {
-    Sidebar.inject('parametres');
-    loadOverride();
-    fillForm();
-    renderServices();
-  });
-}
-
-function loadOverride() {
-  try {
-    const o = JSON.parse(localStorage.getItem(OVERRIDE_KEY) || 'null');
-    if (o) deepMerge(CONFIG, o);
-  } catch (e) { console.warn('Override invalide', e); }
-}
-
-function deepMerge(target, source) {
-  for (const k of Object.keys(source)) {
-    if (source[k] && typeof source[k] === 'object' && !Array.isArray(source[k])) {
-      if (!target[k]) target[k] = {};
-      deepMerge(target[k], source[k]);
-    } else {
-      target[k] = source[k];
-    }
-  }
-}
-
-function getByPath(obj, path) {
-  return path.split('.').reduce((o, k) => o?.[k], obj);
-}
-function setByPath(obj, path, value) {
-  const keys = path.split('.');
-  const last = keys.pop();
-  const target = keys.reduce((o, k) => { if (!o[k]) o[k] = {}; return o[k]; }, obj);
-  target[last] = value;
-}
-
-function fillForm() {
-  document.querySelectorAll('[data-path]').forEach(el => {
-    const path = el.dataset.path;
-    const val = getByPath(CONFIG, path);
-    if (val == null) return;
-    if (el.type === 'checkbox') el.checked = !!val;
-    else el.value = val;
-  });
-}
-
-function renderServices() {
-  const list = document.getElementById('services-list');
-  list.innerHTML = (CONFIG.services || []).map((s, i) => `
-    <div class="service-row" data-i="${i}">
-      <input value="${s.icone || '🛠️'}" maxlength="3" placeholder="🛠️" data-field="icone"/>
-      <input value="${s.nom || ''}" placeholder="Nom du service" data-field="nom"/>
-      <input type="number" value="${s.prix_base || 0}" placeholder="0" data-field="prix_base"/>
-      <button class="action-btn danger" onclick="rmService(${i})">🗑️</button>
+  document.getElementById('main').innerHTML = `
+    <div class="card">
+      <div class="card-head"><div class="card-title">Compte</div></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:38px">${session.avatar||'👤'}</div>
+        <div>
+          <div style="font-weight:600">${session.nom}</div>
+          <div style="font-size:13px;color:var(--text-soft)">${session.role==='admin'?'Administrateur':'Agent terrain'}</div>
+        </div>
+      </div>
     </div>
-  `).join('');
-}
 
-function addService() {
-  if (!CONFIG.services) CONFIG.services = [];
-  CONFIG.services.push({
-    id: 'svc-' + Date.now().toString(36),
-    nom: 'Nouveau service',
-    icone: '🛠️',
-    prix_base: 0,
-    unite: 'intervention',
-    duree_min: 60,
-    description: '',
-    inclus: [],
-    featured: false,
+    <div class="card">
+      <div class="card-head"><div class="card-title">Entreprise</div></div>
+      <form id="biz">
+        <div class="form-group"><label>Nom</label><input class="form-control" name="nom" value="${settings.bizNom||'Wassou Multiservices'}"/></div>
+        <div class="form-group"><label>Téléphone</label><input class="form-control" name="tel" value="${settings.bizTel||'0690 67 30 85'}"/></div>
+        <div class="form-group"><label>Email</label><input class="form-control" name="email" value="${settings.bizEmail||'contact@wassou-services.fr'}"/></div>
+        <div class="form-group"><label>Zone</label><input class="form-control" name="zone" value="${settings.bizZone||'Martinique'}"/></div>
+        <button type="submit" class="btn btn-primary btn-block">Enregistrer</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Application</div></div>
+      <button class="btn btn-outline btn-block mb-12" id="reset">${App.icons.trash} Réinitialiser les données démo</button>
+      <button class="btn btn-outline btn-block" id="clearCache">🔄 Vider le cache</button>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">À propos</div></div>
+      <div style="font-size:13.5px;color:var(--text-soft);line-height:1.6">
+        <strong>Wassou Multiservices — Mobile PWA</strong><br>
+        Version 1.0 · Mode hors-ligne · LocalStorage<br>
+        Powered by NexusAI Agency
+      </div>
+    </div>
+
+    <button class="btn btn-danger btn-block mt-16" id="lo">${App.icons.logout} Déconnexion</button>
+  `;
+
+  document.getElementById('biz').addEventListener('submit', e => {
+    e.preventDefault();
+    const o = Object.fromEntries(new FormData(e.target));
+    DB.settings.set({bizNom:o.nom, bizTel:o.tel, bizEmail:o.email, bizZone:o.zone});
+    App.toast('Enregistré','success');
   });
-  renderServices();
-}
 
-function rmService(i) {
-  if (!confirm('Supprimer ce service ?')) return;
-  CONFIG.services.splice(i, 1);
-  renderServices();
-}
-
-function collectServices() {
-  document.querySelectorAll('#services-list .service-row').forEach((row, i) => {
-    const ic = row.querySelector('[data-field=icone]').value;
-    const nm = row.querySelector('[data-field=nom]').value;
-    const pr = parseFloat(row.querySelector('[data-field=prix_base]').value) || 0;
-    if (CONFIG.services[i]) {
-      CONFIG.services[i].icone = ic;
-      CONFIG.services[i].nom = nm;
-      CONFIG.services[i].prix_base = pr;
+  document.getElementById('reset').addEventListener('click', async () => {
+    if (await App.confirm('Réinitialiser toutes les données ? Cette action est irréversible.')){
+      Object.values(DB.KEYS).forEach(k => localStorage.removeItem(k));
+      App.toast('Données réinitialisées','success');
+      setTimeout(()=>location.reload(),700);
     }
   });
-}
 
-function saveAll() {
-  // Récupère toutes les valeurs
-  document.querySelectorAll('[data-path]').forEach(el => {
-    const path = el.dataset.path;
-    let val;
-    if (el.type === 'checkbox') val = el.checked;
-    else if (el.type === 'number') val = parseFloat(el.value) || 0;
-    else val = el.value;
-    setByPath(CONFIG, path, val);
+  document.getElementById('clearCache').addEventListener('click', async () => {
+    if ('caches' in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    App.toast('Cache vidé','success');
   });
-  collectServices();
 
-  // Construit l'override (snapshot complet)
-  const override = {
-    business: CONFIG.business,
-    branding: CONFIG.branding,
-    liens: CONFIG.liens,
-    pwa: CONFIG.pwa,
-    paiement: CONFIG.paiement,
-    services: CONFIG.services,
-    ia_agent: CONFIG.ia_agent,
-  };
-  localStorage.setItem(OVERRIDE_KEY, JSON.stringify(override));
-  App.toast('✅ Paramètres sauvegardés', 'success');
-  setTimeout(() => location.reload(), 800);
-}
-
-function resetOverride() {
-  if (!confirm('Supprimer toutes tes modifications locales et revenir à config.js ?')) return;
-  localStorage.removeItem(OVERRIDE_KEY);
-  App.toast('Paramètres réinitialisés', 'success');
-  setTimeout(() => location.reload(), 600);
+  document.getElementById('lo').addEventListener('click', () => Auth.logout());
 }
 </script>
 </body>

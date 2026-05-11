@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<meta name="theme-color" content="#0a1419"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Nexus AI — Maintenance</title>
+<link rel="icon" type="image/png" href="icons/favicon-32.png"/>
+<link rel="stylesheet" href="css/app.css"/>
+</head>
+<body class="nexus-body">
+<div class="status-spacer" style="background:#0a1419"></div>
+<header class="nexus-header">
+  <span style="font-size:20px">🔧</span>
+  <h1>Nexus AI</h1>
+  <span class="nexus-badge">MAINTENANCE</span>
+</header>
+
+<div class="nexus-banner">🔒 Cette page est invisible pour le client · Site supervisé : Wassou Multiservices</div>
+
+<div style="display:flex;gap:10px;justify-content:flex-end;padding:10px 14px">
+  <a href="dashboard.html" class="nexus-btn alt">← Retour à Wassou</a>
+  <button class="nexus-btn danger" id="lo">⏻ Déconnexion</button>
+</div>
+
+<!-- Crédits Anthropic -->
+<div class="nexus-card">
+  <h3>💳 Crédits Anthropic</h3>
+  <div class="nexus-credit"><span id="credits">20.00</span> €</div>
+  <div class="nexus-bar"><div class="nexus-bar-fill" style="width:100%"></div></div>
+  <div style="text-align:center"><span class="nexus-pill">100% — Tout va bien</span></div>
+  <div class="nexus-grid-2 mt-12">
+    <div class="nexus-mini"><div class="nexus-mini-label">Dépensé aujourd'hui</div><div class="nexus-mini-value">0.00 €</div></div>
+    <div class="nexus-mini"><div class="nexus-mini-label">Dépensé ce mois</div><div class="nexus-mini-value">0.00 €</div></div>
+    <div class="nexus-mini"><div class="nexus-mini-label">Estimation restante</div><div class="nexus-mini-value">40 j</div></div>
+    <div class="nexus-mini"><div class="nexus-mini-label">Dernière maj</div><div class="nexus-mini-value" style="font-size:14px">Jamais</div></div>
+  </div>
+  <div class="mt-12">
+    <button class="nexus-btn" id="recharge">💎 Recharger crédits</button>
+    <button class="nexus-btn alt">📊</button>
+  </div>
+</div>
+
+<!-- Contrat -->
+<div class="nexus-card">
+  <h3>📋 Contrat maintenance</h3>
+  <div class="nexus-banner-purple">
+    <div style="font-size:13px;opacity:.9">Forfait mensuel Wassou</div>
+    <div class="price">49€<span style="font-size:14px;font-weight:400;opacity:.8"> / mois</span></div>
+  </div>
+  <div class="nexus-stat"><span>RDV inclus</span><span>200/mois</span></div>
+  <div class="nexus-stat"><span>RDV pris ce mois</span><span>0</span></div>
+  <div class="nexus-stat"><span>Marge ce mois</span><span style="color:#5fd1a8">+49.00€</span></div>
+  <div class="nexus-stat"><span>Statut paiement</span><span>✅ À jour</span></div>
+</div>
+
+<!-- Alertes -->
+<div class="nexus-card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <h3 style="margin:0">⚠️ Journal des alertes</h3>
+    <button class="nexus-btn alt" style="font-size:11px;padding:6px 10px">🗑️ Vider</button>
+  </div>
+  <div style="text-align:center;padding:14px;color:#7a96a8;font-size:13px" id="alerts">
+    Aucune alerte. Tout fonctionne normalement ✅
+  </div>
+</div>
+
+<!-- Canaux d'alerte -->
+<div class="nexus-card">
+  <h3>📡 Canaux d'alerte</h3>
+  <div class="nexus-stat"><span>📱 Push (PWA)</span><span style="color:#fbbf24">⚠️ Permission requise</span></div>
+  <div class="nexus-stat"><span>✈️ Telegram</span><span style="color:#7a96a8">Non configuré</span></div>
+  <div class="nexus-stat"><span>📧 Email</span><span style="color:#5fd1a8">client@wassou.com</span></div>
+  <div class="nexus-stat"><span>🔗 Webhook Make</span><span style="color:#7a96a8">Non configuré</span></div>
+  <div class="mt-12">
+    <button class="nexus-btn">🧪 Test alerte</button>
+    <button class="nexus-btn alt">🔔 Activer push</button>
+  </div>
+</div>
+
+<!-- Agent IA état -->
+<div class="nexus-card">
+  <h3>🤖 État Agent IA</h3>
+  <div class="nexus-stat"><span>Modèle</span><span>claude-sonnet</span></div>
+  <div class="nexus-stat"><span>Statut</span><span style="color:#5fd1a8">✅ Actif</span></div>
+  <div class="nexus-stat"><span>Cap quotidien</span><span>5 €/jour</span></div>
+  <div class="nexus-stat"><span>Mode dégradé</span><span style="color:#7a96a8">○ Inactif</span></div>
+  <div class="mt-12">
+    <button class="nexus-btn danger">⚠️ Forcer mode dégradé</button>
+  </div>
+</div>
+
+<!-- Actions -->
+<div class="nexus-card">
+  <h3>🔧 Actions de maintenance</h3>
+  <div class="nexus-grid-2">
+    <button class="nexus-btn alt">🔑 Gérer les clés API</button>
+    <button class="nexus-btn alt">📊 Console usage</button>
+    <button class="nexus-btn alt">🟣 Scénarios Make</button>
+    <button class="nexus-btn alt">🐙 Dépôt GitHub</button>
+    <button class="nexus-btn alt">📋 Exporter logs</button>
+    <button class="nexus-btn alt">♻️ Reset cooldowns</button>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+// On exige une session admin pour entrer dans Nexus
+const s = Auth.getSession();
+if (!s || s.role !== 'admin') {
+  location.replace('login.html');
+}
+document.getElementById('lo').addEventListener('click', () => Auth.logout());
+document.getElementById('recharge').addEventListener('click', () => {
+  const v = prompt('Nouveau solde de crédits (€) :', '20.00');
+  if (v !== null){ document.getElementById('credits').textContent = parseFloat(v).toFixed(2); }
+});
+</script>
+</body>
+</html>

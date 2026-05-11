@@ -1,237 +1,80 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
-  <meta name="theme-color" content="#1b4332"/>
-  <title>Rapports — Wassou Multiservices</title>
-  <link rel="stylesheet" href="css/style.css"/>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <style>
-    .chart-bar-h { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
-    .chart-bar-h .label { width:130px; font-size:.82rem; color:var(--gray-600); text-align:right; flex-shrink:0; }
-    .chart-bar-h .bar-wrap { flex:1; background:var(--gray-100); border-radius:999px; height:14px; overflow:hidden; }
-    .chart-bar-h .bar-fill { height:100%; border-radius:999px; transition:width .8s cubic-bezier(.4,0,.2,1); }
-    .chart-bar-h .val { font-size:.82rem; font-weight:700; color:var(--green-700); width:80px; }
-    .kpi-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px; }
-    .kpi-box { flex:1; min-width:130px; background:var(--white); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); text-align:center; border:1px solid var(--gray-200); }
-    .kpi-box .kpi-val { font-family:'Sora',sans-serif; font-size:1.9rem; font-weight:800; color:var(--green-700); }
-    .kpi-box .kpi-lbl { font-size:.75rem; color:var(--gray-400); margin-top:4px; }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<meta name="theme-color" content="#1b4332"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Rapports — Wassou</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" type="image/png" href="icons/favicon-32.png"/>
+<link rel="stylesheet" href="css/app.css"/>
 </head>
 <body>
-<div id="overlay"></div>
-<div class="app-shell">
-  <nav class="sidebar" id="sidebar"></nav>
+<div class="status-spacer"></div>
+<header class="app-header" id="header"></header>
 
-  <div class="main-content">
-    <header class="top-header">
-      <button class="burger-btn" id="burger">☰</button>
-      <div class="page-title">📈 Rapports & Statistiques</div>
-      <div class="header-actions">
-        <button class="btn btn-outline btn-sm" onclick="exportAll()">⬇ Export complet</button>
-      </div>
-    </header>
-
-    <div class="page-body">
-      <!-- KPIs -->
-      <div class="kpi-row stagger" id="kpi-row"></div>
-
-      <div class="grid-2 mb-6">
-
-        <!-- CA par service -->
-        <div class="card slide-up">
-          <div class="card-header"><h3>💶 CA par service</h3></div>
-          <div class="card-body" id="chart-service"></div>
-        </div>
-
-        <!-- Interventions par statut -->
-        <div class="card slide-up" style="animation-delay:.1s">
-          <div class="card-header"><h3>📅 Interventions par statut</h3></div>
-          <div class="card-body" id="chart-statut"></div>
-        </div>
-
-      </div>
-
-      <div class="grid-2 mb-6">
-
-        <!-- Top agents -->
-        <div class="card slide-up" style="animation-delay:.15s">
-          <div class="card-header"><h3>🧑‍🌾 Performance agents</h3></div>
-          <div class="card-body" id="chart-agents"></div>
-        </div>
-
-        <!-- Top clients -->
-        <div class="card slide-up" style="animation-delay:.2s">
-          <div class="card-header"><h3>👥 Top clients (CA)</h3></div>
-          <div class="card-body" id="chart-clients"></div>
-        </div>
-
-      </div>
-
-      <!-- Détail mensuel -->
-      <div class="card mb-6">
-        <div class="card-header"><h3>📆 Activité mensuelle</h3></div>
-        <div class="card-body">
-          <div id="monthly-chart" style="display:flex;align-items:flex-end;gap:8px;height:140px;padding-top:20px;"></div>
-          <div id="monthly-labels" style="display:flex;gap:8px;margin-top:8px;font-size:.72rem;color:var(--gray-400);text-align:center;"></div>
-        </div>
-      </div>
-
-      <!-- Tableau récapitulatif -->
-      <div class="card">
-        <div class="card-header"><h3>📋 Toutes les interventions terminées</h3></div>
-        <div class="table-wrapper">
-          <table>
-            <thead><tr><th>Date</th><th>Client</th><th>Service</th><th>Agent</th><th>Montant</th></tr></thead>
-            <tbody id="tbody-all"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+<main class="page fade-in" id="main"></main>
 
 <script src="js/data.js"></script>
-<script src="js/data-bridge.js"></script>
 <script src="js/app.js"></script>
-<script src="js/sidebar.js"></script>
-<script src="js/nexus-secret.js"></script>
+<script src="js/auth.js"></script>
 <script>
-function barChart(container, items, maxVal, color) {
-  container.innerHTML = '';
-  if (!items.length) { container.innerHTML = '<div class="empty-state" style="padding:20px 0"><p>Aucune donnée</p></div>'; return; }
-  items.forEach(item => {
-    const pct = maxVal ? Math.max(2, (item.val / maxVal) * 100) : 2;
-    container.innerHTML += `
-      <div class="chart-bar-h">
-        <span class="label">${item.label}</span>
-        <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${color || 'linear-gradient(90deg,var(--green-600),var(--green-400))'}"></div></div>
-        <span class="val">${item.display}</span>
-      </div>
-    `;
+if (!App.init('dashboard','Rapports', 'Statistiques globales')) {} else {
+  const s = DB.stats();
+  const ints = DB.interventions.all();
+  const byService = {};
+  ints.forEach(i => { byService[i.service||'Autre'] = (byService[i.service||'Autre']||0)+1; });
+  const byStatut = {};
+  ints.forEach(i => { byStatut[i.statut||'—'] = (byStatut[i.statut||'—']||0)+1; });
+
+  document.getElementById('main').innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-icon green">${App.icons.users}</div><div class="kpi-info"><div class="kpi-value">${s.clients}</div><div class="kpi-label">Clients</div></div></div>
+      <div class="kpi-card"><div class="kpi-icon blue">${App.icons.calendar}</div><div class="kpi-info"><div class="kpi-value">${s.interventionsTotal}</div><div class="kpi-label">Interventions</div></div></div>
+      <div class="kpi-card"><div class="kpi-icon purple">${App.icons.trending}</div><div class="kpi-info"><div class="kpi-value">${Fmt.eur(s.caTotal)}</div><div class="kpi-label">CA total</div></div></div>
+      <div class="kpi-card"><div class="kpi-icon orange">${App.icons.sms}</div><div class="kpi-info"><div class="kpi-value">${s.sms}</div><div class="kpi-label">SMS envoyés</div></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Interventions par service</div></div>
+      ${Object.keys(byService).length ? Object.entries(byService).map(([k,v]) => `
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft)">
+          <span style="font-size:14px">${k}</span><strong>${v}</strong>
+        </div>
+      `).join('') : '<p class="empty-state">Aucune donnée</p>'}
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Répartition par statut</div></div>
+      ${Object.keys(byStatut).length ? Object.entries(byStatut).map(([k,v]) => `
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft)">
+          <span class="li-status status-${k}">${k}</span><strong>${v}</strong>
+        </div>
+      `).join('') : '<p class="empty-state">Aucune donnée</p>'}
+    </div>
+
+    <button class="btn btn-outline btn-block mt-12" id="exportBtn">${App.icons.download} Exporter les données (JSON)</button>
+  `;
+
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const data = {
+      clients: DB.clients.all(),
+      agents: DB.agents.all(),
+      interventions: DB.interventions.all(),
+      devis: DB.devis.all(),
+      paiements: DB.paiements.all(),
+      sms: DB.sms.all(),
+      exported: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `wassou-export-${Date.now()}.json`;
+    a.click(); URL.revokeObjectURL(url);
+    App.toast('Export téléchargé','success');
   });
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  const s = WassouDB.stats();
-  const interventions = WassouDB.interventions.getAll();
-  const clients = WassouDB.clients.getAll();
-  const agents = WassouDB.agents.getAll();
-  const terminées = interventions.filter(i => i.statut === 'terminé');
-  const caTotal = terminées.reduce((s,i) => s+(i.montant||0), 0);
-  const txConversion = interventions.length ? Math.round((terminées.length/interventions.length)*100) : 0;
-
-  // KPIs
-  const kpiRow = document.getElementById('kpi-row');
-  [
-    { val: caTotal, display: App.formatMoney(caTotal), label: 'CA total' },
-    { val: s.totalClients, display: s.totalClients, label: 'Clients' },
-    { val: s.totalInterventions, display: s.totalInterventions, label: 'Interventions' },
-    { val: txConversion, display: txConversion+'%', label: 'Taux completion' },
-    { val: s.smsSent, display: s.smsSent, label: 'SMS envoyés' },
-    { val: s.devisTotal, display: s.devisTotal, label: 'Devis émis' },
-  ].forEach(k => {
-    kpiRow.innerHTML += `
-      <div class="kpi-box fade-in">
-        <div class="kpi-val">${k.display}</div>
-        <div class="kpi-lbl">${k.label}</div>
-      </div>
-    `;
-  });
-
-  // CA par service
-  const caService = {};
-  terminées.forEach(i => { caService[i.service] = (caService[i.service]||0) + (i.montant||0); });
-  const serviceItems = Object.entries(caService).map(([k,v]) => ({ label: WassouDB.serviceLabel(k), val: v, display: App.formatMoney(v) }));
-  const maxSvc = Math.max(...serviceItems.map(x=>x.val), 1);
-  barChart(document.getElementById('chart-service'), serviceItems, maxSvc);
-
-  // Statuts
-  const statutCounts = { en_attente: 0, confirmé: 0, terminé: 0, annulé: 0 };
-  interventions.forEach(i => { if (statutCounts[i.statut] !== undefined) statutCounts[i.statut]++; });
-  const statutItems = [
-    { label: '⏳ En attente', val: statutCounts.en_attente, display: statutCounts.en_attente },
-    { label: '📅 Confirmé', val: statutCounts.confirmé, display: statutCounts.confirmé },
-    { label: '✅ Terminé', val: statutCounts.terminé, display: statutCounts.terminé },
-    { label: '❌ Annulé', val: statutCounts.annulé, display: statutCounts.annulé },
-  ];
-  barChart(document.getElementById('chart-statut'), statutItems, Math.max(...statutItems.map(x=>x.val),1), 'linear-gradient(90deg,var(--info),#7ecbf0)');
-
-  // Agents perf
-  const agentItems = agents.map(a => {
-    const inter = terminées.filter(i => i.agentId === a.id);
-    const ca = inter.reduce((s,i)=>s+(i.montant||0),0);
-    return { label: a.prenom+' '+a.nom, val: ca, display: App.formatMoney(ca) };
-  }).sort((a,b)=>b.val-a.val);
-  barChart(document.getElementById('chart-agents'), agentItems, Math.max(...agentItems.map(x=>x.val),1), 'linear-gradient(90deg,var(--gold-dark),var(--gold-light))');
-
-  // Top clients
-  const clientCA = {};
-  terminées.forEach(i => { clientCA[i.clientId] = (clientCA[i.clientId]||0) + (i.montant||0); });
-  const clientItems = Object.entries(clientCA).map(([id,ca]) => {
-    const c = WassouDB.clients.getById(id);
-    return { label: c ? c.prenom+' '+c.nom : '—', val: ca, display: App.formatMoney(ca) };
-  }).sort((a,b)=>b.val-a.val).slice(0,5);
-  barChart(document.getElementById('chart-clients'), clientItems, Math.max(...clientItems.map(x=>x.val),1), 'linear-gradient(90deg,var(--green-700),var(--green-300))');
-
-  // Monthly chart
-  const months = {};
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(); d.setMonth(d.getMonth()-i);
-    months[d.toISOString().slice(0,7)] = 0;
-  }
-  terminées.forEach(i => { const m = (i.date||'').slice(0,7); if (months[m] !== undefined) months[m] += (i.montant||0); });
-  const monthVals = Object.values(months);
-  const maxM = Math.max(...monthVals, 1);
-  const monthChart = document.getElementById('monthly-chart');
-  const monthLabels = document.getElementById('monthly-labels');
-  Object.entries(months).forEach(([m, val]) => {
-    const h = Math.max(4, (val/maxM)*120);
-    monthChart.innerHTML += `
-      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">
-        <span style="font-size:.7rem;color:var(--gray-400);font-weight:600;">${App.formatMoney(val).replace('€','')}</span>
-        <div style="width:100%;background:linear-gradient(to top,var(--green-600),var(--green-400));border-radius:6px 6px 0 0;height:${h}px;transition:height .6s ease;"></div>
-      </div>
-    `;
-    const shortMonth = new Date(m+'-01').toLocaleDateString('fr-FR',{month:'short'});
-    monthLabels.innerHTML += `<span style="flex:1;text-align:center;">${shortMonth}</span>`;
-  });
-
-  // Table terminées
-  const tbody = document.getElementById('tbody-all');
-  terminées.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(i => {
-    const c = WassouDB.clients.getById(i.clientId);
-    const a = WassouDB.agents.getById(i.agentId);
-    tbody.innerHTML += `
-      <tr>
-        <td>${App.formatDate(i.date)}</td>
-        <td>${c ? c.prenom+' '+c.nom : '—'}</td>
-        <td>${WassouDB.serviceLabel(i.service)}</td>
-        <td>${a ? a.prenom+' '+a.nom : '—'}</td>
-        <td><strong>${App.formatMoney(i.montant)}</strong></td>
-      </tr>
-    `;
-  });
-  if (!terminées.length) tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state" style="padding:20px 0"><p>Aucune intervention terminée</p></div></td></tr>';
-});
-
-function exportAll() {
-  App.exportCSV(WassouDB.interventions.getAll(), 'wassou-rapport-complet.csv');
-  App.toast('Export en cours…');
-}
 </script>
-<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").then(()=>console.log("SW registered")).catch(e=>console.error(e))}</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof Sidebar !== 'undefined') Sidebar.inject('rapports');
-});
-</script>
-
 </body>
 </html>

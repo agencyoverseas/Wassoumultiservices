@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<meta name="theme-color" content="#1b4332"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Intervention — Wassou</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" type="image/png" href="icons/favicon-32.png"/>
+<link rel="stylesheet" href="css/app.css"/>
+</head>
+<body>
+<div class="status-spacer"></div>
+<div class="back-bar">
+  <a class="back-btn" href="interventions.html"></a>
+  <div class="back-title">Intervention</div>
+</div>
+
+<main class="page fade-in" id="main"></main>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+if (!Auth.guard()) {} else {
+PWAInstall.init();
+App.renderNav('interventions');
+document.querySelector('.back-btn').innerHTML = App.icons.back;
+
+const id = new URLSearchParams(location.search).get('id');
+const i = DB.interventions.get(id);
+if (!i){ document.getElementById('main').innerHTML = '<p class="empty-state">Intervention introuvable</p>'; }
+else render();
+
+function render(){
+  const c = DB.clients.get(i.clientId);
+  const a = DB.agents.get(i.agentId);
+  document.getElementById('main').innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div style="font-size:18px;font-weight:700">${i.service||'—'}</div>
+          <div style="font-size:14px;color:var(--text-soft);margin-top:4px">${Fmt.dateLong(i.date)} ${i.heure||''}</div>
+        </div>
+        <span class="li-status status-${i.statut}">${i.statut}</span>
+      </div>
+      <div style="font-size:24px;font-weight:700;color:var(--green-text);margin:10px 0">${Fmt.eur(i.montant)}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Client</div></div>
+      ${c ? `
+        <a href="client-detail.html?id=${c.id}" style="display:block">
+          <div style="font-weight:600">${c.prenom} ${c.nom}</div>
+          <div class="li-row">${App.icons.phone}<span>${c.tel||'—'}</span></div>
+          <div class="li-row">${App.icons.pin}<span>${i.adresse||c.adresse||'—'}</span></div>
+        </a>
+      ` : '<p class="empty-state">Client supprimé</p>'}
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Agent</div></div>
+      ${a ? `<div style="font-weight:600">${a.prenom} ${a.nom}</div><div class="li-row">${App.icons.phone}<span>${a.tel||'—'}</span></div>` : '<p class="empty-state">Non assigné</p>'}
+    </div>
+
+    ${i.notes ? `<div class="card"><div class="card-head"><div class="card-title">Notes</div></div><div style="font-size:14px;color:var(--text-soft);line-height:1.5">${i.notes}</div></div>` : ''}
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Changer le statut</div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${['planifié','confirmé','en_attente','terminé','annulé'].map(s => `
+          <button class="filter-chip ${i.statut===s?'active':''}" data-s="${s}">${s}</button>
+        `).join('')}
+      </div>
+    </div>
+
+    <button class="btn btn-danger btn-block mt-16" id="del">${App.icons.trash} Supprimer</button>
+  `;
+
+  document.querySelectorAll('[data-s]').forEach(b => b.addEventListener('click', () => {
+    DB.interventions.update(i.id, {statut: b.dataset.s});
+    i.statut = b.dataset.s;
+    App.toast('Statut mis à jour','success');
+    render();
+  }));
+
+  document.getElementById('del').addEventListener('click', async () => {
+    if (await App.confirm('Supprimer cette intervention ?')){
+      DB.interventions.remove(i.id);
+      App.toast('Supprimée','success');
+      setTimeout(()=>location.href='interventions.html',500);
+    }
+  });
+}
+}
+</script>
+</body>
+</html>

@@ -1,14 +1,14 @@
 {
-  "name": "Wassou Multiservices — Guadeloupe",
+  "name": "Wassou Multiservices",
   "short_name": "Wassou",
-  "description": "Gestion clients, interventions et devis — Wassou Multiservices Guadeloupe",
+  "description": "Gestion clients, agents, interventions — Wassou Multiservices",
   "start_url": "./index.html",
   "scope": "./",
-  "id": "wassou-multiservices",
+  "id": "wassou-mobile",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
-  "background_color": "#0f2d1c",
+  "background_color": "#1b4332",
   "theme_color": "#1b4332",
   "lang": "fr",
   "dir": "ltr",
@@ -21,7 +21,8 @@
     { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Nouvelle intervention", "url": "./interventions.html#add", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Clients", "url": "./clients.html", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Tableau de bord", "url": "./dashboard.html", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Clients", "url": "./clients.html", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Interventions", "url": "./interventions.html", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }

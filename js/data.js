@@ -1,110 +1,103 @@
 // ============================================================
-// WASSOU MULTISERVICES — DATA LAYER (localStorage)
+// WASSOU MOBILE — DATA LAYER (localStorage)
 // ============================================================
-
-const WassouDB = {
-
-  // ── Seed data ────────────────────────────────────────────
-  _seed() {
-    if (!localStorage.getItem('wassou_seeded')) {
-      this.clients.save([
-        { id: 'c1', nom: 'Jean', prenom: 'Dupont', tel: '0690123456', email: 'jean@email.com', adresse: '12 rue des Fleurs, Le Gosier', notes: 'Client fidèle depuis 2024', createdAt: '2024-03-15', tags: ['jardin','karcher'] },
-        { id: 'c2', nom: 'Claire', prenom: 'Martin', tel: '0690654321', email: 'claire@email.com', adresse: '5 Allée des Manguiers, Pointe-à-Pitre', notes: '', createdAt: '2024-05-20', tags: ['karcher'] },
-        { id: 'c3', nom: 'Thomas', prenom: 'Leblanc', tel: '0690987654', email: 'thomas@email.com', adresse: '88 Route de la Côte, Sainte-Anne', notes: 'Jardin grand + terrasse', createdAt: '2025-01-10', tags: ['jardin'] },
-        { id: 'c4', nom: 'Marie', prenom: 'Rosalie', tel: '0690111222', email: 'marie@email.com', adresse: '3 Impasse Beausoleil, Baie-Mahault', notes: '', createdAt: '2025-02-28', tags: ['karcher','autre'] },
-        { id: 'c5', nom: 'Paul', prenom: 'Victoire', tel: '0690333444', email: 'paul@email.com', adresse: '21 Rue des Cocotiers, Le Moule', notes: 'RDV le matin uniquement', createdAt: '2025-04-01', tags: ['jardin'] },
-      ]);
-      this.agents.save([
-        { id: 'a1', nom: 'Kevin', prenom: 'Rosine', tel: '0690000001', specialites: ['jardin','karcher'], statut: 'actif', avatar: '🧑‍🌾', note: 4.9, interventions: 48 },
-        { id: 'a2', nom: 'Sonia', prenom: 'Victoire', tel: '0690000002', specialites: ['karcher'], statut: 'actif', avatar: '👩‍🌾', note: 4.8, interventions: 31 },
-        { id: 'a3', nom: 'Marc', prenom: 'Balthazar', tel: '0690000003', specialites: ['jardin','autre'], statut: 'conge', avatar: '🌱', note: 4.7, interventions: 22 },
-      ]);
-      this.interventions.save([
-        { id: 'i1', clientId: 'c1', agentId: 'a1', service: 'jardin', date: '2025-05-10', heure: '08:00', adresse: '12 rue des Fleurs, Le Gosier', statut: 'terminé', montant: 120, notes: 'Tonte + taille haies', photos: [] },
-        { id: 'i2', clientId: 'c2', agentId: 'a2', service: 'karcher', date: '2025-05-12', heure: '09:00', adresse: '5 Allée des Manguiers, PAP', statut: 'confirmé', montant: 80, notes: 'Terrasse + façade', photos: [] },
-        { id: 'i3', clientId: 'c3', agentId: 'a1', service: 'jardin', date: '2025-05-15', heure: '07:30', adresse: '88 Route de la Côte, Sainte-Anne', statut: 'en_attente', montant: 150, notes: '', photos: [] },
-        { id: 'i4', clientId: 'c4', agentId: 'a2', service: 'karcher', date: '2025-05-08', heure: '10:00', adresse: '3 Impasse Beausoleil, Baie-Mahault', statut: 'terminé', montant: 90, notes: 'Cours + clôtures', photos: [] },
-        { id: 'i5', clientId: 'c5', agentId: 'a1', service: 'jardin', date: '2025-05-20', heure: '07:00', adresse: '21 Rue des Cocotiers, Le Moule', statut: 'confirmé', montant: 100, notes: '', photos: [] },
-        { id: 'i6', clientId: 'c1', agentId: 'a2', service: 'karcher', date: '2025-04-20', heure: '09:00', adresse: '12 rue des Fleurs, Le Gosier', statut: 'terminé', montant: 60, notes: '', photos: [] },
-      ]);
-      this.sms.save([
-        { id: 's1', clientId: 'c1', tel: '0690123456', message: 'Bonjour Jean, votre RDV Wassou est confirmé le 10/05 à 8h. À bientôt ! 🌿', date: '2025-05-08', statut: 'envoyé', type: 'confirmation' },
-        { id: 's2', clientId: 'c2', tel: '0690654321', message: 'Rappel Wassou : votre intervention Kärcher est demain 12/05 à 9h. Bonne journée !', date: '2025-05-11', statut: 'envoyé', type: 'rappel' },
-        { id: 's3', clientId: 'c3', tel: '0690987654', message: 'Bonjour Thomas, votre demande de RDV a bien été reçue. Confirmation sous 2h. 🌱', date: '2025-05-13', statut: 'envoyé', type: 'confirmation' },
-      ]);
-      this.devis.save([
-        { id: 'd1', clientId: 'c1', numero: 'DEV-2025-001', date: '2025-05-01', echeance: '2025-05-15', services: [{label:'Entretien jardin',qty:1,pu:80},{label:'Taille haies',qty:1,pu:40}], statut: 'accepté', notes: 'RDV confirmé le 10/05' },
-        { id: 'd2', clientId: 'c3', numero: 'DEV-2025-002', date: '2025-05-10', echeance: '2025-05-25', services: [{label:'Entretien jardin complet',qty:1,pu:150}], statut: 'envoyé', notes: '' },
-        { id: 'd3', clientId: 'c5', numero: 'DEV-2025-003', date: '2025-05-14', echeance: '2025-05-28', services: [{label:'Débroussaillage',qty:1,pu:60},{label:'Désherbage',qty:2,pu:20}], statut: 'brouillon', notes: '' },
-      ]);
-      localStorage.setItem('wassou_seeded', 'true');
-    }
+const DB = {
+  KEYS:{
+    clients:'wm_clients', agents:'wm_agents', interventions:'wm_interventions',
+    sms:'wm_sms', devis:'wm_devis', paiements:'wm_paiements',
+    rdvs:'wm_rdvs', photos:'wm_photos', notifs:'wm_notifs',
+    settings:'wm_settings', seeded:'wm_seeded_v1'
   },
+  _get(k){ try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return []} },
+  _set(k,v){ localStorage.setItem(k,JSON.stringify(v)) },
+  _uid(p='x'){ return p+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6) },
 
-  // ── Generic CRUD ─────────────────────────────────────────
-  _store(key) {
+  store(key){
+    const k = this.KEYS[key];
     return {
-      getAll: () => JSON.parse(localStorage.getItem(key) || '[]'),
-      save: (arr) => localStorage.setItem(key, JSON.stringify(arr)),
-      getById: (id) => JSON.parse(localStorage.getItem(key) || '[]').find(x => x.id === id),
-      add: (item) => {
-        const arr = JSON.parse(localStorage.getItem(key) || '[]');
-        item.id = item.id || key[0] + Date.now();
-        arr.push(item);
-        localStorage.setItem(key, JSON.stringify(arr));
-        return item;
-      },
-      update: (id, patch) => {
-        const arr = JSON.parse(localStorage.getItem(key) || '[]');
-        const idx = arr.findIndex(x => x.id === id);
-        if (idx !== -1) { arr[idx] = { ...arr[idx], ...patch }; localStorage.setItem(key, JSON.stringify(arr)); }
-        return arr[idx];
-      },
-      delete: (id) => {
-        const arr = JSON.parse(localStorage.getItem(key) || '[]').filter(x => x.id !== id);
-        localStorage.setItem(key, JSON.stringify(arr));
-      }
+      all: () => this._get(k),
+      get: (id) => this._get(k).find(x=>x.id===id),
+      add: (item) => { const arr=this._get(k); item.id=item.id||DB._uid(key[0]); item.createdAt=item.createdAt||new Date().toISOString(); arr.push(item); DB._set(k,arr); return item; },
+      update: (id,patch) => { const arr=this._get(k); const i=arr.findIndex(x=>x.id===id); if(i>-1){arr[i]={...arr[i],...patch};DB._set(k,arr);return arr[i]} },
+      remove: (id) => { DB._set(k, this._get(k).filter(x=>x.id!==id)) },
+      save: (arr) => DB._set(k,arr),
     };
   },
 
-  get clients()       { return this._store('wassou_clients'); },
-  get agents()        { return this._store('wassou_agents'); },
-  get interventions() { return this._store('wassou_interventions'); },
-  get sms()           { return this._store('wassou_sms'); },
-  get devis()         { return this._store('wassou_devis'); },
+  get clients(){return this.store('clients')},
+  get agents(){return this.store('agents')},
+  get interventions(){return this.store('interventions')},
+  get sms(){return this.store('sms')},
+  get devis(){return this.store('devis')},
+  get paiements(){return this.store('paiements')},
+  get rdvs(){return this.store('rdvs')},
+  get photos(){return this.store('photos')},
+  get notifs(){return this.store('notifs')},
 
-  // ── Stats ─────────────────────────────────────────────────
-  stats() {
-    const interventions = this.interventions.getAll();
-    const terminées = interventions.filter(i => i.statut === 'terminé');
-    const ca = terminées.reduce((s, i) => s + (i.montant || 0), 0);
-    const thisMonth = new Date().toISOString().slice(0, 7);
-    const caMonth = terminées.filter(i => i.date && i.date.startsWith(thisMonth)).reduce((s, i) => s + (i.montant || 0), 0);
+  settings: {
+    get(){ try{return JSON.parse(localStorage.getItem(DB.KEYS.settings))||{}}catch(e){return {}} },
+    set(o){ localStorage.setItem(DB.KEYS.settings, JSON.stringify({...DB.settings.get(),...o})) },
+  },
+
+  seed(){
+    if(localStorage.getItem(this.KEYS.seeded)) return;
+    // CLIENTS (noms des captures)
+    this.clients.save([
+      {id:'c1', nom:'Dupont', prenom:'Jean', tel:'0696111111', email:'jean.dupont@email.com', adresse:'12 Rue des Fleurs, Le Lamentin', statut:'actif', notes:'Client fidèle', createdAt:'2024-03-15', tags:['jardin']},
+      {id:'c2', nom:'Lebrun', prenom:'Thomas', tel:'0696333333', email:'thomas@email.com', adresse:'3 Résidence Bois Rouge, Schoelcher', statut:'prospect', notes:'Devis envoyé', createdAt:'2025-04-08', tags:['jardin','karcher']},
+      {id:'c3', nom:'Martin', prenom:'Claire', tel:'0696222222', email:'claire.m@email.com', adresse:'8 Allée des Manguiers, Fort-de-France', statut:'actif', notes:'', createdAt:'2024-09-12', tags:['karcher']},
+      {id:'c4', nom:'Martin', prenom:'Sophie', tel:'0696111222', email:'sophie@email.com', adresse:'Schoelcher', statut:'actif', notes:'RDV récurrent', createdAt:'2025-02-01', tags:['jardin']},
+      {id:'c5', nom:'Rosalie', prenom:'Marie', tel:'0696444555', email:'marie.r@email.com', adresse:'Sainte-Marie', statut:'actif', notes:'', createdAt:'2025-03-22', tags:['karcher']},
+    ]);
+    // AGENTS (noms des captures)
+    this.agents.save([
+      {id:'a1', nom:'Démo', prenom:'Agent', tel:'0696000001', adresse:'Fort-de-France', statut:'disponible', avatar:'🧑‍🌾', specialites:['Entretien jardin','Nettoyage Kärcher'], note:4.9, interventions:48, actif:true},
+      {id:'a2', nom:'Rosine', prenom:'Kevin', tel:'0696444444', adresse:'Centre Martinique', statut:'disponible', avatar:'🧑‍🌾', specialites:['Entretien jardin','Nettoyage Kärcher'], note:4.8, interventions:31, actif:true},
+      {id:'a3', nom:'Victoire', prenom:'Sonia', tel:'0696555555', adresse:'Nord Martinique', statut:'disponible', avatar:'🧑‍🌾', specialites:['Nettoyage Kärcher'], note:4.7, interventions:22, actif:true},
+    ]);
+    // INTERVENTIONS
+    this.interventions.save([
+      {id:'i1', clientId:'c4', agentId:'a1', service:'Entretien jardin', date:'2026-05-10', heure:'03:50', adresse:'Schoelcher', statut:'planifié', montant:80, notes:'', photos:[]},
+    ]);
+    // SMS / Devis / Paiements vides au début
+    this.sms.save([]);
+    this.devis.save([]);
+    this.paiements.save([]);
+    this.rdvs.save([]);
+    this.photos.save([]);
+    this.notifs.save([]);
+    localStorage.setItem(this.KEYS.seeded,'1');
+  },
+
+  stats(){
+    const today = new Date().toISOString().slice(0,10);
+    const month = today.slice(0,7);
+    const ints = this.interventions.all();
+    const pays = this.paiements.all();
     return {
-      totalClients: this.clients.getAll().length,
-      totalAgents: this.agents.getAll().filter(a => a.statut === 'actif').length,
-      totalInterventions: interventions.length,
-      interventionsTerminees: terminées.length,
-      interventionsConfirmees: interventions.filter(i => i.statut === 'confirmé').length,
-      interventionsAttente: interventions.filter(i => i.statut === 'en_attente').length,
-      caTotal: ca,
-      caMonth,
-      smsSent: this.sms.getAll().length,
-      devisTotal: this.devis.getAll().length,
+      clients: this.clients.all().length,
+      agents: this.agents.all().filter(a=>a.actif!==false).length,
+      agentsDispo: this.agents.all().filter(a=>a.statut==='disponible').length,
+      interventionsToday: ints.filter(i=>i.date===today).length,
+      interventionsNonAssignees: ints.filter(i=>!i.agentId).length,
+      interventionsTotal: ints.length,
+      caMonth: pays.filter(p=>p.statut==='reçu' && (p.date||'').startsWith(month)).reduce((s,p)=>s+(p.montant||0),0),
+      caTotal: pays.filter(p=>p.statut==='reçu').reduce((s,p)=>s+(p.montant||0),0),
+      sms: this.sms.all().length,
+      smsEnvoyes: this.sms.all().filter(s=>s.statut==='envoyé').length,
+      smsEchoues: this.sms.all().filter(s=>s.statut==='échoué').length,
+      devis: this.devis.all().length,
     };
-  },
-
-  // ── Labels helpers ────────────────────────────────────────
-  serviceLabel(s) {
-    return { jardin: '🌱 Jardin', karcher: '💦 Kärcher', autre: '🔧 Autre' }[s] || s;
-  },
-  statutLabel(s) {
-    return { terminé:'✅ Terminé', confirmé:'📅 Confirmé', en_attente:'⏳ En attente', annulé:'❌ Annulé' }[s] || s;
-  },
-  statutClass(s) {
-    return { terminé:'badge-success', confirmé:'badge-info', en_attente:'badge-warning', annulé:'badge-danger' }[s] || '';
-  },
+  }
 };
 
-// Auto-seed on first load
-document.addEventListener('DOMContentLoaded', () => WassouDB._seed());
+DB.seed();
+
+// Helpers
+const Fmt = {
+  eur(n){ return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR'}).format(n||0) },
+  date(d){ if(!d) return '—'; const dt=new Date(d); if(isNaN(dt)) return d; return dt.toLocaleDateString('fr-FR') },
+  dateLong(d){ if(!d) return '—'; const dt=new Date(d); if(isNaN(dt)) return d; return dt.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}) },
+  dateInput(d){ if(!d) return ''; const dt=new Date(d); return dt.toISOString().slice(0,10) },
+  initials(p,n){ return ((p||'').charAt(0)+(n||'').charAt(0)).toUpperCase() },
+};

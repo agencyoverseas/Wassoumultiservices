@@ -1,300 +1,193 @@
 // ============================================================
-//  WASSOU MULTISERVICES — APP LOGIC v2.1
-//  - Navigation
-//  - Toasts + Confirms
-//  - Helpers (date, money, etc.)
-//  - PWA install (Android + iOS)
-//  - Anti-zoom (pinch-zoom désactivé)
-//  - Auth helpers pour pages protégées
+// WASSOU MOBILE — APP CORE
 // ============================================================
 
 const App = {
+  // ─── Icons SVG (reusable) ───
+  icons: {
+    burger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
+    bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+    mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+    back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>',
+    calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+    users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    trending: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+    dashboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+    agent: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>',
+    sms: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+    send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+    leaf: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3 11 0 14-15 14-15-2 2-7.5 2-11 4z"/></svg>',
+    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+    doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+    euro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12M4 14h9"/><path d="M19 6.41a8 8 0 1 0 0 11.18"/></svg>',
+    settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+    bot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>',
+    logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  },
 
-  // ── Navigation : highlight de la page active ──────────────
-  initNav() {
-    const page = location.pathname.split('/').pop() || 'index.html';
-    document.querySelectorAll('.nav-link').forEach(link => {
-      const href = link.getAttribute('href');
-      if (href === page || (page === '' && href === 'index.html')) {
-        link.classList.add('active');
-      }
+  // ─── Header ───
+  renderHeader(title, subtitle){
+    const h = document.getElementById('header');
+    if (!h) return;
+    h.innerHTML = `
+      <button class="burger" id="openDrawer" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="header-titles">
+        <h1 id="appLogo">${title}</h1>
+        ${subtitle ? `<div class="subtitle">${subtitle}</div>` : ''}
+      </div>
+      <button class="bell-btn" id="bellBtn" aria-label="Notifications">${this.icons.bell}<span class="dot"></span></button>
+    `;
+    document.getElementById('openDrawer')?.addEventListener('click', ()=>Drawer.open());
+    document.getElementById('bellBtn')?.addEventListener('click', ()=>App.toast('Aucune nouvelle notification'));
+
+    // Easter egg : 5 taps sur le titre = panneau Nexus
+    let taps=0, lastTap=0;
+    document.getElementById('appLogo')?.addEventListener('click', () => {
+      const now = Date.now();
+      if (now - lastTap > 1500) taps = 0;
+      taps++; lastTap = now;
+      if (taps >= 5) { taps = 0; window.location.href = 'nexus.html'; }
     });
+  },
 
-    // Mobile sidebar toggle
-    const burger = document.getElementById('burger');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    if (burger && sidebar && !burger._appNavBound) {
-      burger._appNavBound = true;
-      burger.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
-        overlay?.classList.toggle('show');
-      });
-      overlay?.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-        overlay.classList.remove('show');
-      });
-      // Fermer la sidebar quand on clique un lien (mobile)
-      sidebar.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', () => {
-          if (window.innerWidth <= 900) {
-            sidebar.classList.remove('open');
-            overlay?.classList.remove('show');
-          }
-        });
-      });
-    }
+  // ─── Bottom nav ───
+  renderNav(active){
+    const items = [
+      {key:'dashboard', label:'Tableau de bord', href:'dashboard.html', ic:this.icons.dashboard},
+      {key:'clients', label:'Clients', href:'clients.html', ic:this.icons.users},
+      {key:'agents', label:'Agents', href:'agents.html', ic:this.icons.agent},
+      {key:'interventions', label:'Interventions', href:'interventions.html', ic:this.icons.calendar},
+      {key:'sms', label:'SMS', href:'sms.html', ic:this.icons.sms},
+    ];
+    const html = `<nav class="bottom-nav">${items.map(it=>`
+      <a href="${it.href}" class="bn-item ${active===it.key?'active':''}">
+        ${it.ic}
+        <div class="bn-label">${it.label}</div>
+      </a>`).join('')}</nav>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+  },
 
-    // Filtrer liens selon le rôle (data-role="admin")
-    const session = window.Auth?.getSession?.();
-    if (session) {
-      document.querySelectorAll('[data-role]').forEach(el => {
-        const required = el.dataset.role;
-        if (required && session.role !== required) {
-          el.style.display = 'none';
+  // ─── Toast ───
+  toast(msg, type=''){
+    const old = document.querySelector('.toast');
+    if (old) old.remove();
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    requestAnimationFrame(()=>t.classList.add('show'));
+    setTimeout(()=>{t.classList.remove('show'); setTimeout(()=>t.remove(),300)}, 2500);
+  },
+
+  // ─── Confirm ───
+  confirm(msg){
+    return new Promise(resolve => {
+      const ov = document.createElement('div');
+      ov.className = 'modal-overlay show';
+      ov.innerHTML = `<div class="modal" style="max-width:340px;border-radius:18px;margin:auto">
+        <div style="text-align:center;padding:8px 0 16px">
+          <div style="font-size:38px;margin-bottom:8px">⚠️</div>
+          <div style="font-size:15px;color:var(--text);line-height:1.4">${msg}</div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" data-r="0">Annuler</button>
+          <button class="btn btn-danger" data-r="1">Confirmer</button>
+        </div>
+      </div>`;
+      document.body.appendChild(ov);
+      ov.addEventListener('click', e => {
+        if (e.target.dataset.r !== undefined || e.target===ov){
+          const r = e.target.dataset.r === '1';
+          ov.remove();
+          resolve(r);
         }
       });
-      // Afficher le pill utilisateur connecté
-      const slot = document.getElementById('user-pill-slot');
-      if (slot && !slot.innerHTML.trim()) {
-        slot.innerHTML = `
-          <div class="user-pill">
-            <div class="av">${session.avatar || '👤'}</div>
-            <div class="info">
-              <strong>${session.nom || 'Utilisateur'}</strong>
-              <small>${session.role_label || session.role}</small>
-            </div>
-          </div>
-        `;
-      }
-    }
-  },
-
-  // ── Page protégée : initialisation auth ──────────────────
-  initAdminPage(allowedRoles = ['admin', 'agent']) {
-    if (typeof Auth === 'undefined') return null;
-    const session = Auth.requireAuth(allowedRoles);
-    if (!session) return null;
-    return session;
-  },
-
-  // ── Toast notifications ──────────────────────────────────
-  toast(msg, type = 'success') {
-    const container = document.getElementById('toasts') || (() => {
-      const d = document.createElement('div');
-      d.id = 'toasts';
-      document.body.appendChild(d);
-      return d;
-    })();
-    const t = document.createElement('div');
-    t.className = `toast toast-${type}`;
-    t.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()">×</button>`;
-    container.appendChild(t);
-    setTimeout(() => t.classList.add('show'), 10);
-    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3500);
-  },
-
-  // ── Confirm modal ─────────────────────────────────────────
-  confirm(msg, cb) {
-    const modal = document.getElementById('confirmModal');
-    if (!modal) { if (window.confirm(msg)) cb(); return; }
-    modal.querySelector('.confirm-msg').textContent = msg;
-    modal.style.display = 'flex';
-    modal.querySelector('.btn-confirm').onclick = () => { modal.style.display = 'none'; cb(); };
-    modal.querySelector('.btn-cancel').onclick = () => { modal.style.display = 'none'; };
-  },
-
-  // ── Format helpers ────────────────────────────────────────
-  formatDate(d) {
-    if (!d) return '—';
-    const dt = new Date(d);
-    return dt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  },
-  fmtDate(d) { return App.formatDate(d); },
-  formatMoney(n) {
-    return (n || 0).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
-  },
-  fmtEur(n) { return App.formatMoney(n); },
-  timeAgo(d) {
-    const diff = Date.now() - new Date(d).getTime();
-    const days = Math.floor(diff / 86400000);
-    if (days === 0) return 'Aujourd\'hui';
-    if (days === 1) return 'Hier';
-    return `Il y a ${days} jours`;
-  },
-
-  filterList(items, query, fields) {
-    if (!query) return items;
-    const q = query.toLowerCase();
-    return items.filter(item => fields.some(f => (item[f] || '').toLowerCase().includes(q)));
-  },
-
-  stars(n) {
-    return '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
-  },
-
-  smsTemplate(type, data = {}) {
-    const templates = {
-      confirmation: `Bonjour ${data.prenom || ''}, votre RDV Wassou est confirmé le ${data.date || ''} à ${data.heure || ''}. À bientôt ! 🌿`,
-      rappel: `Rappel Wassou : votre intervention est demain ${data.date || ''} à ${data.heure || ''}. Notre équipe sera à l'heure ! 📅`,
-      devis: `Bonjour ${data.prenom || ''}, votre devis Wassou N°${data.numero || ''} est disponible. Montant : ${data.montant || ''}€. Valide 15j. 📄`,
-      remerciement: `Merci ${data.prenom || ''} pour votre confiance ! Votre satisfaction est notre priorité. N'hésitez pas à nous recommander 🌱`,
-      custom: '',
-    };
-    return templates[type] || '';
-  },
-
-  genId(prefix = 'x') {
-    return prefix + Date.now() + Math.random().toString(36).slice(2, 6);
-  },
-
-  devisTotal(services) {
-    return services.reduce((s, l) => s + ((l.qty || 1) * (l.pu || 0)), 0);
-  },
-
-  exportCSV(data, filename) {
-    if (!data.length) return;
-    const keys = Object.keys(data[0]);
-    const csv = [keys.join(';'), ...data.map(row => keys.map(k => `"${(row[k] || '').toString().replace(/"/g, '""')}"`).join(';'))].join('\n');
-    const a = document.createElement('a');
-    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-    a.download = filename;
-    a.click();
-  },
-
-  printSection(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const win = window.open('', '_blank');
-    win.document.write(`<html><head><title>Wassou</title><link rel="stylesheet" href="css/style.css"></head><body style="padding:2rem">${el.innerHTML}</body></html>`);
-    win.document.close();
-    win.print();
-  },
-
-  // ============================================================
-  //  📲 PWA INSTALL — Android + iOS
-  // ============================================================
-  initInstallPrompt() {
-    let deferredPrompt = null;
-
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
-      console.log('[PWA] App already installed');
-      return;
-    }
-
-    const dismissed = localStorage.getItem('wassou-install-dismissed');
-    if (dismissed) {
-      const days = (Date.now() - parseInt(dismissed)) / 86400000;
-      if (days < 7) return;
-    }
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      console.log('[PWA] beforeinstallprompt captured ✅');
-      setTimeout(() => App.showInstallButton(deferredPrompt), 2000);
     });
-
-    window.addEventListener('appinstalled', () => {
-      deferredPrompt = null;
-      const banner = document.getElementById('install-banner');
-      if (banner) banner.remove();
-      App.toast('Application installée 🌿', 'success');
-    });
-
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIOS && !window.navigator.standalone) {
-      setTimeout(() => App.showIOSInstallHint(), 3000);
-    }
   },
 
-  showInstallButton(deferredPrompt) {
-    if (document.getElementById('install-banner')) return;
-
-    const banner = document.createElement('div');
-    banner.id = 'install-banner';
-    banner.innerHTML = `
-      <div class="install-banner-inner">
-        <span class="install-icon">📲</span>
-        <div class="install-text">
-          <strong>Installer Wassou</strong>
-          <small>Accès rapide depuis votre écran d'accueil</small>
-        </div>
-        <button id="install-btn" class="btn btn-primary btn-sm">Installer</button>
-        <button id="install-close" aria-label="Fermer">×</button>
+  // ─── Modal ───
+  modal(title, html, onSubmit){
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay show';
+    ov.innerHTML = `<div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">${title}</div>
+        <button class="modal-close" data-close>×</button>
       </div>
-    `;
-    document.body.appendChild(banner);
-    setTimeout(() => banner.classList.add('show'), 100);
-
-    document.getElementById('install-btn').addEventListener('click', async () => {
-      banner.classList.remove('show');
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        App.toast('Merci ! Installation en cours…', 'success');
-      }
-      setTimeout(() => banner.remove(), 300);
-    });
-
-    document.getElementById('install-close').addEventListener('click', () => {
-      banner.classList.remove('show');
-      setTimeout(() => banner.remove(), 300);
-      localStorage.setItem('wassou-install-dismissed', Date.now());
-    });
+      <div class="modal-body">${html}</div>
+    </div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.addEventListener('click', e => { if (e.target===ov || e.target.dataset.close!==undefined) close(); });
+    if (onSubmit) {
+      const form = ov.querySelector('form');
+      if (form) form.addEventListener('submit', e => { e.preventDefault(); const ok = onSubmit(form, close); if (ok!==false) close(); });
+    }
+    return { close, el: ov };
   },
 
-  showIOSInstallHint() {
-    if (localStorage.getItem('wassou-ios-hint-dismissed')) return;
-    if (document.getElementById('install-banner')) return;
-
-    const banner = document.createElement('div');
-    banner.id = 'install-banner';
-    banner.innerHTML = `
-      <div class="install-banner-inner">
-        <span class="install-icon">📲</span>
-        <div class="install-text">
-          <strong>Installer Wassou sur iPhone</strong>
-          <small>Appuyez sur <b>Partager</b> ⬆️ puis <b>Sur l'écran d'accueil</b></small>
-        </div>
-        <button id="install-close" aria-label="Fermer">×</button>
-      </div>
-    `;
-    document.body.appendChild(banner);
-    setTimeout(() => banner.classList.add('show'), 100);
-
-    document.getElementById('install-close').addEventListener('click', () => {
-      banner.classList.remove('show');
-      setTimeout(() => banner.remove(), 300);
-      localStorage.setItem('wassou-ios-hint-dismissed', '1');
-    });
-  },
-
-  // ============================================================
-  //  🚫 Anti-zoom : pinch-zoom + double-tap zoom désactivés
-  // ============================================================
-  initAntiZoom() {
-    document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
-    document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
-    document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
-
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', (e) => {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 300) {
-        e.preventDefault();
-      }
-      lastTouchEnd = now;
-    }, { passive: false });
-  },
-
+  // ─── Init page ───
+  init(navKey, title, subtitle){
+    if (!Auth.guard()) return false;
+    this.renderHeader(title, subtitle);
+    this.renderNav(navKey);
+    PWAInstall.init();
+    return true;
+  }
 };
 
-// Auto-init
-document.addEventListener('DOMContentLoaded', () => {
-  App.initNav();
-  App.initInstallPrompt();
-  App.initAntiZoom();
-});
-
-if (typeof window !== 'undefined') window.App = App;
+// ============================================================
+// DRAWER (menu latéral)
+// ============================================================
+const Drawer = {
+  ensureDOM(){
+    if (document.getElementById('drawer')) return;
+    const session = Auth.getSession() || {};
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="overlay" id="drawerOverlay"></div>
+      <aside class="drawer" id="drawer">
+        <div class="drawer-head">
+          <div class="drawer-logo">🌿</div>
+          <div class="drawer-info">
+            <h3>Wassou Multiservices</h3>
+            <p>${session.role==='admin' ? 'Administrateur' : (session.nom || 'Agent')}</p>
+          </div>
+        </div>
+        <nav class="drawer-nav">
+          <a href="dashboard.html" class="drawer-link"><span class="ic">📊</span>Tableau de bord</a>
+          <a href="clients.html" class="drawer-link"><span class="ic">👥</span>Clients</a>
+          <a href="agents.html" class="drawer-link"><span class="ic">🧑‍🌾</span>Agents</a>
+          <a href="interventions.html" class="drawer-link"><span class="ic">📅</span>Interventions</a>
+          <a href="sms.html" class="drawer-link"><span class="ic">💬</span>SMS</a>
+          <a href="devis.html" class="drawer-link"><span class="ic">📄</span>Devis</a>
+          <a href="paiements.html" class="drawer-link"><span class="ic">💳</span>Paiements</a>
+          <a href="rapports.html" class="drawer-link"><span class="ic">📈</span>Rapports</a>
+          <a href="agent-ia.html" class="drawer-link"><span class="ic">🤖</span>Agent IA</a>
+          <a href="parametres.html" class="drawer-link"><span class="ic">⚙️</span>Paramètres</a>
+        </nav>
+        <div class="drawer-foot">
+          <button class="btn btn-outline btn-block" id="logoutBtn">↩ Déconnexion</button>
+        </div>
+      </aside>
+    `);
+    document.getElementById('drawerOverlay').addEventListener('click', ()=>this.close());
+    document.getElementById('logoutBtn').addEventListener('click', ()=>{ Auth.logout(); });
+    // marquer le lien actif
+    const cur = location.pathname.split('/').pop() || 'dashboard.html';
+    document.querySelectorAll('.drawer-link').forEach(a => {
+      if (a.getAttribute('href') === cur) a.classList.add('active');
+    });
+  },
+  open(){ this.ensureDOM(); document.getElementById('drawer').classList.add('show'); document.getElementById('drawerOverlay').classList.add('show'); },
+  close(){ document.getElementById('drawer')?.classList.remove('show'); document.getElementById('drawerOverlay')?.classList.remove('show'); }
+};

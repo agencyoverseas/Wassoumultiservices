@@ -496,7 +496,7 @@ select.form-control { cursor: pointer; }
   z-index: 200;
   display: none;
   align-items: center; justify-content: center;
-  padding: 20px;
+  padding: 16px;
   animation: fadeIn .2s ease;
 }
 .modal-overlay.open { display: flex; }
@@ -507,6 +507,7 @@ select.form-control { cursor: pointer; }
   width: 100%;
   max-width: 560px;
   max-height: 90vh;
+  max-height: 90dvh;
   overflow-y: auto;
   animation: slideUp .25s cubic-bezier(.4,0,.2,1);
 }
@@ -923,16 +924,18 @@ select.form-control { cursor: pointer; }
   .top-header { padding: 0 16px; }
 }
 @media (max-width: 600px) {
-  .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-  .stat-card { padding: 16px; }
-  .stat-info .stat-value { font-size: 1.4rem; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 12px 14px; gap: 10px; }
+  .stat-info .stat-value { font-size: 1.25rem; }
+  .stat-info .stat-label { font-size: .72rem; }
+  .stat-icon { font-size: 1.4rem; flex-shrink: 0; }
   .clients-grid { grid-template-columns: 1fr; }
   .devis-line { grid-template-columns: 1fr 60px 80px 50px; font-size: .82rem; }
   .modal { border-radius: var(--radius) var(--radius) 0 0; margin-top: auto; }
   .modal-overlay { align-items: flex-end; padding: 0; }
 }
 @media (max-width: 400px) {
-  .stats-grid { grid-template-columns: 1fr; }
+  /* (réservé - stats restent en 2 colonnes jusqu'à 340px) */
 }
 
 /* ── PWA splash ───────────────────────────────────────────── */
@@ -1435,3 +1438,311 @@ body {
   color: var(--gray-600);
 }
 
+/* ============================================================
+   ✨ PATCH v3.0 — Corrections Mobile + Mode App + Hamburger Desktop
+   ============================================================ */
+
+/* ── 1. HEADER : bouton + toujours visible (icône seule sur mobile) ── */
+.top-header {
+  gap: 8px !important;
+  padding-right: 14px !important;
+  padding-left: 14px !important;
+}
+.top-header .page-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.top-header .header-actions {
+  flex-shrink: 0;
+}
+.top-header .header-actions .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Sur mobile : bouton "+" compact en cercle visible */
+@media (max-width: 700px) {
+  .top-header .header-actions .btn-sm {
+    padding: 0 !important;
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    height: 40px;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    font-size: 0 !important; /* cache le texte natif du bouton */
+    line-height: 1;
+  }
+  /* Restaure le texte de l'icône (premier caractère ou span explicite) */
+  .top-header .header-actions .btn-sm > span {
+    font-size: 1.15rem !important;
+    line-height: 1;
+  }
+  /* Pour les boutons "+ Texte" sans span, on injecte un + visuel */
+  .top-header .header-actions .btn-sm::before {
+    content: "+";
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+    color: inherit;
+  }
+  /* Si le bouton a déjà un span enfant, on cache le ::before */
+  .top-header .header-actions .btn-sm:has(> span)::before {
+    display: none;
+  }
+  /* Masque tout span.lbl (texte long type "Nouveau devis") */
+  .top-header .header-actions .btn-sm .lbl { display: none !important; }
+  .top-header .page-title {
+    font-size: 1rem !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .top-header .header-actions {
+    gap: 6px !important;
+  }
+}
+
+/* ── 2. PAGE TITLE : date dashboard compacte sur mobile ── */
+@media (max-width: 700px) {
+  #header-date {
+    font-size: .72rem !important;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* ── 3. CARDS MOBILE — Interventions / Devis = cards verticales ── */
+@media (max-width: 700px) {
+  /* Affichage en carte verticale propre */
+  .table-wrapper { overflow-x: visible; }
+  table, thead, tbody, th, td, tr { display: block; width: 100%; }
+  thead { position: absolute; left: -9999px; }
+
+  tbody tr {
+    display: block;
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: 14px;
+    margin-bottom: 14px;
+    padding: 16px 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  }
+  tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: .92rem;
+    text-align: right;
+    gap: 10px;
+  }
+  tbody td:first-child {
+    padding-top: 0;
+    border-bottom: 1px solid var(--gray-200);
+    margin-bottom: 4px;
+    padding-bottom: 12px;
+  }
+  tbody td:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--gray-600);
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    text-align: left;
+    margin-right: 12px;
+    flex: 0 0 auto;
+  }
+  /* La première td (Client/N°) → pas de label */
+  tbody td:first-child::before { display: none; }
+  tbody td:first-child {
+    justify-content: flex-start;
+    text-align: left;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  .td-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .td-actions select {
+    flex: 1 0 100%;
+    margin-bottom: 6px;
+  }
+}
+
+/* ── 4. BOUTON DECONNEXION FLOTTANT (FAB) — visible partout sur mobile ── */
+.logout-fab {
+  position: fixed;
+  bottom: 80px;
+  right: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(231,76,60,.40);
+  z-index: 90;
+  display: none; /* masqué desktop par défaut */
+  align-items: center;
+  justify-content: center;
+  transition: transform .15s, box-shadow .15s, opacity .15s;
+  opacity: .92;
+}
+.logout-fab:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(231,76,60,.55); opacity: 1; }
+.logout-fab:active { transform: scale(.95); }
+
+/* Affiche le FAB partout sur mobile, et aussi sur desktop si la sidebar est masquée */
+@media (max-width: 900px) {
+  .logout-fab { display: flex !important; }
+}
+body.menu-mode .logout-fab { display: flex !important; }
+
+/* Masquer le FAB quand une modal est ouverte */
+body:has(.modal-overlay.open) .logout-fab,
+body:has(#confirmModal[style*="flex"]) .logout-fab { display: none !important; }
+
+/* ── 5. MENU HAMBURGER DESKTOP (mode menu) — sidebar cachée par défaut ── */
+body.menu-mode .sidebar {
+  transform: translateX(-100%);
+  width: 280px;
+  border-radius: 0 18px 18px 0;
+}
+body.menu-mode .sidebar.open {
+  transform: translateX(0);
+  box-shadow: var(--shadow-lg);
+}
+body.menu-mode .main-content { margin-left: 0 !important; }
+body.menu-mode .burger-btn { display: flex !important; }
+body.menu-mode #overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 99;
+  display: none;
+}
+body.menu-mode #overlay.show { display: block; }
+
+/* ── 6. MODAL — bouton Annuler toujours fonctionnel + zindex ── */
+.modal-overlay {
+  display: none;
+}
+.modal-overlay.open {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  padding: 16px;
+}
+.modal-overlay.open .modal {
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+@media (max-width: 600px) {
+  .modal-overlay.open {
+    padding: 0 !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+  }
+  .modal-overlay.open .modal {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 92vh !important;
+    max-height: 92dvh !important;
+    border-radius: 18px 18px 0 0 !important;
+    margin: 0 !important;
+  }
+}
+#confirmModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+#confirmModal[style*="flex"] { display: flex !important; }
+
+/* ── 7. FORCER LE MODE APP — pas de zoom, pas de scroll horizontal ── */
+html, body {
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  overflow-x: hidden !important;
+  max-width: 100vw;
+}
+.app-shell, .main-content {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+.page-body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+/* Forcer toutes les tables à respecter la largeur */
+.table-wrapper, table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+@media (max-width: 700px) {
+  .table-wrapper {
+    overflow-x: visible !important;
+  }
+  table {
+    overflow-x: visible !important;
+    table-layout: fixed;
+  }
+}
+input, textarea, select, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  max-width: 100%;
+}
+@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+  body {
+    overscroll-behavior: none;
+    background: var(--off-white);
+  }
+}
+
+/* ── 8. Dropdown clients enrichi ── */
+select.client-select option {
+  padding: 10px;
+}
+
+/* ── 9. Stats grid mobile : 2 colonnes par défaut, 1 si vraiment étroit ── */
+@media (max-width: 340px) {
+  .stats-grid { grid-template-columns: 1fr !important; }
+}

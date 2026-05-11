@@ -24,7 +24,8 @@ const App = {
     const burger = document.getElementById('burger');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
-    if (burger && sidebar) {
+    if (burger && sidebar && !burger._appNavBound) {
+      burger._appNavBound = true;
       burger.addEventListener('click', () => {
         sidebar.classList.toggle('open');
         overlay?.classList.toggle('show');

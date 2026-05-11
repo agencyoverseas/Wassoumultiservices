@@ -19,32 +19,8 @@
 <div id="overlay"></div>
 <div class="app-shell">
 
-  <!-- ========== SIDEBAR ========== -->
-  <nav class="sidebar" id="sidebar">
-    <div class="sidebar-logo">
-      <span class="logo-icon">🌿</span>
-      <span class="logo-name" id="brand-name">Wassou</span>
-      <span class="logo-sub">Admin — Guadeloupe</span>
-    </div>
-    <div id="user-pill-slot"></div>
-    <div class="nav-section">
-      <div class="nav-section-title">Principal</div>
-      <a href="dashboard-admin.html" class="nav-link"><span class="nav-icon">📊</span> Tableau de bord</a>
-      <a href="clients.html" class="nav-link"><span class="nav-icon">👥</span> Clients</a>
-      <a href="agents.html" class="nav-link"><span class="nav-icon">🧑‍🌾</span> Agents</a>
-      <a href="interventions.html" class="nav-link"><span class="nav-icon">📅</span> Interventions</a>
-      <div class="nav-section-title">Outils</div>
-      <a href="agent-ia.html" class="nav-link"><span class="nav-icon">🤖</span> Agent IA</a>
-      <a href="sms.html" class="nav-link"><span class="nav-icon">💬</span> SMS</a>
-      <a href="devis.html" class="nav-link"><span class="nav-icon">📄</span> Devis & Factures</a>
-      <a href="rapports.html" class="nav-link"><span class="nav-icon">📈</span> Rapports</a>
-      <div class="nav-section-title">Configuration</div>
-      <a href="parametres.html" class="nav-link"><span class="nav-icon">⚙️</span> Paramètres</a>
-    </div>
-    <div class="sidebar-footer">
-      <a href="#" class="logout-btn" onclick="Auth.logout();return false">🚪 Déconnexion</a>
-    </div>
-  </nav>
+  <!-- ========== SIDEBAR (injectée dynamiquement) ========== -->
+  <nav class="sidebar" id="sidebar"></nav>
 
   <!-- ========== MAIN ========== -->
   <div class="main-content">
@@ -69,21 +45,31 @@
       <!-- ⚡ ACTIONS RAPIDES (AVANT les interventions) -->
       <div class="card slide-up" style="margin-top:18px;animation-delay:.1s">
         <div class="card-header"><h3>⚡ Actions rapides</h3></div>
-        <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <a href="interventions.html#add" class="btn btn-primary" style="justify-content:center;padding:18px;font-size:1rem;">
-            <span style="font-size:1.3em;margin-right:6px">📅</span> Nouveau RDV
+        <div class="card-body actions-rapides-grid">
+          <a href="interventions.html#add" class="btn btn-primary action-btn">
+            <span class="action-ic">📅</span> <span class="action-lbl">Nouveau RDV</span>
           </a>
-          <a href="clients.html#add" class="btn btn-outline" style="justify-content:center;padding:18px;font-size:1rem;">
-            <span style="font-size:1.3em;margin-right:6px">👤</span> Nouveau client
+          <a href="clients.html#add" class="btn btn-outline action-btn">
+            <span class="action-ic">👤</span> <span class="action-lbl">Nouveau client</span>
           </a>
-          <a href="devis.html#add" class="btn btn-outline" style="justify-content:center;padding:18px;font-size:1rem;">
-            <span style="font-size:1.3em;margin-right:6px">📄</span> Nouveau devis
+          <a href="devis.html#add" class="btn btn-outline action-btn">
+            <span class="action-ic">📄</span> <span class="action-lbl">Nouveau devis</span>
           </a>
-          <a href="sms.html#compose" class="btn btn-outline" style="justify-content:center;padding:18px;font-size:1rem;">
-            <span style="font-size:1.3em;margin-right:6px">💬</span> Envoyer SMS
+          <a href="sms.html#compose" class="btn btn-outline action-btn">
+            <span class="action-ic">💬</span> <span class="action-lbl">Envoyer SMS</span>
           </a>
         </div>
       </div>
+      <style>
+        .actions-rapides-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .action-btn { justify-content:center; padding:18px 8px; font-size:1rem; text-align:center; }
+        .action-ic { font-size:1.3em; margin-right:6px; }
+        @media (max-width: 600px) {
+          .action-btn { padding:14px 6px; font-size:.88rem; flex-direction:column; gap:4px; }
+          .action-ic { font-size:1.6em; margin-right:0; }
+          .action-lbl { font-size:.82rem; white-space:nowrap; }
+        }
+      </style>
 
       <!-- Activité récente -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px" id="dash-grid">
@@ -122,15 +108,32 @@
 <script src="config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/data.js"></script>
+<script src="js/data-bridge.js"></script>
 <script src="js/app.js"></script>
 <script src="js/nexus-secret.js"></script>
 <script src="js/payment.js"></script>
+<script src="js/sidebar.js"></script>
 <script>
 const session = App.initAdminPage(['admin']);
 if (session) {
-  document.getElementById('brand-name').textContent = (CONFIG.business.nom || 'Wassou').split(' ')[0];
+  // Inject sidebar (avec footer Déconnexion)
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof Sidebar !== 'undefined') Sidebar.inject('dashboard');
+  });
+
   const now = new Date();
-  document.getElementById('header-date').textContent = now.toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long'});
+  // Date responsive : longue desktop, courte mobile
+  const isMobile = window.innerWidth <= 700;
+  const dateEl = document.getElementById('header-date');
+  function updateDate() {
+    const mobile = window.innerWidth <= 700;
+    dateEl.textContent = mobile
+      ? now.toLocaleDateString('fr-FR', {day:'2-digit', month:'short'})
+      : now.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
+  }
+  updateDate();
+  window.addEventListener('resize', updateDate);
+
   document.getElementById('welcome-msg').textContent = `Bonjour ${session.nom?.split(' ')[0] || ''} 🌿`;
 
   setTimeout(() => {
@@ -139,7 +142,7 @@ if (session) {
     const ints = safe(() => Data.interventions.all(), []);
     const devis = safe(() => Data.devis.all(), []);
     const pays = safe(() => Data.paiements.all(), []);
-    const rdvs = safe(() => Data.rdvs.all(), []).filter(r => r.statut === 'à traiter');
+    const rdvs = safe(() => Data.rdvs?.all?.() || [], []).filter(r => r.statut === 'à traiter');
     const ca = pays.filter(p => p.statut === 'reçu').reduce((s, p) => s + (p.montant || 0), 0);
 
     document.getElementById('kpis').innerHTML = `
@@ -149,11 +152,12 @@ if (session) {
       <div class="stat-card orange"><div class="stat-icon">💶</div><div class="stat-info"><div class="stat-value">${App.fmtEur(ca)}</div><div class="stat-label">CA encaissé</div></div></div>
     `;
 
-    const next = ints.filter(i => i.statut === 'planifié').sort((a,b) => (a.date || '').localeCompare(b.date || '')).slice(0, 5);
+    const next = ints.filter(i => i.statut === 'planifié' || i.statut === 'confirmé' || i.statut === 'en_attente').sort((a,b) => (a.date || '').localeCompare(b.date || '')).slice(0, 5);
     document.getElementById('next-int').innerHTML = next.length
       ? next.map(i => {
-          const c = Data.clients.get?.(i.client_id);
-          const a = (CONFIG.auth.agents || []).find(x => x.id === i.agent_id);
+          const c = Data.clients.get?.(i.client_id || i.clientId);
+          const aId = i.agent_id || i.agentId;
+          const a = Data.agents.get?.(aId) || (CONFIG.auth.agents || []).find(x => x.id === aId);
           return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
             <strong>${c?.prenom || ''} ${c?.nom || '—'}</strong>
             <span class="badge badge-success" style="margin-left:8px">${i.service || ''}</span>
@@ -174,7 +178,7 @@ if (session) {
     const lastDev = devis.slice().sort((a,b) => (b.created || '').localeCompare(a.created || '')).slice(0, 5);
     document.getElementById('recent-devis').innerHTML = lastDev.length
       ? lastDev.map(d => {
-          const c = Data.clients.get?.(d.client_id);
+          const c = Data.clients.get?.(d.client_id || d.clientId);
           const cls = { brouillon: 'badge-gray', envoyé: 'badge-info', accepté: 'badge-success', refusé: 'badge-danger', soldé: 'badge-success' }[d.statut] || 'badge-gray';
           return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
             <strong>${d.numero || ''}</strong> <span class="badge ${cls}" style="margin-left:8px">${d.statut || ''}</span>

@@ -15,28 +15,14 @@
 <body>
 <div id="overlay"></div>
 <div class="app-shell">
-  <nav class="sidebar" id="sidebar">
-    <div class="sidebar-logo"><span class="logo-icon">🌿</span><span class="logo-name">Wassou</span><span class="logo-sub">Multiservices — Guadeloupe</span></div>
-    <div class="nav-section">
-      <div class="nav-section-title">Principal</div>
-      <a href="index.html" class="nav-link"><span class="nav-icon">📊</span> Tableau de bord</a>
-      <a href="clients.html" class="nav-link"><span class="nav-icon">👥</span> Clients</a>
-      <a href="agents.html" class="nav-link"><span class="nav-icon">🧑‍🌾</span> Agents</a>
-      <a href="interventions.html" class="nav-link"><span class="nav-icon">📅</span> Interventions</a>
-      <div class="nav-section-title">Outils</div>
-      <a href="agent-ia.html" class="nav-link"><span class="nav-icon">🤖</span> Agent IA</a>
-      <a href="sms.html" class="nav-link"><span class="nav-icon">💬</span> SMS</a>
-      <a href="devis.html" class="nav-link"><span class="nav-icon">📄</span> Devis & Factures</a>
-      <a href="rapports.html" class="nav-link"><span class="nav-icon">📈</span> Rapports</a>
-    </div>
-</nav>
+  <nav class="sidebar" id="sidebar"></nav>
 
   <div class="main-content">
     <header class="top-header">
       <button class="burger-btn" id="burger">☰</button>
       <div class="page-title">📅 Interventions</div>
       <div class="header-actions">
-        <button class="btn btn-primary btn-sm" onclick="openModal()">+ Nouvelle</button>
+        <button class="btn btn-primary btn-sm" onclick="openModal()" title="Nouvelle intervention"><span style="font-size:1.1em;font-weight:700">+</span><span class="lbl"> Nouvelle</span></button>
       </div>
     </header>
 
@@ -165,11 +151,19 @@
   </div>
 </div>
 
+<script src="config.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/data.js"></script>
+<script src="js/data-bridge.js"></script>
 <script src="js/app.js"></script>
 <script src="js/nexus-secret.js"></script>
+<script src="js/sidebar.js"></script>
 <script>
 let currentFilter = 'all';
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof Sidebar !== 'undefined') Sidebar.inject('interventions');
+});
 
 function setFilter(f, el) {
   currentFilter = f;
@@ -206,21 +200,21 @@ function renderInterventions() {
     const agent = WassouDB.agents.getById(i.agentId);
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>
+      <td data-label="Client">
         <div style="display:flex;align-items:center;gap:8px;">
-          <div class="avatar" style="width:28px;height:28px;font-size:.75rem">${client ? client.nom[0] : '?'}</div>
+          <div class="avatar" style="width:32px;height:32px;font-size:.8rem">${client ? client.nom[0] : '?'}</div>
           <strong>${client ? client.prenom+' '+client.nom : '—'}</strong>
         </div>
       </td>
-      <td class="text-sm">${App.formatDate(i.date)}<br/><span class="text-muted">${i.heure || ''}</span></td>
-      <td>${WassouDB.serviceLabel(i.service)}</td>
-      <td class="text-sm">${agent ? agent.prenom+' '+agent.nom : '—'}</td>
-      <td class="text-sm text-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.adresse || '—'}</td>
-      <td><strong>${App.formatMoney(i.montant)}</strong></td>
-      <td><span class="badge ${WassouDB.statutClass(i.statut)}">${WassouDB.statutLabel(i.statut)}</span></td>
-      <td>
+      <td data-label="Date" class="text-sm">${App.formatDate(i.date)} <span class="text-muted">${i.heure || ''}</span></td>
+      <td data-label="Service">${WassouDB.serviceLabel(i.service)}</td>
+      <td data-label="Agent" class="text-sm">${agent ? agent.prenom+' '+agent.nom : '—'}</td>
+      <td data-label="Adresse" class="text-sm text-muted" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.adresse || '—'}</td>
+      <td data-label="Montant"><strong>${App.formatMoney(i.montant)}</strong></td>
+      <td data-label="Statut"><span class="badge ${WassouDB.statutClass(i.statut)}">${WassouDB.statutLabel(i.statut)}</span></td>
+      <td data-label="Actions">
         <div class="td-actions">
-          <select class="form-control" style="padding:5px 8px;font-size:.78rem;width:auto;" onchange="changeStatut('${i.id}',this.value)">
+          <select class="form-control" style="padding:6px 10px;font-size:.78rem;" onchange="changeStatut('${i.id}',this.value)">
             <option value="en_attente" ${i.statut==='en_attente'?'selected':''}>⏳ Attente</option>
             <option value="confirmé" ${i.statut==='confirmé'?'selected':''}>📅 Confirmé</option>
             <option value="terminé" ${i.statut==='terminé'?'selected':''}>✅ Terminé</option>

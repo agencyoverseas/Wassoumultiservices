@@ -50,7 +50,7 @@
           <span>🧾</span><span class="lbl"> Facture</span>
         </button>
         <button class="btn btn-primary btn-sm" onclick="openModal('devis')" title="Nouveau devis">
-          <span>+</span><span class="lbl"> Nouveau devis</span>
+          <span style="font-size:1.2em;font-weight:700">+</span><span class="lbl"> Nouveau devis</span>
         </button>
       </div>
     </header>
@@ -168,6 +168,7 @@
 <script src="config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/data.js"></script>
+<script src="js/data-bridge.js"></script>
 <script src="js/app.js"></script>
 <script src="js/nexus-secret.js"></script>
 <script src="js/sidebar.js"></script>
@@ -189,8 +190,15 @@ if (session) {
 function populateClients() {
   const sel = document.getElementById('f-client');
   const clients = (Data.clients?.all?.() || []).sort((a,b)=>(a.nom||'').localeCompare(b.nom||''));
-  sel.innerHTML = '<option value="">— Sélectionner —</option>' +
-    clients.map(c => `<option value="${c.id}">${c.prenom||''} ${c.nom||''}</option>`).join('');
+  if (!clients.length) {
+    sel.innerHTML = '<option value="">— Aucun client. Ajoute d\'abord un client —</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">— Sélectionner un client —</option>' +
+    clients.map(c => {
+      const tel = c.tel ? ` · ${c.tel}` : '';
+      return `<option value="${c.id}">${c.prenom||''} ${c.nom||''}${tel}</option>`;
+    }).join('');
 }
 
 function visible() {
@@ -212,14 +220,16 @@ function render() {
   
   document.getElementById('empty').style.display = list.length ? 'none' : 'block';
   document.getElementById('tbody').innerHTML = list.map(d => {
-    const c = Data.clients?.get?.(d.client_id);
+    const cid = d.client_id || d.clientId;
+    const c = Data.clients?.get?.(cid);
     const recu = (Data.paiements?.forDevis?.(d.id) || []).filter(p => p.statut === 'reçu').reduce((s,p) => s + p.montant, 0);
     const cls = { brouillon:'badge-gray', envoyé:'badge-info', accepté:'badge-success', refusé:'badge-danger', soldé:'badge-success' }[d.statut] || 'badge-gray';
+    const total = d.total_ttc || App.devisTotal(d.services || d.lignes || []) || 0;
     return `<tr>
       <td data-label="N°"><strong>${d.numero || '—'}</strong></td>
       <td data-label="Date">${App.fmtDate(d.date)}</td>
-      <td data-label="Client"><strong>${c?.prenom||''} ${c?.nom||'—'}</strong></td>
-      <td data-label="Total">${App.fmtEur(d.total_ttc || 0)}</td>
+      <td data-label="Client"><strong>${c ? (c.prenom||'')+' '+(c.nom||'') : '—'}</strong></td>
+      <td data-label="Total">${App.fmtEur(total)}</td>
       <td data-label="Reçu">${App.fmtEur(recu)}</td>
       <td data-label="Statut"><span class="badge ${cls}">${d.statut}</span></td>
       <td data-label="Actions" class="td-actions">
@@ -252,13 +262,15 @@ function openModal(type = 'devis', editId = null) {
     const d = Data.devis?.get?.(editId);
     if (d) {
       document.getElementById('edit-id').value = d.id;
-      document.getElementById('f-client').value = d.client_id || '';
+      document.getElementById('f-client').value = d.client_id || d.clientId || '';
       document.getElementById('f-date').value = d.date || '';
       document.getElementById('f-echeance').value = d.echeance || '';
       document.getElementById('f-statut').value = d.statut || 'brouillon';
       document.getElementById('f-notes').value = d.notes || '';
       document.getElementById('lines').innerHTML = '';
-      (d.lignes || []).forEach(l => addLine(l));
+      const lignes = d.lignes || (d.services ? d.services.map(s => ({desc:s.label, qty:s.qty, pu:s.pu})) : []);
+      lignes.forEach(l => addLine(l));
+      if (!lignes.length) addLine();
     }
   } else {
     document.getElementById('edit-id').value = '';
@@ -340,7 +352,7 @@ function save() {
   const total_ttc = total_ht + total_tva;
   
   const data = {
-    client_id, date,
+    client_id, clientId: client_id, date,
     echeance: document.getElementById('f-echeance').value || null,
     statut: document.getElementById('f-statut').value,
     notes: document.getElementById('f-notes').value || '',

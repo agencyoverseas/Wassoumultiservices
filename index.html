@@ -2,18 +2,24 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
   <meta name="theme-color" content="#1b4332"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Wassou"/>
+  <meta name="format-detection" content="telephone=no"/>
   <title>Wassou Multiservices — Chargement…</title>
   <link rel="manifest" href="manifest.json"/>
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <style>
-    body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    body{display:flex;align-items:center;justify-content:center;
          background:linear-gradient(135deg,#1b4332 0%,#2d6a4f 100%);
-         font-family:system-ui,-apple-system,sans-serif;color:#fff;text-align:center;}
+         font-family:system-ui,-apple-system,sans-serif;color:#fff;text-align:center;
+         padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
     .loader{display:flex;flex-direction:column;align-items:center;gap:18px;}
     .spinner{width:50px;height:50px;border:4px solid rgba(255,255,255,.2);
              border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;}
@@ -33,9 +39,7 @@
   <script src="config.js"></script>
   <script src="js/auth.js"></script>
   <script>
-    // Redirection auto :
-    // - Si déjà connecté → dashboard correspondant
-    // - Sinon → login
+    // Redirection auto
     setTimeout(() => {
       const session = (typeof Auth !== 'undefined') ? Auth.getSession() : null;
       if (session) {
@@ -47,10 +51,16 @@
     }, 500);
   </script>
   <script>
-    // Service worker
+    // Service worker — enregistrement précoce pour mode app
     if("serviceWorker" in navigator){
-      navigator.serviceWorker.register("sw.js").catch(e=>console.error(e));
+      navigator.serviceWorker.register("sw.js").then(reg => {
+        console.log("[SW] Registered:", reg.scope);
+      }).catch(e=>console.error("[SW] Failed:",e));
     }
+    // Empêche les gestes de pinch-zoom
+    document.addEventListener('gesturestart', e => e.preventDefault());
+    document.addEventListener('gesturechange', e => e.preventDefault());
+    document.addEventListener('gestureend', e => e.preventDefault());
   </script>
 </body>
 </html>

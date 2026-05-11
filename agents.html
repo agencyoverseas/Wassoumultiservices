@@ -16,25 +16,7 @@
 <div id="overlay"></div>
 <div class="app-shell">
 
-  <nav class="sidebar" id="sidebar">
-    <div class="sidebar-logo">
-      <span class="logo-icon">🌿</span>
-      <span class="logo-name">Wassou</span>
-      <span class="logo-sub">Multiservices — Guadeloupe</span>
-    </div>
-    <div class="nav-section">
-      <div class="nav-section-title">Principal</div>
-      <a href="index.html" class="nav-link"><span class="nav-icon">📊</span> Tableau de bord</a>
-      <a href="clients.html" class="nav-link"><span class="nav-icon">👥</span> Clients</a>
-      <a href="agents.html" class="nav-link"><span class="nav-icon">🧑‍🌾</span> Agents</a>
-      <a href="interventions.html" class="nav-link"><span class="nav-icon">📅</span> Interventions</a>
-      <div class="nav-section-title">Outils</div>
-      <a href="agent-ia.html" class="nav-link"><span class="nav-icon">🤖</span> Agent IA</a>
-      <a href="sms.html" class="nav-link"><span class="nav-icon">💬</span> SMS</a>
-      <a href="devis.html" class="nav-link"><span class="nav-icon">📄</span> Devis & Factures</a>
-      <a href="rapports.html" class="nav-link"><span class="nav-icon">📈</span> Rapports</a>
-    </div>
-</nav>
+  <nav class="sidebar" id="sidebar"></nav>
 
   <div class="main-content">
     <header class="top-header">
@@ -122,7 +104,9 @@
 </div>
 
 <script src="js/data.js"></script>
+<script src="js/data-bridge.js"></script>
 <script src="js/app.js"></script>
+<script src="js/sidebar.js"></script>
 <script src="js/nexus-secret.js"></script>
 <script>
 let currentFilter = 'all';
@@ -236,5 +220,12 @@ function closeModal() { document.getElementById('agentModal').classList.remove('
 document.addEventListener('DOMContentLoaded', renderAgents);
 </script>
 <script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").then(()=>console.log("SW registered")).catch(e=>console.error(e))}</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof Sidebar !== 'undefined') Sidebar.inject('agents');
+});
+</script>
+
 </body>
 </html>

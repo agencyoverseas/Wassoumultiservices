@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<meta name="theme-color" content="#0d1f15"/>
+<meta name="theme-color" content="#1b4332"/>
 <meta name="description" content="Wassou Multiservices — Services à domicile en Guadeloupe : jardinage, kärcher, nettoyage, débroussaillage. Devis gratuit, intervention rapide."/>
 <title>Wassou Multiservices — Services à domicile en Guadeloupe</title>
 <link rel="manifest" href="manifest.json"/>
@@ -80,7 +80,7 @@
     </div>
     <div class="hero-visual">
       <div class="hero-card">
-        <img src="assets/landing/hero.svg" alt="Service à domicile Wassou" onerror="this.style.display='none';this.parentNode.classList.add('no-img')"/>
+        <img src="assets/landing/hero.jpg" alt="Service à domicile Wassou" onerror="this.style.display='none';this.parentNode.classList.add('no-img')"/>
         <div class="hero-card-fallback">🌿</div>
       </div>
     </div>
@@ -105,7 +105,7 @@
 <section class="section section-alt" id="about">
   <div class="container about-inner">
     <div class="about-visual">
-      <img src="assets/landing/about.svg" alt="Équipe Wassou Multiservices" onerror="this.style.display='none';this.parentNode.classList.add('no-img')"/>
+      <img src="assets/landing/about.jpg" alt="Équipe Wassou Multiservices" onerror="this.style.display='none';this.parentNode.classList.add('no-img')"/>
       <div class="about-fallback">👷‍♂️</div>
     </div>
     <div class="about-content">
@@ -280,5 +280,41 @@
 
 <script src="config.js"></script>
 <script src="js/landing.js"></script>
+<script>
+/* ═══ ANTI-OVERSCROLL CHROME ANDROID — bloque le scroll en fin de page ═══ */
+(function(){
+  let lastY = 0;
+  let touching = false;
+
+  document.addEventListener('touchstart', (e) => {
+    lastY = e.touches[0].clientY;
+    touching = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!touching) return;
+    const y = e.touches[0].clientY;
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight;
+    const viewportHeight = window.innerHeight;
+    const atBottom = scrollTop + viewportHeight >= scrollHeight - 1;
+    const atTop = scrollTop <= 0;
+    const scrollingDown = y < lastY;
+    const scrollingUp   = y > lastY;
+
+    // Bloque le "tirage" élastique en bas
+    if (atBottom && scrollingDown) {
+      e.preventDefault();
+    }
+    // Bloque le "tirage" élastique en haut
+    if (atTop && scrollingUp) {
+      e.preventDefault();
+    }
+    lastY = y;
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => { touching = false; }, { passive: true });
+})();
+</script>
 </body>
 </html>

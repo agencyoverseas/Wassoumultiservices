@@ -38,7 +38,7 @@
   </div>
   <div class="mt-12">
     <button class="nexus-btn" id="recharge">💎 Recharger crédits</button>
-    <button class="nexus-btn alt">📊</button>
+    <button class="nexus-btn alt" id="statsBtn">📊</button>
   </div>
 </div>
 
@@ -59,7 +59,7 @@
 <div class="nexus-card">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
     <h3 style="margin:0">⚠️ Journal des alertes</h3>
-    <button class="nexus-btn alt" style="font-size:11px;padding:6px 10px">🗑️ Vider</button>
+    <button class="nexus-btn alt" id="clearAlerts" style="font-size:11px;padding:6px 10px">🗑️ Vider</button>
   </div>
   <div style="text-align:center;padding:14px;color:#7a96a8;font-size:13px" id="alerts">
     Aucune alerte. Tout fonctionne normalement ✅
@@ -69,25 +69,25 @@
 <!-- Canaux d'alerte -->
 <div class="nexus-card">
   <h3>📡 Canaux d'alerte</h3>
-  <div class="nexus-stat"><span>📱 Push (PWA)</span><span style="color:#fbbf24">⚠️ Permission requise</span></div>
-  <div class="nexus-stat"><span>✈️ Telegram</span><span style="color:#7a96a8">Non configuré</span></div>
-  <div class="nexus-stat"><span>📧 Email</span><span style="color:#5fd1a8">client@wassou.com</span></div>
-  <div class="nexus-stat"><span>🔗 Webhook Make</span><span style="color:#7a96a8">Non configuré</span></div>
+  <div class="nexus-stat"><span>📱 Push (PWA)</span><span id="pushStat" style="color:#fbbf24">⚠️ Permission requise</span></div>
+  <div class="nexus-stat"><span>✈️ Telegram</span><span id="tgStat" style="color:#7a96a8">Non configuré</span></div>
+  <div class="nexus-stat"><span>📧 Email</span><span id="mailStat" style="color:#5fd1a8">client@wassou.com</span></div>
+  <div class="nexus-stat"><span>🔗 Webhook Make</span><span id="hookStat" style="color:#7a96a8">Non configuré</span></div>
   <div class="mt-12">
-    <button class="nexus-btn">🧪 Test alerte</button>
-    <button class="nexus-btn alt">🔔 Activer push</button>
+    <button class="nexus-btn" id="testAlert">🧪 Test alerte</button>
+    <button class="nexus-btn alt" id="pushBtn">🔔 Activer push</button>
   </div>
 </div>
 
 <!-- Agent IA état -->
 <div class="nexus-card">
   <h3>🤖 État Agent IA</h3>
-  <div class="nexus-stat"><span>Modèle</span><span>claude-sonnet</span></div>
-  <div class="nexus-stat"><span>Statut</span><span style="color:#5fd1a8">✅ Actif</span></div>
-  <div class="nexus-stat"><span>Cap quotidien</span><span>5 €/jour</span></div>
-  <div class="nexus-stat"><span>Mode dégradé</span><span style="color:#7a96a8">○ Inactif</span></div>
+  <div class="nexus-stat"><span>Modèle</span><span id="iaModel">claude-sonnet</span></div>
+  <div class="nexus-stat"><span>Statut</span><span id="iaStatus" style="color:#5fd1a8">✅ Actif</span></div>
+  <div class="nexus-stat"><span>Cap quotidien</span><span id="iaCap">5 €/jour</span></div>
+  <div class="nexus-stat"><span>Mode dégradé</span><span id="iaDeg" style="color:#7a96a8">○ Inactif</span></div>
   <div class="mt-12">
-    <button class="nexus-btn danger">⚠️ Forcer mode dégradé</button>
+    <button class="nexus-btn danger" id="forceDeg">⚠️ Forcer mode dégradé</button>
   </div>
 </div>
 
@@ -95,12 +95,12 @@
 <div class="nexus-card">
   <h3>🔧 Actions de maintenance</h3>
   <div class="nexus-grid-2">
-    <button class="nexus-btn alt">🔑 Gérer les clés API</button>
-    <button class="nexus-btn alt">📊 Console usage</button>
-    <button class="nexus-btn alt">🟣 Scénarios Make</button>
-    <button class="nexus-btn alt">🐙 Dépôt GitHub</button>
-    <button class="nexus-btn alt">📋 Exporter logs</button>
-    <button class="nexus-btn alt">♻️ Reset cooldowns</button>
+    <button class="nexus-btn alt" id="actKeys">🔑 Gérer les clés API</button>
+    <button class="nexus-btn alt" id="actConsole">📊 Console usage</button>
+    <button class="nexus-btn alt" id="actMake">🟣 Scénarios Make</button>
+    <button class="nexus-btn alt" id="actGit">🐙 Dépôt GitHub</button>
+    <button class="nexus-btn alt" id="actLogs">📋 Exporter logs</button>
+    <button class="nexus-btn alt" id="actReset">♻️ Reset cooldowns</button>
   </div>
 </div>
 
@@ -113,10 +113,218 @@ const s = Auth.getSession();
 if (!s || s.role !== 'admin') {
   location.replace('login.html');
 }
+
+// ─── Mini-toast Nexus (style sombre cohérent) ───
+function nxToast(msg, type = 'info') {
+  const colors = {
+    info:    { bg:'#1a2a35', bd:'#5fd1a8', ic:'ℹ️' },
+    success: { bg:'#1a2a25', bd:'#5fd1a8', ic:'✅' },
+    error:   { bg:'#2a1a1a', bd:'#ef4444', ic:'❌' },
+    warn:    { bg:'#2a2418', bd:'#fbbf24', ic:'⚠️' },
+  };
+  const c = colors[type] || colors.info;
+  const t = document.createElement('div');
+  t.textContent = c.ic + '  ' + msg;
+  t.style.cssText = `
+    position:fixed; bottom:30px; left:50%; transform:translateX(-50%);
+    background:${c.bg}; color:#e6edf3; padding:14px 22px;
+    border:1px solid ${c.bd}; border-radius:12px;
+    box-shadow:0 6px 20px rgba(0,0,0,.4); font-size:14px;
+    z-index:9999; max-width:90%; text-align:center;
+    animation: nxIn .2s ease-out;
+  `;
+  if (!document.getElementById('nx-anim')) {
+    const st = document.createElement('style');
+    st.id = 'nx-anim';
+    st.textContent = '@keyframes nxIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}';
+    document.head.appendChild(st);
+  }
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .25s'; setTimeout(()=>t.remove(),300); }, 2400);
+}
+
+// ─── Mini-confirm Nexus ───
+function nxConfirm(msg) {
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.style.cssText = `
+      position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+      display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;
+    `;
+    ov.innerHTML = `
+      <div style="background:#0f1a22;border:1px solid #1f3340;border-radius:16px;padding:22px;max-width:340px;width:100%">
+        <div style="font-size:15px;color:#e6edf3;margin-bottom:18px;line-height:1.5">${msg}</div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button data-r="0" style="padding:10px 18px;border-radius:8px;background:#1f3340;color:#e6edf3;font-weight:600;font-size:14px">Annuler</button>
+          <button data-r="1" style="padding:10px 18px;border-radius:8px;background:#ef4444;color:#fff;font-weight:600;font-size:14px">Confirmer</button>
+        </div>
+      </div>
+    `;
+    ov.querySelectorAll('button').forEach(b => b.onclick = () => { ov.remove(); resolve(b.dataset.r === '1'); });
+    document.body.appendChild(ov);
+  });
+}
+
+// ─── État local persistant ───
+const NX_KEY = 'wassou_nexus_state';
+const loadState = () => { try { return JSON.parse(localStorage.getItem(NX_KEY)) || {}; } catch { return {}; } };
+const saveState = (s) => localStorage.setItem(NX_KEY, JSON.stringify(s));
+const state = loadState();
+
+// ─── Initialiser l'UI depuis l'état ───
+function refreshUI() {
+  // Push status
+  if ('Notification' in window) {
+    const p = Notification.permission;
+    const el = document.getElementById('pushStat');
+    if (p === 'granted')        { el.textContent = '✅ Autorisées'; el.style.color = '#5fd1a8'; }
+    else if (p === 'denied')    { el.textContent = '🚫 Refusées';   el.style.color = '#ef4444'; }
+    else                        { el.textContent = '⚠️ Permission requise'; el.style.color = '#fbbf24'; }
+  }
+  // Mode dégradé
+  const deg = document.getElementById('iaDeg');
+  const dgBtn = document.getElementById('forceDeg');
+  if (state.degraded) {
+    deg.textContent = '● Activé';
+    deg.style.color = '#ef4444';
+    dgBtn.innerHTML = '✅ Désactiver mode dégradé';
+    document.getElementById('iaStatus').textContent = '⚠️ Dégradé';
+    document.getElementById('iaStatus').style.color = '#fbbf24';
+  } else {
+    deg.textContent = '○ Inactif';
+    deg.style.color = '#7a96a8';
+    dgBtn.innerHTML = '⚠️ Forcer mode dégradé';
+    document.getElementById('iaStatus').textContent = '✅ Actif';
+    document.getElementById('iaStatus').style.color = '#5fd1a8';
+  }
+  // Crédits
+  if (state.credits != null) document.getElementById('credits').textContent = state.credits.toFixed(2);
+}
+refreshUI();
+
+// ─── Déconnexion ───
 document.getElementById('lo').addEventListener('click', () => Auth.logout());
+
+// ─── Recharger crédits ───
 document.getElementById('recharge').addEventListener('click', () => {
-  const v = prompt('Nouveau solde de crédits (€) :', '20.00');
-  if (v !== null){ document.getElementById('credits').textContent = parseFloat(v).toFixed(2); }
+  const v = prompt('Nouveau solde de crédits (€) :', state.credits != null ? state.credits.toFixed(2) : '20.00');
+  if (v !== null) {
+    const n = parseFloat(v);
+    if (isNaN(n)) return nxToast('Valeur invalide', 'error');
+    state.credits = n; saveState(state); refreshUI();
+    nxToast(`Crédits rechargés : ${n.toFixed(2)} €`, 'success');
+  }
+});
+
+document.getElementById('statsBtn').addEventListener('click', () => {
+  window.open('https://console.anthropic.com/dashboard', '_blank');
+});
+
+// ─── Vider alertes ───
+document.getElementById('clearAlerts').addEventListener('click', async () => {
+  if (await nxConfirm('Vider le journal des alertes ?')) {
+    document.getElementById('alerts').textContent = 'Aucune alerte. Tout fonctionne normalement ✅';
+    nxToast('Journal vidé', 'success');
+  }
+});
+
+// ─── Test alerte ───
+document.getElementById('testAlert').addEventListener('click', () => {
+  // Affiche une alerte dans le journal
+  const a = document.getElementById('alerts');
+  const now = new Date().toLocaleTimeString('fr-FR');
+  a.innerHTML = `<div style="text-align:left;padding:8px;background:#1a2a25;border-left:3px solid #5fd1a8;border-radius:6px;color:#e6edf3">
+    <strong>🧪 Test alerte</strong> · ${now}<br>
+    <span style="font-size:12px;color:#7a96a8">Tous les canaux d'alerte ont été testés avec succès.</span>
+  </div>`;
+  // Tente une notification système si autorisée
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('Wassou — Test alerte', {
+      body: 'Le système d\'alertes fonctionne correctement.',
+      icon: 'icons/icon-192.png'
+    });
+  }
+  nxToast('Alerte test envoyée', 'success');
+});
+
+// ─── Activer push ───
+document.getElementById('pushBtn').addEventListener('click', async () => {
+  if (!('Notification' in window)) return nxToast('Notifications non supportées sur ce navigateur', 'error');
+  if (Notification.permission === 'granted') return nxToast('Notifications déjà autorisées ✅', 'info');
+  if (Notification.permission === 'denied') return nxToast('Refusées. Activez-les dans les paramètres du navigateur', 'warn');
+  try {
+    const p = await Notification.requestPermission();
+    refreshUI();
+    if (p === 'granted') {
+      new Notification('Wassou — Notifications activées', { body: 'Vous recevrez désormais les alertes.', icon:'icons/icon-192.png' });
+      nxToast('Notifications activées', 'success');
+    } else nxToast('Permission refusée', 'warn');
+  } catch (e) { nxToast('Erreur : ' + e.message, 'error'); }
+});
+
+// ─── Forcer mode dégradé ───
+document.getElementById('forceDeg').addEventListener('click', async () => {
+  if (state.degraded) {
+    if (await nxConfirm('Désactiver le mode dégradé ? L\'agent IA redeviendra pleinement actif.')) {
+      state.degraded = false; saveState(state); refreshUI();
+      nxToast('Mode dégradé désactivé', 'success');
+    }
+  } else {
+    if (await nxConfirm('Activer le mode dégradé ?\n\nL\'agent IA ne répondra plus qu\'avec les réponses préprogrammées (économie de crédits).')) {
+      state.degraded = true; saveState(state); refreshUI();
+      nxToast('Mode dégradé activé', 'warn');
+    }
+  }
+});
+
+// ─── Actions maintenance ───
+document.getElementById('actKeys').addEventListener('click', () => {
+  const k = prompt('Clé API Anthropic (sk-ant-…) :\n\n(Laisser vide pour ne pas modifier)', state.apiKey ? '***' + state.apiKey.slice(-6) : '');
+  if (k && k !== '***' + (state.apiKey||'').slice(-6)) {
+    state.apiKey = k; saveState(state);
+    nxToast('Clé API enregistrée localement', 'success');
+  }
+});
+
+document.getElementById('actConsole').addEventListener('click', () => {
+  window.open('https://console.anthropic.com/dashboard', '_blank');
+});
+
+document.getElementById('actMake').addEventListener('click', () => {
+  window.open('https://www.make.com/en/login', '_blank');
+});
+
+document.getElementById('actGit').addEventListener('click', () => {
+  window.open('https://github.com/drayk973/Wassoumultiservices', '_blank');
+});
+
+document.getElementById('actLogs').addEventListener('click', () => {
+  const logs = {
+    exportedAt: new Date().toISOString(),
+    state,
+    devis: JSON.parse(localStorage.getItem('wm_devis') || '[]'),
+    clients: JSON.parse(localStorage.getItem('wm_clients') || '[]'),
+    interventions: JSON.parse(localStorage.getItem('wm_interventions') || '[]'),
+    settings: JSON.parse(localStorage.getItem('wm_settings') || '{}'),
+  };
+  const blob = new Blob([JSON.stringify(logs, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `wassou-logs-${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  nxToast('Logs exportés', 'success');
+});
+
+document.getElementById('actReset').addEventListener('click', async () => {
+  if (await nxConfirm('Réinitialiser les cooldowns ?\n\nCela permettra de réenvoyer des SMS/relances qui étaient temporairement bloqués.')) {
+    // Nettoie tout ce qui ressemble à un cooldown
+    Object.keys(localStorage).filter(k => /cooldown|throttle/i.test(k)).forEach(k => localStorage.removeItem(k));
+    state.cooldownsResetAt = Date.now();
+    saveState(state);
+    nxToast('Cooldowns réinitialisés', 'success');
+  }
 });
 </script>
 </body>

@@ -1,0 +1,69 @@
+╔════════════════════════════════════════════════════════════╗
+║  🌿 WASSOU MULTISERVICES — DOSSIER PHOTOS LANDING PAGE      ║
+╚════════════════════════════════════════════════════════════╝
+
+Ce dossier contient les images affichées sur la page d'accueil
+(landing page publique : index.html).
+
+────────────────────────────────────────────────────────────
+📂 FICHIERS ACTUELLEMENT EN PLACE
+────────────────────────────────────────────────────────────
+
+  hero.svg   → Image principale (côté droit du hero)
+              Format conseillé : portrait, ratio 4/5 (ex: 800x1000px)
+
+  about.svg  → Image section "À propos" (équipe)
+              Format conseillé : paysage, ratio 4/3 (ex: 1200x900px)
+
+Ces fichiers SVG sont des placeholders élégants (dégradé vert
++ feuille). Ils s'affichent immédiatement, sans configuration.
+
+────────────────────────────────────────────────────────────
+🖼  REMPLACER PAR TES VRAIES PHOTOS
+────────────────────────────────────────────────────────────
+
+ÉTAPE 1 — Préparer tes photos :
+  • Format recommandé : .jpg ou .png
+  • hero  : portrait 4/5 (ex: 800×1000 px), max 500 KB
+  • about : paysage 4/3 (ex: 1200×900 px), max 500 KB
+  • Optimiser via https://squoosh.app ou https://tinypng.com
+
+ÉTAPE 2 — Déposer dans CE dossier (/assets/landing/) :
+  • Nommer EXACTEMENT :
+      - hero.jpg     (ou hero.png)
+      - about.jpg    (ou about.png)
+
+ÉTAPE 3 — Activer les .jpg dans index.html :
+  Ouvrir le fichier index.html à la racine.
+  Trouver les 2 lignes :
+
+      <img src="assets/landing/hero.svg" ...
+      <img src="assets/landing/about.svg" ...
+
+  Remplacer .svg par .jpg (ou .png selon ton format) :
+
+      <img src="assets/landing/hero.jpg" ...
+      <img src="assets/landing/about.jpg" ...
+
+  Sauver, déployer → tes photos s'affichent.
+
+────────────────────────────────────────────────────────────
+💡 SI UN FICHIER EST MANQUANT
+────────────────────────────────────────────────────────────
+
+Si une image .jpg n'est pas trouvée, le système affiche
+automatiquement un emoji de fallback (🌿 pour hero, 👷‍♂️
+pour about). Aucune erreur visuelle, rien ne casse.
+
+────────────────────────────────────────────────────────────
+📸 IDÉES DE PHOTOS À PRENDRE
+────────────────────────────────────────────────────────────
+
+  hero.jpg  : un agent en action avec un kärcher sur une
+              terrasse, ou un beau jardin entretenu, photo
+              verticale en pleine lumière naturelle.
+
+  about.jpg : photo de groupe de ton équipe en tenue, ou
+              une intervention en cours (paysage).
+
+🌿 Bonne mise en ligne !

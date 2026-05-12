@@ -23,6 +23,7 @@
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/whatsapp.js"></script>
 <script>
 if (!Auth.guard()) {} else {
 PWAInstall.init();
@@ -54,9 +55,10 @@ function render(){
       <div class="li-row">${App.icons.pin}<span>${c.adresse||'—'}</span></div>
       ${c.notes ? `<div style="margin-top:12px;padding:10px;background:var(--bg);border-radius:10px;font-size:13.5px;color:var(--text-soft)">${c.notes}</div>` : ''}
 
-      <div class="modal-actions" style="margin-top:14px">
-        <a class="btn btn-outline" href="tel:${c.tel||''}">${App.icons.phone} Appeler</a>
-        <a class="btn btn-primary" href="sms.html?clientId=${c.id}">${App.icons.sms} SMS</a>
+      <div class="modal-actions" style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <a class="btn btn-outline btn-sm" href="tel:${c.tel||''}" style="padding:10px 6px;font-size:12.5px">${App.icons.phone} Appeler</a>
+        <a class="btn btn-outline btn-sm" href="sms.html?clientId=${c.id}" style="padding:10px 6px;font-size:12.5px">${App.icons.sms} SMS</a>
+        <button class="btn btn-sm" id="waBtn" style="padding:10px 6px;font-size:12.5px;background:#25D366;color:#fff;font-weight:600">📲 WhatsApp</button>
       </div>
     </div>
 
@@ -94,6 +96,10 @@ function render(){
       App.toast('Client supprimé','success');
       setTimeout(()=>location.href='clients.html', 600);
     }
+  });
+
+  document.getElementById('waBtn').addEventListener('click', () => {
+    Wa.pickAndSend(c);
   });
 
   document.getElementById('editBtn').addEventListener('click', () => {

@@ -1,7 +1,7 @@
 // ============================================================
 // WASSOU MOBILE — SERVICE WORKER
 // ============================================================
-const CACHE = 'wassou-mobile-v3';
+const CACHE = 'wassou-mobile-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -27,6 +27,7 @@ const ASSETS = [
   './js/data.js',
   './js/pdf-facture.js',
   './js/pull-refresh.js',
+  './js/whatsapp.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/apple-touch-icon.png',

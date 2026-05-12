@@ -50,6 +50,7 @@
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/pdf-facture.js"></script>
+<script src="js/whatsapp.js"></script>
 <script>
 if (!App.init('interventions','Devis & Factures', `${DB.devis.all().length} documents`)) {} else {
 
@@ -132,22 +133,23 @@ if (!App.init('interventions','Devis & Factures', `${DB.devis.all().length} docu
           location.href = 'facture-view.html?id=' + d.id;
         }
         else if (b.dataset.act === 'mail'){
-          App.modal('Envoyer par mail', `
+          // Étape 1 : choix du canal (Mail / WhatsApp)
+          App.modal('Envoyer le document', `
             <div style="font-size:14px;color:var(--text-soft);margin-bottom:14px">
-              Quel type de document souhaitez-vous envoyer ?
+              Comment souhaitez-vous l'envoyer ?
             </div>
-            <button class="choice-card" data-send="devis">
-              <div class="ic devis">📄</div>
+            <button class="choice-card" data-ch="mail">
+              <div class="ic" style="background:#e8f0fe;color:#1967d2">📧</div>
               <div class="tx">
-                <div class="t">Envoyer comme devis</div>
-                <div class="s">Proposition commerciale</div>
+                <div class="t">Par email</div>
+                <div class="s">Ouvre votre app mail</div>
               </div>
             </button>
-            <button class="choice-card" data-send="facture">
-              <div class="ic facture">🧾</div>
+            <button class="choice-card" data-ch="whatsapp">
+              <div class="ic" style="background:#dcfce7;color:#16a34a">📲</div>
               <div class="tx">
-                <div class="t">Envoyer comme facture</div>
-                <div class="s">Document à régler par le client</div>
+                <div class="t">Par WhatsApp</div>
+                <div class="s">Message pré-rempli pour le client</div>
               </div>
             </button>
             <div class="modal-actions" style="margin-top:14px">
@@ -155,16 +157,25 @@ if (!App.init('interventions','Devis & Factures', `${DB.devis.all().length} docu
             </div>
           `);
           setTimeout(() => {
-            document.querySelectorAll('[data-send]').forEach(btn => btn.addEventListener('click', () => {
-              const t = btn.dataset.send;
+            document.querySelectorAll('[data-ch]').forEach(btn => btn.addEventListener('click', () => {
+              const ch = btn.dataset.ch;
               document.querySelector('.modal-overlay').remove();
               const c = DB.clients.get(d.clientId);
-              if (!c?.email) {
-                App.toast("Ce client n'a pas d'adresse email","error");
-                return;
+              if (!c) return App.toast('Client introuvable','error');
+
+              if (ch === 'mail') {
+                if (!c.email) return App.toast("Ce client n'a pas d'email",'error');
+                PdfFacture.sendByMail(d, d.type || 'devis');
+                App.toast('Ouverture du mail…','success');
+              } else if (ch === 'whatsapp') {
+                if (!c.tel) return App.toast("Ce client n'a pas de téléphone",'error');
+                const isFact = d.type === 'facture';
+                Wa.openEditor(isFact ? 'factureEnvoyee' : 'devisEnvoye', c, {
+                  numero:  d.numero || d.id,
+                  montant: Fmt.eur(d.total || 0),
+                  service: (d.lines?.[0]?.label) || '',
+                });
               }
-              PdfFacture.sendByMail(d, t);
-              App.toast('Ouverture du mail…','success');
             }));
           }, 50);
         }

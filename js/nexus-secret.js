@@ -313,17 +313,25 @@
   // ============================================================
   window.NexusCredits = {
     getStatus() {
+      // 🆕 Lit en priorité l'usage réel tracké par NexusAnthropic
       const data = JSON.parse(localStorage.getItem('wassou_anthropic_usage') || '{}');
       const budget = NEXUS.surveillance_credits.budget_mensuel_eur;
       const spent = data.month_spent_eur || 0;
       const remaining = Math.max(0, budget - spent);
-      const pct = budget > 0 ? (remaining / budget) * 100 : 0;
+      const pct = budget > 0 ? (remaining / budget) * 100 : 100;
       const seuils = NEXUS.surveillance_credits.seuils_alerte;
       let level = 'ok';
       if (pct < seuils.critique) level = 'critical';
       else if (pct < seuils.urgent) level = 'urgent';
       else if (pct < seuils.attention) level = 'warning';
-      return { budget, spent, remaining, pct, level, last_update: data.last_update || null, details: data };
+      return {
+        budget, spent, remaining, pct, level,
+        last_update: data.last_update || null,
+        calls: data.month_calls || 0,
+        input_tokens: data.month_input_tokens || 0,
+        output_tokens: data.month_output_tokens || 0,
+        details: data,
+      };
     },
 
     check() {
@@ -362,5 +370,337 @@
     setTimeout(() => Notification.requestPermission(), 5000);
   }
 
-  console.log('[NEXUS] Maintenance system loaded ✓ (mobile-ready)');
+  // ============================================================
+  //  🆕 NEXUS ANTHROPIC — Gestion clé API + tracking consommation
+  // ============================================================
+  // Stockage local SÉCURISÉ (jamais exposé sur landing publique)
+  const API_KEY_STORAGE = 'wassou_anthropic_api_key';
+  const USAGE_STORAGE   = 'wassou_anthropic_usage';
+
+  window.NexusAnthropic = {
+
+    // Récupère la clé : priorité localStorage > CONFIG
+    getKey() {
+      return localStorage.getItem(API_KEY_STORAGE) || NEXUS.anthropic?.api_key || '';
+    },
+
+    // Sauve la clé (depuis le panel Nexus uniquement)
+    setKey(key) {
+      const trimmed = String(key || '').trim();
+      if (!trimmed) {
+        localStorage.removeItem(API_KEY_STORAGE);
+        return false;
+      }
+      localStorage.setItem(API_KEY_STORAGE, trimmed);
+
+      // Initialise la date d'activation cycle facturation si vide
+      const cycle = JSON.parse(localStorage.getItem('wassou_billing_cycle') || '{}');
+      if (!cycle.date_activation) {
+        cycle.date_activation = new Date().toISOString().slice(0,10);
+        cycle.actif = true;
+        localStorage.setItem('wassou_billing_cycle', JSON.stringify(cycle));
+      }
+
+      // Initialise compteur usage si vide
+      if (!localStorage.getItem(USAGE_STORAGE)) {
+        this.resetUsage();
+      }
+
+      return true;
+    },
+
+    clearKey() {
+      localStorage.removeItem(API_KEY_STORAGE);
+    },
+
+    // Aperçu masqué : sk-ant-...xxxxx
+    getMaskedKey() {
+      const k = this.getKey();
+      if (!k) return '';
+      if (k.length < 12) return '***';
+      return k.slice(0,7) + '…' + k.slice(-6);
+    },
+
+    // Vérifie que la clé fonctionne (1 ping minimal vers /v1/messages)
+    async testKey() {
+      const key = this.getKey();
+      if (!key) return { ok:false, error:'Aucune clé enregistrée' };
+      try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': key,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true',
+          },
+          body: JSON.stringify({
+            model: NEXUS.anthropic?.modele || 'claude-sonnet-4-5',
+            max_tokens: 10,
+            messages: [{ role:'user', content:'ping' }],
+          }),
+        });
+        if (res.status === 401 || res.status === 403) {
+          return { ok:false, error:'Clé invalide (401/403)' };
+        }
+        if (!res.ok) {
+          const txt = await res.text().catch(()=>String(res.status));
+          return { ok:false, error:'HTTP ' + res.status + ' — ' + txt.slice(0,120) };
+        }
+        const data = await res.json();
+        // Comptabilise l'appel test
+        if (data.usage) {
+          this.trackUsage(data.usage.input_tokens || 0, data.usage.output_tokens || 0);
+        }
+        return { ok:true, data };
+      } catch (e) {
+        return { ok:false, error: e.message || 'Erreur réseau' };
+      }
+    },
+
+    // Lecture de l'usage stocké
+    getUsage() {
+      try { return JSON.parse(localStorage.getItem(USAGE_STORAGE) || '{}'); }
+      catch { return {}; }
+    },
+
+    resetUsage() {
+      const fresh = {
+        month_spent_eur: 0,
+        month_input_tokens: 0,
+        month_output_tokens: 0,
+        month_calls: 0,
+        month_start: this._currentBillingMonthStart(),
+        last_update: new Date().toISOString(),
+      };
+      localStorage.setItem(USAGE_STORAGE, JSON.stringify(fresh));
+      return fresh;
+    },
+
+    // Enregistre une consommation (à appeler après CHAQUE appel IA)
+    // Calcul prix : (input_tokens × tarif_input + output_tokens × tarif_output) / 1M × taux_eur
+    trackUsage(inputTokens=0, outputTokens=0) {
+      const A = NEXUS.anthropic || {};
+      const tarifIn  = A.tarif_input_per_mtok  || 3.00;
+      const tarifOut = A.tarif_output_per_mtok || 15.00;
+      const taux     = A.taux_eur_usd          || 0.92;
+
+      const costUsd = (inputTokens * tarifIn + outputTokens * tarifOut) / 1_000_000;
+      const costEur = costUsd * taux;
+
+      let u = this.getUsage();
+      // Si on a changé de mois de facturation, reset
+      const curMonthStart = this._currentBillingMonthStart();
+      if (u.month_start !== curMonthStart) {
+        u = this.resetUsage();
+      }
+
+      u.month_spent_eur   = (u.month_spent_eur || 0) + costEur;
+      u.month_input_tokens  = (u.month_input_tokens  || 0) + inputTokens;
+      u.month_output_tokens = (u.month_output_tokens || 0) + outputTokens;
+      u.month_calls = (u.month_calls || 0) + 1;
+      u.last_update = new Date().toISOString();
+      localStorage.setItem(USAGE_STORAGE, JSON.stringify(u));
+
+      // Déclenche check seuils
+      try { NexusCredits.check(); } catch(e) {}
+      return u;
+    },
+
+    // Calcule le 1er jour du cycle actuel (basé sur jour_debut_mois)
+    _currentBillingMonthStart() {
+      const cycle = (NEXUS.cycle_facturation || {});
+      const jour = Math.min(28, Math.max(1, cycle.jour_debut_mois || 1));
+      const now = new Date();
+      let y = now.getFullYear(), m = now.getMonth();
+      if (now.getDate() < jour) m -= 1;
+      if (m < 0) { m = 11; y -= 1; }
+      const d = new Date(y, m, jour);
+      return d.toISOString().slice(0,10);
+    },
+
+    // Statut détaillé pour affichage Nexus
+    getDetailedStatus() {
+      const usage = this.getUsage();
+      const budget = NEXUS.surveillance_credits?.budget_mensuel_eur || 20;
+      const spent = usage.month_spent_eur || 0;
+      const remaining = Math.max(0, budget - spent);
+      const pct = budget > 0 ? (spent / budget) * 100 : 0;
+      return {
+        hasKey: !!this.getKey(),
+        maskedKey: this.getMaskedKey(),
+        budget,
+        spent,
+        remaining,
+        pct,
+        calls: usage.month_calls || 0,
+        input_tokens: usage.month_input_tokens || 0,
+        output_tokens: usage.month_output_tokens || 0,
+        month_start: usage.month_start || this._currentBillingMonthStart(),
+        last_update: usage.last_update || null,
+      };
+    },
+  };
+
+  // ============================================================
+  //  🆕 NEXUS BILLING — Rapport mensuel auto par Telegram
+  // ============================================================
+  // Vérifie à chaque chargement si on est passé le jour J du mois.
+  // Si oui ET pas déjà envoyé ce mois → envoie le rapport au bot Telegram.
+  const REPORT_SENT_KEY = 'wassou_last_monthly_report';
+
+  window.NexusBilling = {
+
+    // Statut cycle facturation
+    getCycle() {
+      const stored = JSON.parse(localStorage.getItem('wassou_billing_cycle') || '{}');
+      const cfg = NEXUS.cycle_facturation || {};
+      return {
+        jour_debut_mois: cfg.jour_debut_mois || 1,
+        date_activation: stored.date_activation || cfg.date_activation || '',
+        actif: stored.actif != null ? stored.actif : (cfg.actif || false),
+      };
+    },
+
+    setCycle(patch) {
+      const cur = this.getCycle();
+      const next = Object.assign({}, cur, patch);
+      localStorage.setItem('wassou_billing_cycle', JSON.stringify(next));
+      return next;
+    },
+
+    // Vérifie si on doit envoyer le rapport mensuel maintenant
+    shouldSendReport() {
+      const cfg = NEXUS.rapport_mensuel || {};
+      if (!cfg.active) return false;
+
+      const cycle = this.getCycle();
+      if (!cycle.actif) return false;
+
+      const now = new Date();
+      const todayKey = now.toISOString().slice(0,10);   // yyyy-mm-dd
+      const monthKey = todayKey.slice(0,7);             // yyyy-mm
+
+      // Déjà envoyé ce mois ?
+      const lastSent = localStorage.getItem(REPORT_SENT_KEY);
+      if (lastSent && lastSent.slice(0,7) === monthKey) return false;
+
+      // Bon jour ?
+      if (now.getDate() !== (cycle.jour_debut_mois || 1)) return false;
+
+      // Bonne heure (≥ heure_envoi) ?
+      const [hh, mm] = (cfg.heure_envoi || '09:00').split(':').map(Number);
+      const targetMinutes = (hh||9) * 60 + (mm||0);
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      if (nowMinutes < targetMinutes) return false;
+
+      return true;
+    },
+
+    // Construit le contenu du rapport
+    buildReport() {
+      const cfg = NEXUS.rapport_mensuel || {};
+      const fact = NEXUS.facturation || {};
+      const anth = window.NexusAnthropic ? NexusAnthropic.getDetailedStatus() : { spent:0, budget:0, remaining:0, pct:0 };
+
+      // Données métier (depuis DB si présent)
+      let rdvCount = 0, caTotal = 0, devisCount = 0, smsCount = 0;
+      try {
+        if (window.DB) {
+          const monthStart = anth.month_start || new Date().toISOString().slice(0,7) + '-01';
+          const ints = DB.interventions.all().filter(i => (i.date||i.createdAt||'') >= monthStart);
+          const pays = DB.paiements.all().filter(p => (p.date||p.createdAt||'') >= monthStart && p.statut === 'reçu');
+          const dvs  = DB.devis.all().filter(d => (d.date||d.createdAt||'') >= monthStart);
+          const sms  = DB.sms.all().filter(s => (s.date||s.createdAt||'') >= monthStart);
+          rdvCount = ints.length;
+          caTotal = pays.reduce((s,p)=>s+(p.montant||0), 0);
+          devisCount = dvs.length;
+          smsCount = sms.length;
+        }
+      } catch(e) { console.warn('[NEXUS] DB read fail', e); }
+
+      const marge = (fact.forfait_mensuel_eur || 0) - (anth.spent || 0);
+      const alertes = (NexusAlerts.getLog() || []).filter(a => {
+        try {
+          const m = new Date(a.timestamp).toISOString().slice(0,7);
+          return m === new Date().toISOString().slice(0,7);
+        } catch { return false; }
+      }).length;
+
+      const moisLabel = new Date().toLocaleString('fr-FR', { month:'long', year:'numeric' });
+
+      const template = cfg.template || '📊 *Rapport mensuel Wassou — {mois}*\n\nRDV: {rdv_count} | CA: {ca_total}€ | Crédits: {credits_spent}€/{credits_budget}€';
+      const vars = {
+        '{mois}': moisLabel,
+        '{rdv_count}': rdvCount,
+        '{rdv_inclus}': fact.inclus_dans_forfait?.rdv_par_mois || '—',
+        '{ca_total}': caTotal.toFixed(2),
+        '{devis_count}': devisCount,
+        '{sms_count}': smsCount,
+        '{forfait}': fact.forfait_mensuel_eur || 0,
+        '{marge}': marge.toFixed(2),
+        '{statut_paiement}': '✅ À jour',
+        '{credits_spent}': (anth.spent || 0).toFixed(2),
+        '{credits_budget}': anth.budget || 0,
+        '{credits_remaining}': (anth.remaining || 0).toFixed(2),
+        '{credits_pct}': Math.round(100 - (anth.pct || 0)),
+        '{alertes_count}': alertes,
+      };
+      let msg = template;
+      Object.entries(vars).forEach(([k,v]) => { msg = msg.split(k).join(v); });
+      return msg;
+    },
+
+    // Envoie le rapport au Telegram (réutilise la même API que NexusAlerts)
+    async sendReport(forceTest=false) {
+      const tg = NEXUS.alertes_techniques?.telegram;
+      if (!tg || !tg.bot_token || !tg.chat_id) {
+        console.warn('[NEXUS] Telegram non configuré, rapport non envoyé');
+        return { ok:false, error:'Telegram non configuré (bot_token / chat_id manquant)' };
+      }
+
+      const text = this.buildReport();
+
+      try {
+        const r = await fetch(`https://api.telegram.org/bot${tg.bot_token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: tg.chat_id, text, parse_mode: 'Markdown' })
+        });
+        const data = await r.json().catch(()=>({}));
+        if (!r.ok || !data.ok) {
+          return { ok:false, error: (data.description || 'HTTP ' + r.status) };
+        }
+        if (!forceTest) {
+          localStorage.setItem(REPORT_SENT_KEY, new Date().toISOString());
+        }
+        return { ok:true };
+      } catch(e) {
+        return { ok:false, error: e.message };
+      }
+    },
+
+    // Vérification automatique (auto-déclenchée au load + toutes les heures)
+    async autoCheck() {
+      if (!this.shouldSendReport()) return;
+      console.log('[NEXUS] Envoi rapport mensuel auto...');
+      const res = await this.sendReport(false);
+      if (res.ok) {
+        console.log('[NEXUS] Rapport mensuel envoyé ✓');
+        NexusAlerts.log({
+          level:'info', title:'Rapport mensuel envoyé',
+          message:'Rapport automatique envoyé sur Telegram',
+          timestamp: new Date().toISOString(), site:'wassou-multiservices', url: location.href,
+        });
+      } else {
+        console.warn('[NEXUS] Échec envoi rapport mensuel:', res.error);
+      }
+    },
+  };
+
+  // Auto-check au chargement (10s après) puis toutes les heures
+  setTimeout(() => { try { NexusBilling.autoCheck(); } catch(e) { console.warn(e); } }, 10000);
+  setInterval(() => { try { NexusBilling.autoCheck(); } catch(e) { console.warn(e); } }, 60 * 60 * 1000);
+
+  console.log('[NEXUS] Maintenance system loaded ✓ (mobile-ready, Anthropic tracking, monthly Telegram report)');
 })();

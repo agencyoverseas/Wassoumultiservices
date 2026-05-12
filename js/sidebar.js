@@ -1,8 +1,9 @@
 // ============================================================
-//  WASSOU — SIDEBAR v3.0
+//  WASSOU — SIDEBAR v3.1
 //  - Mode menu hamburger desktop (sidebar cachée par défaut)
 //  - Bouton déconnexion FAB sur toutes les pages
 //  - Auto-fermeture au clic sur un lien
+//  - 🆕 Bouton "💬 Support NexusAI" → lien chatbot Telegram (CONFIG.SUPPORT)
 // ============================================================
 const Sidebar = {
   inject(active = '') {
@@ -55,14 +56,37 @@ const Sidebar = {
       }
     });
 
+    // 🆕 Bouton SUPPORT NexusAI (Telegram chatbot)
+    const SUP = (window.CONFIG && window.CONFIG.SUPPORT) || null;
+    let supportHtml = '';
+    if (SUP && SUP.active && SUP.telegram_url) {
+      const url = SUP.start_payload
+        ? `${SUP.telegram_url}${SUP.telegram_url.includes('?') ? '&' : '?'}start=${encodeURIComponent(SUP.start_payload)}`
+        : SUP.telegram_url;
+      supportHtml = `
+        <a href="${url}" target="_blank" rel="noopener" class="support-btn" id="supportBtn">
+          <span class="support-ic">${SUP.icon || '💬'}</span>
+          <span class="support-txt">
+            <strong>${SUP.label || 'Support'}</strong>
+            <small>${SUP.sublabel || 'Aide en direct'}</small>
+          </span>
+          <span class="support-arrow">→</span>
+        </a>
+      `;
+    }
+
     html += `
       </div>
       <div class="sidebar-footer">
+        ${supportHtml}
         <a href="#" class="logout-btn" onclick="if(window.Auth&&Auth.logout){Auth.logout()}else{localStorage.removeItem('wassou_session');location.href='login.html'}return false">🚪 Déconnexion</a>
       </div>
     `;
 
     sidebar.innerHTML = html;
+
+    // Injection styles bouton support (1 fois)
+    Sidebar._injectSupportStyles();
 
     // Pill utilisateur
     if (session) {
@@ -92,6 +116,30 @@ const Sidebar = {
     }
   },
 
+  _injectSupportStyles() {
+    if (document.getElementById('support-btn-styles')) return;
+    const st = document.createElement('style');
+    st.id = 'support-btn-styles';
+    st.textContent = `
+      .support-btn{
+        display:flex;align-items:center;gap:12px;
+        padding:12px 14px;margin-bottom:10px;
+        background:linear-gradient(135deg,#229ED9 0%,#1a7eb0 100%);
+        color:#fff;border-radius:12px;text-decoration:none;
+        box-shadow:0 4px 12px rgba(34,158,217,.25);
+        transition:transform .15s,box-shadow .2s;
+      }
+      .support-btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(34,158,217,.35)}
+      .support-btn:active{transform:translateY(0)}
+      .support-ic{font-size:22px;line-height:1}
+      .support-txt{flex:1;display:flex;flex-direction:column;line-height:1.2}
+      .support-txt strong{font-size:14px;font-weight:600}
+      .support-txt small{font-size:11px;opacity:.85;margin-top:2px}
+      .support-arrow{font-size:16px;opacity:.7}
+    `;
+    document.head.appendChild(st);
+  },
+
   _bindBurger() {
     const burger = document.getElementById('burger');
     const sidebar = document.getElementById('sidebar');
@@ -108,7 +156,7 @@ const Sidebar = {
       sidebar.classList.remove('open');
       overlay?.classList.remove('show');
     });
-    // Fermer la sidebar après un clic sur un lien
+    // Fermer la sidebar après un clic sur un lien interne (pas le support qui ouvre en _blank)
     sidebar.querySelectorAll('.nav-link, .logout-btn').forEach(link => {
       link.addEventListener('click', () => {
         sidebar.classList.remove('open');

@@ -147,12 +147,11 @@ ${doc.notes ? `<div class="notes"><strong>Notes</strong>${doc.notes}</div>` : ''
 </body></html>`;
   },
 
-  // ─── Ouvre le PDF dans une nouvelle fenêtre/onglet ───
-  open(doc, type = 'facture') {
+  // ─── Ouvre l'aperçu HTML imprimable dans une nouvelle fenêtre ───
+  openHTML(doc, type = 'facture') {
     const html = this.buildHTML(doc, type);
     const win  = window.open('', '_blank');
     if (!win) {
-      // Fallback : si bloqué par popup blocker → blob URL
       const blob = new Blob([html], { type: 'text/html' });
       const url  = URL.createObjectURL(blob);
       window.location.href = url;
@@ -162,6 +161,9 @@ ${doc.notes ? `<div class="notes"><strong>Notes</strong>${doc.notes}</div>` : ''
     win.document.close();
     win.focus();
   },
+
+  // Alias rétrocompatibilité
+  open(doc, type = 'facture') { return this.openHTML(doc, type); },
 
   // ─── Envoi par mail (mailto:) ───
   sendByMail(doc, type = 'facture') {

@@ -141,3 +141,28 @@ const PWAInstall = {
     if (b){ b.classList.remove('show'); setTimeout(()=>b.remove(), 350); }
   }
 };
+
+// ============================================================
+// 📲 AUTO-LOADER POPUP PWA (v2)
+// ============================================================
+// Charge automatiquement js/pwa-install.js sur TOUTES les pages
+// (auth.js est inclus dans chaque page du site).
+// Affiche la popup d'installation 3 secondes après le chargement,
+// si CONFIG.pwa.popup_active = true et si l'app n'est pas déjà installée.
+// ============================================================
+(function loadPwaInstallScript() {
+  // Éviter le double chargement
+  if (document.querySelector('script[data-pwa-loader]')) return;
+  // Détecter si on est dans un sous-dossier (sécurité)
+  const path = location.pathname;
+  const inSubdir = path.split('/').filter(Boolean).length > 1
+    && !path.endsWith('.html')
+    && !/\.[a-z]+$/.test(path.split('/').pop() || '');
+  const base = inSubdir ? '../js/' : 'js/';
+  const s = document.createElement('script');
+  s.src = base + 'pwa-install.js';
+  s.async = true;
+  s.setAttribute('data-pwa-loader', '1');
+  s.onerror = () => console.warn('[PWA] pwa-install.js introuvable. Vérifier que le fichier est bien dans /js/');
+  (document.head || document.documentElement).appendChild(s);
+})();

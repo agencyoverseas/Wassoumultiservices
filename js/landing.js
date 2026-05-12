@@ -325,4 +325,14 @@
     el._t = setTimeout(() => { el.classList.remove('show'); }, 3200);
   }
 
+  // ─── Auto-loader popup PWA (apparait 3s après chargement) ───
+  (function loadPwaInstall(){
+    if (document.querySelector('script[data-pwa-loader]')) return;
+    const s = document.createElement('script');
+    s.src = 'js/pwa-install.js';
+    s.async = true;
+    s.setAttribute('data-pwa-loader', '1');
+    document.head.appendChild(s);
+  })();
+
 })();

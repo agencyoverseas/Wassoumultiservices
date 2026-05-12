@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<meta name="theme-color" content="#1b4332"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>Carte Fidélité — Wassou</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" type="image/png" href="icons/favicon-32.png"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="stylesheet" href="css/app.css"/>
+<style>
+  /* ─── Carte Fidélité — styles spécifiques ─── */
+  .fid-tabs{display:flex;gap:6px;background:#eef3ee;border-radius:14px;padding:4px;margin-bottom:16px}
+  .fid-tabs button{flex:1;padding:10px;border:0;background:transparent;font-size:13.5px;font-weight:600;color:var(--text-soft);border-radius:11px;transition:all .2s}
+  .fid-tabs button.active{background:#fff;color:var(--green-dark);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+
+  /* Empty state */
+  .fid-empty{background:var(--surface);border-radius:var(--radius);padding:40px 20px;text-align:center;border:1.5px dashed var(--border)}
+  .fid-empty .ic{font-size:42px;margin-bottom:10px}
+  .fid-empty p{color:var(--text-soft);font-size:14px;margin-bottom:14px}
+
+  /* Card client fidélité */
+  .fid-card{background:var(--surface);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow-sm);border:1px solid var(--border-soft);position:relative;overflow:hidden}
+  .fid-card.complete{border-color:var(--gold);background:linear-gradient(135deg,#fffbf0 0%,#fff 60%)}
+  .fid-card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+  .fid-card-name{font-size:16px;font-weight:700;color:var(--text)}
+  .fid-card-sub{font-size:12px;color:var(--text-soft);margin-top:2px}
+  .fid-card-badge{background:var(--green-soft);color:var(--green-dark);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px}
+  .fid-card-badge.gold{background:#fdf3d8;color:#8a6a0a}
+
+  /* Grille 10 tampons */
+  .stamps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:8px 0 12px}
+  .stamp{aspect-ratio:1;border-radius:50%;background:#fff;border:2px dashed #b8d4b1;display:flex;align-items:center;justify-content:center;font-weight:700;color:#b8d4b1;font-size:14px;position:relative;transition:all .2s;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .stamp.filled{background:var(--green-dark);border:2px solid var(--green-dark);color:#fff;box-shadow:0 2px 6px rgba(27,67,50,.3)}
+  .stamp.filled::after{content:'✓';font-size:18px}
+  .stamp.filled span{display:none}
+  .stamp.gift{background:linear-gradient(135deg,var(--gold) 0%,#b88a0e 100%);border:2px solid var(--gold);color:#fff;font-size:20px;box-shadow:0 3px 10px rgba(212,160,23,.4)}
+  .stamp.gift.locked{background:#fff;border:2px dashed #d4a017;color:#d4a017}
+  .stamp:active{transform:scale(.92)}
+
+  .fid-progress{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text-soft);font-weight:500;margin-bottom:8px}
+  .fid-progress strong{color:var(--green-dark);font-weight:700}
+
+  .fid-actions{display:flex;gap:8px;margin-top:12px}
+  .fid-actions button{flex:1;padding:9px;font-size:12.5px;font-weight:600;border-radius:10px;border:1.5px solid var(--border);background:#fff;color:var(--text);display:inline-flex;align-items:center;justify-content:center;gap:6px}
+  .fid-actions button:active{background:#f3f4f6}
+  .fid-actions .btn-add{background:var(--green-dark);color:#fff;border-color:var(--green-dark)}
+  .fid-actions .btn-claim{background:var(--gold);color:#fff;border-color:var(--gold)}
+
+  /* Section parrainage */
+  .ref-hero{background:linear-gradient(135deg,var(--green-dark) 0%,#0f2e22 100%);color:#fff;border-radius:20px;padding:22px 20px;margin-bottom:14px;position:relative;overflow:hidden}
+  .ref-hero::before{content:'%';position:absolute;right:-20px;top:50%;transform:translateY(-50%);font-size:160px;color:rgba(212,160,23,.18);font-weight:900;font-family:Georgia,serif;line-height:1;pointer-events:none}
+  .ref-hero-pct{font-size:48px;font-weight:800;line-height:1;color:var(--gold);letter-spacing:-1.5px}
+  .ref-hero-title{font-size:16px;font-weight:700;margin-top:4px}
+  .ref-hero-sub{font-size:13px;opacity:.85;margin-top:6px;line-height:1.4;max-width:75%}
+
+  .ref-steps{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+  .ref-step{background:var(--surface);border-radius:14px;padding:14px 14px 14px 56px;position:relative;border:1px solid var(--border-soft);box-shadow:var(--shadow-sm)}
+  .ref-step-num{position:absolute;left:14px;top:14px;width:30px;height:30px;border-radius:50%;background:var(--green-dark);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+  .ref-step.last .ref-step-num{background:var(--gold)}
+  .ref-step-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px}
+  .ref-step-text{font-size:12.5px;color:var(--text-soft);line-height:1.4}
+
+  /* Parrainages list */
+  .ref-card{background:var(--surface);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow-sm);border:1px solid var(--border-soft)}
+  .ref-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .ref-card-name{font-size:15px;font-weight:700;color:var(--text)}
+  .ref-card-status{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px}
+  .ref-card-status.done{background:var(--green-soft);color:var(--green-dark)}
+  .ref-card-status.wait{background:var(--orange-bg);color:var(--orange-text)}
+  .ref-progress-track{height:6px;background:#eef3ee;border-radius:10px;overflow:hidden;margin-bottom:6px}
+  .ref-progress-fill{height:100%;background:linear-gradient(90deg,var(--green-dark),var(--gold));border-radius:10px;transition:width .3s}
+  .ref-progress-label{font-size:11.5px;color:var(--text-soft);text-align:right}
+
+  /* Section info conditions */
+  .cond-box{background:#f9fafb;border-radius:14px;padding:14px 16px;margin-top:14px;border-left:3px solid var(--gold)}
+  .cond-title{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--green-dark);text-transform:uppercase;margin-bottom:8px}
+  .cond-line{font-size:12.5px;color:var(--text-soft);line-height:1.5;padding-left:14px;position:relative;margin-bottom:4px}
+  .cond-line::before{content:'✓';position:absolute;left:0;color:var(--gold);font-weight:700}
+</style>
+</head>
+<body>
+<div class="status-spacer"></div>
+<header class="app-header" id="header"></header>
+
+<main class="page fade-in">
+  <div class="fid-tabs">
+    <button data-tab="cards" class="active">🎫 Cartes</button>
+    <button data-tab="ref">🤝 Parrainage</button>
+    <button data-tab="info">ℹ️ Programme</button>
+  </div>
+
+  <button class="fab-add" id="addBtn"></button>
+
+  <div id="tab-cards"></div>
+  <div id="tab-ref" style="display:none"></div>
+  <div id="tab-info" style="display:none"></div>
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/fidelite.js"></script>
+<script>
+if (!App.init('fidelite','Carte Fidélité','Programme & parrainage')) {} else {
+  Fid.run();
+}
+</script>
+</body>
+</html>

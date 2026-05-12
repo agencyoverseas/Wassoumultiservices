@@ -1,7 +1,7 @@
 // ============================================================
 // WASSOU MOBILE — SERVICE WORKER
 // ============================================================
-const CACHE = 'wassou-mobile-v4';
+const CACHE = 'wassou-mobile-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -16,6 +16,7 @@ const ASSETS = [
   './devis.html',
   './facture-view.html',
   './paiements.html',
+  './carte-fidelite.html',
   './rapports.html',
   './agent-ia.html',
   './parametres.html',
@@ -25,6 +26,7 @@ const ASSETS = [
   './js/app.js',
   './js/auth.js',
   './js/data.js',
+  './js/fidelite.js',
   './js/pdf-facture.js',
   './js/pull-refresh.js',
   './js/whatsapp.js',

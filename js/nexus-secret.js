@@ -212,18 +212,18 @@
   window.NexusGuard = {
     require() {
       const raw = sessionStorage.getItem(STORAGE_KEY);
-      if (!raw) { window.location.href = 'dashboard-admin.html'; return null; }
+      if (!raw) { window.location.href = 'dashboard.html'; return null; }
       const s = JSON.parse(raw);
       if (Date.now() > s.expires) {
         sessionStorage.removeItem(STORAGE_KEY);
-        window.location.href = 'dashboard-admin.html';
+        window.location.href = 'dashboard.html';
         return null;
       }
       return s;
     },
     logout() {
       sessionStorage.removeItem(STORAGE_KEY);
-      window.location.href = 'dashboard-admin.html';
+      window.location.href = 'dashboard.html';
     }
   };
 

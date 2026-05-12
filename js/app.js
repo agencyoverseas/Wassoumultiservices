@@ -178,6 +178,7 @@ const Drawer = {
           <a href="sms.html" class="drawer-link"><span class="ic">💬</span>SMS</a>
           <a href="devis.html" class="drawer-link"><span class="ic">📄</span>Devis</a>
           <a href="paiements.html" class="drawer-link"><span class="ic">💳</span>Paiements</a>
+          <a href="carte-fidelite.html" class="drawer-link"><span class="ic">🎫</span>Carte Fidélité</a>
           <a href="rapports.html" class="drawer-link"><span class="ic">📈</span>Rapports</a>
           <a href="agent-ia.html" class="drawer-link"><span class="ic">🤖</span>Agent IA</a>
           <a href="parametres.html" class="drawer-link"><span class="ic">⚙️</span>Paramètres</a>

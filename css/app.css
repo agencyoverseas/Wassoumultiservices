@@ -32,13 +32,20 @@ a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 input,select,textarea{font-family:inherit;font-size:15px}
 
-/* ===== STATUS SPACER + HEADER ===== */
-.status-spacer{background:var(--green-dark);height:var(--safe-top);width:100%}
+/* ===== STATUS SPACER + HEADER (fixé en haut sur toutes les pages) ===== */
+.status-spacer{
+  background:var(--green-dark);
+  height:var(--safe-top);
+  width:100%;
+  position:fixed;top:0;left:0;right:0;
+  z-index:51;
+}
 .app-header{
   background:var(--surface);padding:14px 18px 12px;
   display:flex;align-items:center;gap:14px;
   border-bottom:1px solid var(--border-soft);
-  position:sticky;top:0;z-index:50;
+  position:fixed;top:var(--safe-top);left:0;right:0;z-index:50;
+  box-shadow:0 1px 3px rgba(0,0,0,.04);
 }
 .burger{width:32px;height:32px;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:4px}
 .burger span{display:block;height:2.5px;background:var(--text);border-radius:2px}
@@ -51,7 +58,8 @@ input,select,textarea{font-family:inherit;font-size:15px}
 .bell-btn.has-notif .dot{display:block}
 
 /* ===== PAGE ===== */
-.page{padding:16px 14px;min-height:calc(100vh - 140px)}
+/* padding-top = safe-top + hauteur app-header (~64px) pour ne pas passer sous le header fixé */
+.page{padding:calc(80px + var(--safe-top)) 14px 16px;min-height:calc(100vh - 140px)}
 .page-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;text-align:center;color:var(--text-soft)}
 .page-empty .ic{font-size:48px;margin-bottom:12px;opacity:.5}
 
@@ -212,7 +220,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml;cha
 .tab-switch button.active{background:var(--surface);color:var(--green-dark);box-shadow:var(--shadow-sm)}
 
 /* ===== DETAIL PAGE ===== */
-.back-bar{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--border-soft);position:sticky;top:0;z-index:50}
+.back-bar{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--border-soft);position:fixed;top:var(--safe-top);left:0;right:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .back-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--bg)}
 .back-btn svg{width:20px;height:20px;stroke:var(--text);fill:none;stroke-width:2}
 .back-title{font-size:17px;font-weight:700;flex:1}
@@ -237,8 +245,8 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml;cha
 .sms-body{font-size:13.5px;color:var(--text-soft);line-height:1.45}
 
 /* ===== NEXUS DARK PANEL ===== */
-.nexus-body{background:#0a1419;color:#cde;min-height:100vh;padding-bottom:calc(var(--nav-h) + var(--safe-bottom))}
-.nexus-header{background:#0f1f28;padding:14px 18px;border-bottom:1px solid #1f3540;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
+.nexus-body{background:#0a1419;color:#cde;min-height:100vh;padding-top:calc(60px + var(--safe-top));padding-bottom:calc(var(--nav-h) + var(--safe-bottom))}
+.nexus-header{background:#0f1f28;padding:14px 18px;border-bottom:1px solid #1f3540;display:flex;align-items:center;gap:10px;position:fixed;top:var(--safe-top);left:0;right:0;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .nexus-header h1{font-size:18px;font-weight:700;color:#5fd1a8;flex:1}
 .nexus-badge{background:#5fd1a8;color:#063a25;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.5px}
 .nexus-banner{background:#0d3a2a;color:#7be2b8;padding:10px 14px;font-size:12.5px;text-align:center;border-bottom:1px solid #1f3540}

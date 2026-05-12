@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<meta name="theme-color" content="#f5f7f9"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Aperçu — Wassou</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" type="image/png" href="icons/favicon-32.png"/>
+<link rel="stylesheet" href="css/app.css"/>
+<style>
+  body{padding-bottom:0!important;background:var(--bg)}
+  /* ─── Header retour ─── */
+  .fv-head{
+    display:flex;align-items:center;gap:12px;
+    padding:14px 16px;background:var(--bg);
+    position:sticky;top:0;z-index:50;
+  }
+  .fv-back, .fv-share{
+    width:40px;height:40px;border-radius:50%;
+    background:var(--surface);box-shadow:var(--shadow-sm);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .fv-back svg, .fv-share svg{width:20px;height:20px;stroke:var(--text);fill:none;stroke-width:2}
+  .fv-title{flex:1;text-align:center;font-size:17px;font-weight:700;color:var(--text)}
+
+  /* ─── Carte aperçu facture ─── */
+  .fv-preview-wrap{padding:6px 16px 18px;position:relative}
+  .fv-preview{
+    background:#fff;border-radius:16px;
+    box-shadow:0 6px 24px rgba(0,0,0,.08);
+    overflow:hidden;
+    position:relative;
+  }
+
+  /* Bannière entête de la facture (hero) */
+  .fv-hero{
+    background:linear-gradient(135deg,#1b4332 0%,#2d6a4f 100%);
+    color:#fff;padding:18px 18px;
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+  }
+  .fv-hero-logo{font-size:11.5px;font-weight:600;letter-spacing:1px;opacity:.9;line-height:1.3;max-width:50%}
+  .fv-hero-title{font-size:20px;font-weight:800;letter-spacing:.8px;flex-shrink:0;padding-right:38px}
+  .fv-zoom{
+    position:absolute;top:12px;right:28px;
+    width:32px;height:32px;border-radius:50%;
+    background:rgba(255,255,255,.95);box-shadow:var(--shadow);
+    display:flex;align-items:center;justify-content:center;z-index:5;
+  }
+  .fv-zoom svg{width:16px;height:16px;stroke:var(--text);fill:none;stroke-width:2}
+
+  /* Détails facture */
+  .fv-meta{display:flex;justify-content:space-between;padding:16px 20px 12px;font-size:12.5px}
+  .fv-meta-l strong, .fv-meta-r strong{display:block;font-size:12px;color:#333;margin-bottom:2px}
+  .fv-meta-l .v, .fv-meta-r .v{color:#555;font-size:12.5px;line-height:1.5}
+  .fv-meta-r{text-align:right}
+
+  /* Tableau lignes */
+  .fv-table{margin:8px 20px 0;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden}
+  .fv-table-h{
+    background:#1b4332;color:#fff;
+    display:grid;grid-template-columns:2fr .6fr .8fr .9fr;
+    padding:10px 12px;font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;
+  }
+  .fv-table-h > div:nth-child(2), .fv-table-h > div:nth-child(3), .fv-table-h > div:nth-child(4){text-align:right}
+  .fv-table-row{
+    display:grid;grid-template-columns:2fr .6fr .8fr .9fr;
+    padding:11px 12px;font-size:12.5px;border-bottom:1px solid #f0f0f0;
+  }
+  .fv-table-row:last-child{border-bottom:none}
+  .fv-table-row > div:nth-child(2), .fv-table-row > div:nth-child(3), .fv-table-row > div:nth-child(4){text-align:right}
+  .fv-total{
+    background:#1b4332;color:#fff;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 14px;margin:0 20px 20px;border-radius:8px;
+    font-weight:700;font-size:14px;
+  }
+
+  /* ─── Bloc info bas (Total + client + statut) ─── */
+  .fv-info{
+    padding:18px 20px 12px;display:flex;
+    justify-content:space-between;align-items:flex-start;gap:12px;
+  }
+  .fv-info-l .price{font-size:30px;font-weight:800;color:var(--text);letter-spacing:-.5px}
+  .fv-info-l .client{font-size:15px;font-weight:600;color:var(--text);margin-top:4px}
+  .fv-info-r{text-align:right;flex-shrink:0}
+  .fv-statut{
+    display:inline-block;padding:7px 16px;border-radius:100px;
+    font-size:13px;font-weight:600;
+  }
+  .fv-statut.brouillon{background:#f3f4f6;color:#6b7280}
+  .fv-statut.envoyé,.fv-statut.envoye{background:#e8f0fe;color:#1967d2}
+  .fv-statut.accepté,.fv-statut.accepte{background:var(--green-soft);color:var(--green-text)}
+  .fv-statut.refusé,.fv-statut.refuse{background:var(--red-bg);color:var(--red)}
+  .fv-statut.payé,.fv-statut.paye{background:var(--green-soft);color:var(--green-text)}
+  .fv-statut-sub{font-size:11.5px;color:var(--text-muted);margin-top:6px}
+
+  /* ─── Bouton vert Envoyer ─── */
+  .fv-send{
+    margin:8px 16px 18px;padding:18px;
+    background:var(--green-dark);color:#fff;
+    border-radius:14px;display:flex;align-items:center;
+    justify-content:center;gap:10px;
+    font-size:16px;font-weight:700;
+    box-shadow:0 4px 16px rgba(27,67,50,.32);
+    transition:transform .15s;
+  }
+  .fv-send:active{transform:scale(.97)}
+  .fv-send svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2.2}
+
+  /* ─── 4 boutons ronds bas ─── */
+  .fv-actions{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    gap:12px;padding:0 16px 30px;
+  }
+  .fv-act{
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    background:transparent;
+  }
+  .fv-act-ic{
+    width:54px;height:54px;border-radius:50%;
+    background:var(--surface);box-shadow:var(--shadow-sm);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .15s;
+  }
+  .fv-act:active .fv-act-ic{transform:scale(.92);background:var(--green-soft)}
+  .fv-act-ic svg{width:22px;height:22px;fill:none;stroke:var(--text);stroke-width:1.8}
+  .fv-act-lbl{font-size:12.5px;color:var(--text);font-weight:500}
+
+  /* ─── Modal "Plus" ─── */
+  .more-item{
+    width:100%;padding:14px 12px;text-align:left;
+    border-bottom:1px solid var(--border-soft);
+    display:flex;align-items:center;gap:12px;
+    font-size:15px;color:var(--text);
+  }
+  .more-item:last-child{border-bottom:none}
+  .more-item .mi{width:36px;height:36px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+  .more-item.danger{color:var(--red)}
+  .more-item.danger .mi{background:var(--red-bg)}
+</style>
+</head>
+<body>
+
+<div class="fv-head">
+  <button class="fv-back" id="back" aria-label="Retour">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <div class="fv-title" id="docNum">—</div>
+  <button class="fv-share" id="shareBtn" aria-label="Partager">
+    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+      <polyline points="16 6 12 2 8 6"/>
+      <line x1="12" y1="2" x2="12" y2="15"/>
+    </svg>
+  </button>
+</div>
+
+<!-- ─── Aperçu ─── -->
+<div class="fv-preview-wrap">
+  <button class="fv-zoom" id="zoomBtn" aria-label="Agrandir">
+    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+    </svg>
+  </button>
+  <div class="fv-preview" id="preview"><!-- rempli par JS --></div>
+</div>
+
+<!-- ─── Bloc info ─── -->
+<div class="fv-info">
+  <div class="fv-info-l">
+    <div class="price" id="iPrice">0,00 €</div>
+    <div class="client" id="iClient">—</div>
+  </div>
+  <div class="fv-info-r">
+    <span class="fv-statut brouillon" id="iStatut">brouillon</span>
+    <div class="fv-statut-sub" id="iSub"></div>
+  </div>
+</div>
+
+<!-- ─── Bouton envoyer ─── -->
+<button class="fv-send" id="sendBtn">
+  <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="22" y1="2" x2="11" y2="13"/>
+    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+  </svg>
+  <span id="sendLbl">Envoyer</span>
+</button>
+
+<!-- ─── 4 actions ─── -->
+<div class="fv-actions">
+  <button class="fv-act" id="actDl">
+    <div class="fv-act-ic">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    </div>
+    <div class="fv-act-lbl">Télécharger</div>
+  </button>
+  <button class="fv-act" id="actPrint">
+    <div class="fv-act-ic">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 6 2 18 2 18 9"/>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+    </div>
+    <div class="fv-act-lbl">Imprimer</div>
+  </button>
+  <button class="fv-act" id="actEdit">
+    <div class="fv-act-ic">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+      </svg>
+    </div>
+    <div class="fv-act-lbl">Modifier</div>
+  </button>
+  <button class="fv-act" id="actMore">
+    <div class="fv-act-ic">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>
+      </svg>
+    </div>
+    <div class="fv-act-lbl">Plus</div>
+  </button>
+</div>
+
+<!-- ─── jsPDF (CDN) ─── -->
+<script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/pdf-facture.js"></script>
+<script>
+if (!Auth.guard()) {} else {
+
+  // ─── Récupère ID + type via URL ───
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  const doc = id ? DB.devis.get(id) : null;
+  if (!doc) { App.toast('Document introuvable','error'); setTimeout(()=>location.href='devis.html',900); }
+  else {
+    const type = doc.type || 'devis';
+    const isFact = type === 'facture';
+    const labelType = isFact ? 'Facture' : 'Devis';
+    const c = DB.clients.get(doc.clientId) || {};
+    const biz = (typeof PdfFacture !== 'undefined') ? PdfFacture.bizInfo() : {nom:'Wassou Multiservices'};
+    const total = doc.total || (doc.lines||[]).reduce((s,l)=>s+(l.qty*l.pu),0);
+
+    // ─── Header titre ───
+    document.getElementById('docNum').textContent = doc.numero || doc.id;
+
+    // ─── Bloc info bas ───
+    document.getElementById('iPrice').textContent = Fmt.eur(total);
+    document.getElementById('iClient').textContent = (c.prenom||'') + ' ' + (c.nom||'—');
+    const stat = doc.statut || 'brouillon';
+    const sEl = document.getElementById('iStatut');
+    sEl.textContent = stat;
+    sEl.className = 'fv-statut ' + stat;
+    // Sous-libellé date
+    const sub = doc.date ? `Le ${Fmt.date(doc.date)}` : '';
+    document.getElementById('iSub').textContent = sub;
+    // Libellé bouton envoyer
+    document.getElementById('sendLbl').textContent = `Envoyer ${labelType.toLowerCase()}`;
+
+    // ─── Preview interne (mini facture) ───
+    const lines = doc.lines || [];
+    document.getElementById('preview').innerHTML = `
+      <div class="fv-hero">
+        <div>
+          <div class="fv-hero-logo">🌿 ${biz.nom.toUpperCase()}</div>
+        </div>
+        <div class="fv-hero-title">${labelType.toUpperCase()}</div>
+      </div>
+      <div class="fv-meta">
+        <div class="fv-meta-l">
+          <strong>${isFact ? 'FACTURÉ À' : 'DEVIS POUR'}</strong>
+          <div class="v">${(c.prenom||'') + ' ' + (c.nom||'—')}<br>${c.adresse||''}</div>
+        </div>
+        <div class="fv-meta-r">
+          <strong>N° ${doc.numero||doc.id}</strong>
+          <div class="v">DATE<br>${Fmt.date(doc.date)}</div>
+        </div>
+      </div>
+      <div class="fv-table">
+        <div class="fv-table-h"><div>Description</div><div>Qté</div><div>P.U.</div><div>Montant</div></div>
+        ${lines.map(l=>`
+          <div class="fv-table-row">
+            <div>${l.label||''}</div>
+            <div>${l.qty||0}</div>
+            <div>${Number(l.pu||0).toFixed(2)} €</div>
+            <div>${(Number(l.qty||0)*Number(l.pu||0)).toFixed(2)} €</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="fv-total"><span>TOTAL</span><span>${total.toFixed(2)} €</span></div>
+    `;
+
+    // ─── Retour ───
+    document.getElementById('back').addEventListener('click', ()=>{
+      if (history.length > 1) history.back();
+      else location.href = 'devis.html';
+    });
+
+    // ─── Zoom : agrandir l'aperçu en plein écran (impression HTML) ───
+    document.getElementById('zoomBtn').addEventListener('click', ()=>{
+      PdfFacture.openHTML(doc, type);
+    });
+
+    // ─── Génération du PDF en mémoire (Blob) ───
+    async function generatePdfBlob(){
+      // Utilise jsPDF chargé via CDN
+      const { jsPDF } = window.jspdf || {};
+      if (!jsPDF) { App.toast('PDF indisponible — vérifiez la connexion','error'); return null; }
+      const pdf = new jsPDF({ unit:'mm', format:'a4' });
+      const margin = 14; const W = 210, H = 297;
+      const green = [27, 67, 50];
+
+      // Logo + société
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.setTextColor(...green);
+      pdf.text('🌿 ' + (biz.nom||'Wassou'), margin, 22);
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(9); pdf.setTextColor(80,80,80);
+      pdf.text(`${biz.tel||''}  ${biz.email||''}`, margin, 27);
+      pdf.text(`${biz.zone||''}`, margin, 31);
+
+      // Titre droite
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(24); pdf.setTextColor(...green);
+      pdf.text(labelType.toUpperCase(), W - margin, 24, { align:'right' });
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(10); pdf.setTextColor(80,80,80);
+      pdf.text(`N° ${doc.numero||doc.id}`, W - margin, 30, { align:'right' });
+      pdf.text(Fmt.date(doc.date), W - margin, 35, { align:'right' });
+
+      // Trait
+      pdf.setDrawColor(...green); pdf.setLineWidth(.8);
+      pdf.line(margin, 40, W - margin, 40);
+
+      // Client
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(9); pdf.setTextColor(120,120,120);
+      pdf.text(isFact ? 'FACTURÉ À' : 'DEVIS POUR', margin, 50);
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.setTextColor(30,30,30);
+      pdf.text(((c.prenom||'')+' '+(c.nom||'—')).trim(), margin, 56);
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(9); pdf.setTextColor(80,80,80);
+      if (c.adresse) pdf.text(c.adresse, margin, 61);
+      if (c.tel) pdf.text(c.tel + (c.email ? '   ' + c.email : ''), margin, 66);
+
+      // Statut droite
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(9); pdf.setTextColor(120,120,120);
+      pdf.text('STATUT', W - margin, 50, { align:'right' });
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.setTextColor(30,30,30);
+      pdf.text(stat.toUpperCase(), W - margin, 56, { align:'right' });
+
+      // Tableau header
+      let y = 80;
+      pdf.setFillColor(...green); pdf.rect(margin, y, W - margin*2, 9, 'F');
+      pdf.setTextColor(255,255,255); pdf.setFont('helvetica','bold'); pdf.setFontSize(9);
+      pdf.text('DESCRIPTION', margin + 3, y + 6);
+      pdf.text('QTÉ',  W - margin - 70, y + 6, { align:'right' });
+      pdf.text('P.U.', W - margin - 35, y + 6, { align:'right' });
+      pdf.text('TOTAL', W - margin - 3, y + 6, { align:'right' });
+
+      // Lignes
+      y += 14;
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(10); pdf.setTextColor(40,40,40);
+      lines.forEach(l => {
+        const ttl = (Number(l.qty||0)*Number(l.pu||0));
+        pdf.text(l.label||'', margin + 3, y);
+        pdf.text(String(l.qty||0), W - margin - 70, y, { align:'right' });
+        pdf.text(Number(l.pu||0).toFixed(2)+' €', W - margin - 35, y, { align:'right' });
+        pdf.text(ttl.toFixed(2)+' €', W - margin - 3, y, { align:'right' });
+        y += 7;
+        pdf.setDrawColor(230,230,230); pdf.line(margin, y - 3, W - margin, y - 3);
+      });
+
+      // Total
+      y += 6;
+      pdf.setFillColor(...green); pdf.rect(W - margin - 80, y, 80, 11, 'F');
+      pdf.setTextColor(255,255,255); pdf.setFont('helvetica','bold'); pdf.setFontSize(12);
+      pdf.text(isFact ? 'TOTAL À PAYER' : 'TOTAL TTC', W - margin - 77, y + 7);
+      pdf.text(total.toFixed(2)+' €', W - margin - 3, y + 7, { align:'right' });
+
+      // Notes
+      if (doc.notes) {
+        y += 22;
+        pdf.setFillColor(248,248,248); pdf.rect(margin, y, W - margin*2, 16, 'F');
+        pdf.setTextColor(...green); pdf.setFont('helvetica','bold'); pdf.setFontSize(9);
+        pdf.text('NOTES', margin + 3, y + 5);
+        pdf.setTextColor(80,80,80); pdf.setFont('helvetica','normal'); pdf.setFontSize(9);
+        pdf.text(doc.notes, margin + 3, y + 11, { maxWidth: W - margin*2 - 6 });
+      }
+
+      // Footer
+      pdf.setDrawColor(220,220,220); pdf.line(margin, H - 28, W - margin, H - 28);
+      pdf.setFontSize(8); pdf.setTextColor(140,140,140); pdf.setFont('helvetica','normal');
+      pdf.text(`${biz.nom||''} — ${biz.zone||''}`, W/2, H - 22, { align:'center' });
+      pdf.text(`${biz.tel||''}  ·  ${biz.email||''}`, W/2, H - 17, { align:'center' });
+      pdf.text(isFact ? 'Merci pour votre confiance.' : "Devis valable 30 jours.", W/2, H - 12, { align:'center' });
+
+      return pdf;
+    }
+
+    function pdfFileName(){
+      const safeC = ((c.prenom||'') + (c.nom||'')).replace(/[^a-z0-9]/gi,'') || 'client';
+      return `${labelType}_${doc.numero||doc.id}_${safeC}.pdf`;
+    }
+
+    // ─── Télécharger ───
+    document.getElementById('actDl').addEventListener('click', async ()=>{
+      const pdf = await generatePdfBlob();
+      if (!pdf) return;
+      pdf.save(pdfFileName());
+      App.toast('PDF téléchargé','success');
+    });
+
+    // ─── Imprimer ───
+    document.getElementById('actPrint').addEventListener('click', async ()=>{
+      const pdf = await generatePdfBlob();
+      if (!pdf) return;
+      pdf.autoPrint();
+      const url = pdf.output('bloburl');
+      window.open(url, '_blank');
+    });
+
+    // ─── Modifier (retour devis avec édition) ───
+    document.getElementById('actEdit').addEventListener('click', ()=>{
+      location.href = 'devis.html?edit=' + doc.id;
+    });
+
+    // ─── Plus ───
+    document.getElementById('actMore').addEventListener('click', ()=>{
+      App.modal('Actions supplémentaires', `
+        <button class="more-item" data-mi="duplicate"><span class="mi">📋</span>Dupliquer</button>
+        <button class="more-item" data-mi="paid"><span class="mi">✅</span>Marquer comme ${isFact?'payée':'acceptée'}</button>
+        <button class="more-item" data-mi="status"><span class="mi">🏷️</span>Changer le statut</button>
+        <button class="more-item" data-mi="mail"><span class="mi">📧</span>Envoyer par mail (lien)</button>
+        <button class="more-item danger" data-mi="del"><span class="mi">🗑️</span>Supprimer</button>
+      `);
+      setTimeout(()=>{
+        document.querySelectorAll('[data-mi]').forEach(b => b.addEventListener('click', async ()=>{
+          const a = b.dataset.mi;
+          document.querySelector('.modal-overlay').remove();
+          if (a === 'duplicate'){
+            const copy = JSON.parse(JSON.stringify(doc));
+            delete copy.id; delete copy.createdAt;
+            const prefix = isFact ? 'FAC' : 'DEV';
+            const cnt = DB.devis.all().filter(d=>(d.type||'devis')===type).length + 1;
+            copy.numero = `${prefix}-${new Date().getFullYear()}-${String(cnt).padStart(3,'0')}`;
+            copy.statut = 'brouillon';
+            const nw = DB.devis.add(copy);
+            App.toast('Dupliqué','success');
+            setTimeout(()=>location.href='facture-view.html?id='+nw.id, 600);
+          }
+          else if (a === 'paid'){
+            DB.devis.update(doc.id, {statut: isFact ? 'payé' : 'accepté'});
+            App.toast('Statut mis à jour','success');
+            setTimeout(()=>location.reload(), 500);
+          }
+          else if (a === 'status'){
+            App.modal('Changer le statut', `
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                ${(isFact?['brouillon','envoyé','payé','refusé']:['brouillon','envoyé','accepté','refusé']).map(s=>`<button class="filter-chip ${doc.statut===s?'active':''}" data-s="${s}">${s}</button>`).join('')}
+              </div>
+            `);
+            setTimeout(()=>{
+              document.querySelectorAll('[data-s]').forEach(btn => btn.addEventListener('click', ()=>{
+                DB.devis.update(doc.id, {statut: btn.dataset.s});
+                document.querySelector('.modal-overlay').remove();
+                App.toast('Statut mis à jour','success');
+                setTimeout(()=>location.reload(), 400);
+              }));
+            }, 50);
+          }
+          else if (a === 'mail'){
+            PdfFacture.sendByMail(doc, type);
+          }
+          else if (a === 'del'){
+            if (await App.confirm('Supprimer définitivement ce document ?')){
+              DB.devis.remove(doc.id);
+              App.toast('Supprimé','success');
+              setTimeout(()=>location.href='devis.html', 500);
+            }
+          }
+        }));
+      }, 50);
+    });
+
+    // ─── ENVOYER : partage natif Android (Web Share API niveau 2) ───
+    async function shareWith(){
+      const pdf = await generatePdfBlob();
+      if (!pdf) return;
+      const blob = pdf.output('blob');
+      const file = new File([blob], pdfFileName(), { type:'application/pdf' });
+
+      // Test Web Share API niveau 2 (avec fichiers)
+      if (navigator.canShare && navigator.canShare({ files:[file] })) {
+        try {
+          await navigator.share({
+            title: `${labelType} ${doc.numero}`,
+            text: `Bonjour ${c.prenom||''} ${c.nom||''}, veuillez trouver ci-joint votre ${labelType.toLowerCase()} N° ${doc.numero}. Montant : ${total.toFixed(2)} €. Cordialement, ${biz.nom}.`,
+            files: [file]
+          });
+          App.toast('Partagé','success');
+        } catch(err) {
+          if (err.name !== 'AbortError') {
+            App.toast('Partage annulé','error');
+            console.error(err);
+          }
+        }
+        return;
+      }
+
+      // Fallback : si pas de partage natif → propose options
+      App.modal('Partager via', `
+        <button class="more-item" id="opMail"><span class="mi">📧</span>Mail</button>
+        <button class="more-item" id="opWa"><span class="mi">💬</span>WhatsApp</button>
+        <button class="more-item" id="opDl"><span class="mi">📥</span>Télécharger le PDF</button>
+        <div style="font-size:12.5px;color:var(--text-muted);margin-top:10px;padding:0 4px;line-height:1.5">
+          Sur navigateur PC, le partage direct n'est pas supporté. Téléchargez le PDF puis joignez-le manuellement.
+        </div>
+      `);
+      setTimeout(()=>{
+        document.getElementById('opMail').onclick = ()=>{ document.querySelector('.modal-overlay').remove(); PdfFacture.sendByMail(doc, type); };
+        document.getElementById('opWa').onclick   = ()=>{
+          document.querySelector('.modal-overlay').remove();
+          const tel = (c.tel||'').replace(/\D/g,'');
+          const msg = `Bonjour ${c.prenom||''}, voici votre ${labelType.toLowerCase()} N° ${doc.numero}. Total : ${total.toFixed(2)} €.`;
+          window.open(`https://wa.me/${tel}?text=${encodeURIComponent(msg)}`, '_blank');
+        };
+        document.getElementById('opDl').onclick   = async ()=>{
+          document.querySelector('.modal-overlay').remove();
+          const p = await generatePdfBlob();
+          if (p) p.save(pdfFileName());
+        };
+      }, 50);
+    }
+
+    document.getElementById('sendBtn').addEventListener('click', shareWith);
+    document.getElementById('shareBtn').addEventListener('click', shareWith);
+  }
+}
+</script>
+</body>
+</html>

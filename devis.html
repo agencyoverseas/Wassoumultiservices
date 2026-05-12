@@ -27,6 +27,8 @@
   .choice-card .tx{flex:1;min-width:0}
   .choice-card .tx .t{font-size:15px;font-weight:700;color:var(--text)}
   .choice-card .tx .s{font-size:12.5px;color:var(--text-soft);margin-top:2px}
+  .li-head.clickable{cursor:pointer;border-radius:8px;padding:6px;margin:-6px;transition:background .15s}
+  .li-head.clickable:active{background:var(--green-soft)}
 </style>
 </head>
 <body>
@@ -75,7 +77,7 @@ if (!App.init('interventions','Devis & Factures', `${DB.devis.all().length} docu
       const bdt  = type === 'facture' ? 'bdt-facture' : 'bdt-devis';
       const ico  = type === 'facture' ? '🧾' : '📄';
       return `<div class="list-item" data-id="${d.id}">
-        <div class="li-head">
+        <div class="li-head clickable" data-id="${d.id}">
           <div style="flex:1;min-width:0">
             <span class="badge-doctype ${bdt}">${ico} ${type === 'facture' ? 'Facture' : 'Devis'}</span>
             <div class="li-name">${d.numero||d.id}</div>
@@ -89,7 +91,7 @@ if (!App.init('interventions','Devis & Factures', `${DB.devis.all().length} docu
           <button class="btn btn-outline btn-sm" data-act="edit">${App.icons.edit} Modifier</button>
           <button class="btn btn-outline btn-sm" data-act="status">Changer statut</button>
           <button class="btn btn-primary btn-sm" data-act="mail">${App.icons.mail} Envoyer mail</button>
-          <button class="btn btn-outline btn-sm" data-act="pdf" style="border-color:var(--gold);color:var(--gold)">${App.icons.doc} PDF</button>
+          <button class="btn btn-outline btn-sm" data-act="pdf" style="border-color:var(--gold);color:var(--gold)">${App.icons.doc} Aperçu</button>
           <button class="btn btn-danger btn-sm btn-full" data-act="del">${App.icons.trash} Supprimer</button>
         </div>
       </div>`;
@@ -127,7 +129,7 @@ if (!App.init('interventions','Devis & Factures', `${DB.devis.all().length} docu
           openForm(d);
         }
         else if (b.dataset.act === 'pdf'){
-          PdfFacture.open(d, d.type || 'devis');
+          location.href = 'facture-view.html?id=' + d.id;
         }
         else if (b.dataset.act === 'mail'){
           App.modal('Envoyer par mail', `
@@ -168,8 +170,23 @@ if (!App.init('interventions','Devis & Factures', `${DB.devis.all().length} docu
         }
       }));
     });
+
+    // ─── Clic sur l'en-tête de la carte (en dehors des boutons) → ouvre la preview ───
+    document.querySelectorAll('.li-head.clickable').forEach(el => {
+      el.addEventListener('click', () => {
+        location.href = 'facture-view.html?id=' + el.dataset.id;
+      });
+    });
   }
   render();
+
+  // ─── Auto-ouverture du formulaire si ?edit=xxx ───
+  const params = new URLSearchParams(location.search);
+  const editId = params.get('edit');
+  if (editId) {
+    const doc = DB.devis.get(editId);
+    if (doc) setTimeout(() => openForm(doc), 250);
+  }
 
   document.querySelectorAll('.type-tabs button').forEach(b => b.addEventListener('click', () => {
     document.querySelectorAll('.type-tabs button').forEach(x => x.classList.remove('active'));

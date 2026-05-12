@@ -1,12 +1,13 @@
 // ============================================================
 // WASSOU MOBILE — SERVICE WORKER
 // ============================================================
-const CACHE = 'wassou-mobile-v6';
+const CACHE = 'wassou-mobile-v7';
 const ASSETS = [
   './',
   './index.html',
   './login.html',
   './dashboard.html',
+  './dashboard-agent.html',
   './clients.html',
   './client-detail.html',
   './agents.html',

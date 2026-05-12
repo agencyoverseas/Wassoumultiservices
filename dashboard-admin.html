@@ -1,213 +1,24 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
-  <title>Tableau de bord Admin — Wassou</title>
-  <meta name="theme-color" content="#1b4332"/>
-  <link rel="manifest" href="manifest.json"/>
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="css/style.css"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="theme-color" content="#1b4332"/>
+<title>Wassou — Redirection</title>
+<link rel="icon" type="image/png" href="icons/favicon-32.png"/>
+<meta http-equiv="refresh" content="0; url=dashboard.html"/>
+<style>
+  html,body{margin:0;height:100%;background:#1b4332;color:#fff;font-family:-apple-system,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+  .spin{width:38px;height:38px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:r 1s linear infinite}
+  @keyframes r{to{transform:rotate(360deg)}}
+  p{font-size:14px;opacity:.7}
+  a{color:#fff;font-weight:600}
+</style>
 </head>
 <body>
-<div id="overlay"></div>
-<div class="app-shell">
-
-  <!-- ========== SIDEBAR (injectée dynamiquement) ========== -->
-  <nav class="sidebar" id="sidebar"></nav>
-
-  <!-- ========== MAIN ========== -->
-  <div class="main-content">
-    <header class="top-header">
-      <button class="burger-btn" id="burger">☰</button>
-      <div class="page-title">📊 Tableau de bord</div>
-      <div class="header-actions">
-        <span id="header-date" class="text-sm text-muted"></span>
-      </div>
-    </header>
-
-    <div class="page-body">
-
-      <div class="dashboard-welcome fade-in">
-        <h1 id="welcome-msg">Bonjour 🌿</h1>
-        <p id="welcome-sub">Voici un résumé de votre activité</p>
-      </div>
-
-      <!-- KPIs -->
-      <div class="stats-grid stagger" id="kpis"></div>
-
-      <!-- ⚡ ACTIONS RAPIDES (AVANT les interventions) -->
-      <div class="card slide-up" style="margin-top:18px;animation-delay:.1s">
-        <div class="card-header"><h3>⚡ Actions rapides</h3></div>
-        <div class="card-body actions-rapides-grid">
-          <a href="interventions.html#add" class="btn btn-primary action-btn">
-            <span class="action-ic">📅</span> <span class="action-lbl">Nouveau RDV</span>
-          </a>
-          <a href="clients.html#add" class="btn btn-outline action-btn">
-            <span class="action-ic">👤</span> <span class="action-lbl">Nouveau client</span>
-          </a>
-          <a href="devis.html#add" class="btn btn-outline action-btn">
-            <span class="action-ic">📄</span> <span class="action-lbl">Nouveau devis</span>
-          </a>
-          <a href="sms.html#compose" class="btn btn-outline action-btn">
-            <span class="action-ic">💬</span> <span class="action-lbl">Envoyer SMS</span>
-          </a>
-        </div>
-      </div>
-      <style>
-        .actions-rapides-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-        .action-btn { justify-content:center; padding:18px 8px; font-size:1rem; text-align:center; }
-        .action-ic { font-size:1.3em; margin-right:6px; }
-        @media (max-width: 600px) {
-          .action-btn { padding:14px 6px; font-size:.88rem; flex-direction:column; gap:4px; }
-          .action-ic { font-size:1.6em; margin-right:0; }
-          .action-lbl { font-size:.82rem; white-space:nowrap; }
-        }
-      </style>
-
-      <!-- Activité récente -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px" id="dash-grid">
-        <div class="card slide-up" style="animation-delay:.2s">
-          <div class="card-header"><h3>📅 Prochaines interventions</h3></div>
-          <div id="next-int" style="padding:0 20px 16px"></div>
-        </div>
-        <div class="card slide-up" style="animation-delay:.25s">
-          <div class="card-header"><h3>💌 Demandes RDV récentes</h3></div>
-          <div id="recent-rdv" style="padding:0 20px 16px"></div>
-        </div>
-        <div class="card slide-up" style="animation-delay:.3s">
-          <div class="card-header"><h3>📄 Derniers devis</h3></div>
-          <div id="recent-devis" style="padding:0 20px 16px"></div>
-        </div>
-        <div class="card slide-up" style="animation-delay:.35s">
-          <div class="card-header"><h3>💳 Encaissements à venir</h3></div>
-          <div id="pending-pay" style="padding:0 20px 16px"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="confirmModal">
-  <div class="confirm-box">
-    <div class="confirm-icon">⚠️</div>
-    <div class="confirm-msg"></div>
-    <div class="confirm-actions">
-      <button class="btn btn-outline btn-cancel">Annuler</button>
-      <button class="btn btn-danger btn-confirm">Confirmer</button>
-    </div>
-  </div>
-</div>
-
-<script src="config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/data.js"></script>
-<script src="js/data-bridge.js"></script>
-<script src="js/app.js"></script>
-<script src="js/nexus-secret.js"></script>
-<script src="js/payment.js"></script>
-<script src="js/sidebar.js"></script>
-<script>
-const session = App.initAdminPage(['admin']);
-if (session) {
-  // Inject sidebar (avec footer Déconnexion)
-  document.addEventListener('DOMContentLoaded', () => {
-    if (typeof Sidebar !== 'undefined') Sidebar.inject('dashboard');
-  });
-
-  const now = new Date();
-  // Date responsive : longue desktop, courte mobile
-  const isMobile = window.innerWidth <= 700;
-  const dateEl = document.getElementById('header-date');
-  function updateDate() {
-    const mobile = window.innerWidth <= 700;
-    dateEl.textContent = mobile
-      ? now.toLocaleDateString('fr-FR', {day:'2-digit', month:'short'})
-      : now.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
-  }
-  updateDate();
-  window.addEventListener('resize', updateDate);
-
-  document.getElementById('welcome-msg').textContent = `Bonjour ${session.nom?.split(' ')[0] || ''} 🌿`;
-
-  setTimeout(() => {
-    const safe = (fn, def) => { try { return fn() ?? def; } catch(e) { return def; } };
-    const clients = safe(() => Data.clients.all(), []);
-    const ints = safe(() => Data.interventions.all(), []);
-    const devis = safe(() => Data.devis.all(), []);
-    const pays = safe(() => Data.paiements.all(), []);
-    const rdvs = safe(() => Data.rdvs?.all?.() || [], []).filter(r => r.statut === 'à traiter');
-    const ca = pays.filter(p => p.statut === 'reçu').reduce((s, p) => s + (p.montant || 0), 0);
-
-    document.getElementById('kpis').innerHTML = `
-      <div class="stat-card green"><div class="stat-icon">👥</div><div class="stat-info"><div class="stat-value">${clients.length}</div><div class="stat-label">Clients</div></div></div>
-      <div class="stat-card gold"><div class="stat-icon">📅</div><div class="stat-info"><div class="stat-value">${ints.filter(i => i.statut !== 'terminé').length}</div><div class="stat-label">Interventions actives</div></div></div>
-      <div class="stat-card blue"><div class="stat-icon">📄</div><div class="stat-info"><div class="stat-value">${devis.length}</div><div class="stat-label">Devis</div></div></div>
-      <div class="stat-card orange"><div class="stat-icon">💶</div><div class="stat-info"><div class="stat-value">${App.fmtEur(ca)}</div><div class="stat-label">CA encaissé</div></div></div>
-    `;
-
-    const next = ints.filter(i => i.statut === 'planifié' || i.statut === 'confirmé' || i.statut === 'en_attente').sort((a,b) => (a.date || '').localeCompare(b.date || '')).slice(0, 5);
-    document.getElementById('next-int').innerHTML = next.length
-      ? next.map(i => {
-          const c = Data.clients.get?.(i.client_id || i.clientId);
-          const aId = i.agent_id || i.agentId;
-          const a = Data.agents.get?.(aId) || (CONFIG.auth.agents || []).find(x => x.id === aId);
-          return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
-            <strong>${c?.prenom || ''} ${c?.nom || '—'}</strong>
-            <span class="badge badge-success" style="margin-left:8px">${i.service || ''}</span>
-            <div style="font-size:.82rem;color:var(--gray-600);margin-top:4px">📅 ${App.fmtDate(i.date)} ${i.heure || ''} • 🧑 ${a?.nom || '—'}</div>
-          </div>`;
-        }).join('')
-      : '<p class="empty-state" style="padding:18px 0">Aucune intervention planifiée</p>';
-
-    document.getElementById('recent-rdv').innerHTML = rdvs.length
-      ? rdvs.slice(0, 5).map(r => `
-        <div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
-          <strong>${r.prenom || ''} ${r.nom || ''}</strong>
-          <span class="badge badge-warning" style="margin-left:8px">À traiter</span>
-          <div style="font-size:.82rem;color:var(--gray-600);margin-top:4px">📞 ${r.tel || ''} • ${r.service || ''}</div>
-        </div>`).join('')
-      : '<p class="empty-state" style="padding:18px 0">Aucune nouvelle demande</p>';
-
-    const lastDev = devis.slice().sort((a,b) => (b.created || '').localeCompare(a.created || '')).slice(0, 5);
-    document.getElementById('recent-devis').innerHTML = lastDev.length
-      ? lastDev.map(d => {
-          const c = Data.clients.get?.(d.client_id || d.clientId);
-          const cls = { brouillon: 'badge-gray', envoyé: 'badge-info', accepté: 'badge-success', refusé: 'badge-danger', soldé: 'badge-success' }[d.statut] || 'badge-gray';
-          return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
-            <strong>${d.numero || ''}</strong> <span class="badge ${cls}" style="margin-left:8px">${d.statut || ''}</span>
-            <div style="font-size:.82rem;color:var(--gray-600);margin-top:4px">${c?.nom || '—'} • ${App.fmtEur(d.total_ttc || 0)}</div>
-          </div>`;
-        }).join('')
-      : '<p class="empty-state" style="padding:18px 0">Aucun devis</p>';
-
-    const pending = pays.filter(p => p.statut === 'en_attente' || p.statut === 'à_encaisser');
-    document.getElementById('pending-pay').innerHTML = pending.length
-      ? pending.slice(0, 5).map(p => {
-          const d = Data.devis.get?.(p.devis_id);
-          return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
-            <strong>${App.fmtEur(p.montant)}</strong>
-            <span class="badge badge-warning" style="margin-left:8px">${(p.statut || '').replace('_',' ')}</span>
-            <div style="font-size:.82rem;color:var(--gray-600);margin-top:4px">${d?.numero || '—'} • ${p.methode || ''}</div>
-          </div>`;
-        }).join('')
-      : '<p class="empty-state" style="padding:18px 0">Tous les paiements à jour</p>';
-  }, 100);
-}
-
-const mediaQ = window.matchMedia('(max-width: 800px)');
-function updateGrid() {
-  const g = document.getElementById('dash-grid');
-  if (g) g.style.gridTemplateColumns = mediaQ.matches ? '1fr' : '1fr 1fr';
-}
-mediaQ.addEventListener('change', updateGrid); updateGrid();
-</script>
-<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(e=>console.error(e))}</script>
+<div class="spin"></div>
+<p>Redirection vers le tableau de bord…</p>
+<a href="dashboard.html">Continuer →</a>
+<script>location.replace('dashboard.html')</script>
 </body>
 </html>

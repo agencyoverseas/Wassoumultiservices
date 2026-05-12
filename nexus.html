@@ -24,21 +24,38 @@
   <button class="nexus-btn danger" id="lo">⏻ Déconnexion</button>
 </div>
 
-<!-- Crédits Anthropic -->
+<!-- Crédits Anthropic (LIVE - synchronisé sur tracking local) -->
 <div class="nexus-card">
-  <h3>💳 Crédits Anthropic</h3>
-  <div class="nexus-credit"><span id="credits">20.00</span> €</div>
-  <div class="nexus-bar"><div class="nexus-bar-fill" style="width:100%"></div></div>
-  <div style="text-align:center"><span class="nexus-pill">100% — Tout va bien</span></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <h3 style="margin:0">💳 Crédits Anthropic</h3>
+    <span id="keyStatusPill" style="font-size:11px;padding:3px 9px;border-radius:100px;background:#2a1a1a;color:#ef4444;font-weight:600">⚠ Aucune clé</span>
+  </div>
+  <div class="nexus-credit"><span id="credits">0.00</span> €</div>
+  <div class="nexus-bar"><div class="nexus-bar-fill" id="creditsBar" style="width:0%;background:#5fd1a8"></div></div>
+  <div style="text-align:center"><span class="nexus-pill" id="creditsPill">Configurer la clé pour activer</span></div>
   <div class="nexus-grid-2 mt-12">
-    <div class="nexus-mini"><div class="nexus-mini-label">Dépensé aujourd'hui</div><div class="nexus-mini-value">0.00 €</div></div>
-    <div class="nexus-mini"><div class="nexus-mini-label">Dépensé ce mois</div><div class="nexus-mini-value">0.00 €</div></div>
-    <div class="nexus-mini"><div class="nexus-mini-label">Estimation restante</div><div class="nexus-mini-value">40 j</div></div>
-    <div class="nexus-mini"><div class="nexus-mini-label">Dernière maj</div><div class="nexus-mini-value" style="font-size:14px">Jamais</div></div>
+    <div class="nexus-mini"><div class="nexus-mini-label">Dépensé ce mois</div><div class="nexus-mini-value" id="spentMonth">0.00 €</div></div>
+    <div class="nexus-mini"><div class="nexus-mini-label">Restant</div><div class="nexus-mini-value" id="remaining">— €</div></div>
+    <div class="nexus-mini"><div class="nexus-mini-label">Appels IA mois</div><div class="nexus-mini-value" id="callsCount">0</div></div>
+    <div class="nexus-mini"><div class="nexus-mini-label">Dernière maj</div><div class="nexus-mini-value" id="lastUpdate" style="font-size:14px">Jamais</div></div>
   </div>
   <div class="mt-12">
     <button class="nexus-btn" id="recharge">💎 Recharger crédits</button>
-    <button class="nexus-btn alt" id="statsBtn">📊</button>
+    <button class="nexus-btn alt" id="testKey">🧪 Tester la clé API</button>
+  </div>
+</div>
+
+<!-- Cycle facturation -->
+<div class="nexus-card">
+  <h3>🗓️ Cycle facturation & rapport mensuel</h3>
+  <div class="nexus-stat"><span>Jour début cycle</span><span id="cycleDayLabel">1<sup>er</sup> du mois</span></div>
+  <div class="nexus-stat"><span>Date d'activation</span><span id="cycleActivation" style="color:#7a96a8">—</span></div>
+  <div class="nexus-stat"><span>Cycle actif</span><span id="cycleActive" style="color:#7a96a8">○ Non</span></div>
+  <div class="nexus-stat"><span>Rapport Telegram auto</span><span id="reportAuto" style="color:#7a96a8">⚙️ À configurer</span></div>
+  <div class="nexus-stat"><span>Dernier rapport envoyé</span><span id="lastReport" style="color:#7a96a8">Jamais</span></div>
+  <div class="mt-12">
+    <button class="nexus-btn" id="sendReportNow">📨 Envoyer rapport maintenant (test)</button>
+    <button class="nexus-btn alt" id="editCycle">📅 Modifier le jour</button>
   </div>
 </div>
 
@@ -131,9 +148,11 @@
   </div>
 </div>
 
+<script src="config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/nexus-secret.js"></script>
 <script>
 // On exige une session admin pour entrer dans Nexus
 const s = Auth.getSession();
@@ -614,14 +633,217 @@ document.getElementById('forceDeg').addEventListener('click', async () => {
   }
 });
 
-// ─── Actions maintenance ───
+// ─── 🔑 MODAL CLÉ API ANTHROPIC ───
 document.getElementById('actKeys').addEventListener('click', () => {
-  const k = prompt('Clé API Anthropic (sk-ant-…) :\n\n(Laisser vide pour ne pas modifier)', state.apiKey ? '***' + state.apiKey.slice(-6) : '');
-  if (k && k !== '***' + (state.apiKey||'').slice(-6)) {
-    state.apiKey = k; saveState(state);
-    nxToast('Clé API enregistrée localement', 'success');
+  const masked = window.NexusAnthropic ? NexusAnthropic.getMaskedKey() : '';
+  const hasKey = !!masked;
+  nxModal('🔑 Clé API Anthropic', `
+    <div class="nx-help">
+      <strong>🔒 Clé stockée localement</strong> dans ce navigateur uniquement.<br>
+      Format : <code>sk-ant-api03-...</code><br>
+      Obtenir : <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a>
+    </div>
+    ${hasKey ? `<div class="nx-help" style="border-left-color:#5fd1a8">
+      ✅ <strong>Clé active :</strong> <code>${masked}</code>
+    </div>` : ''}
+    <div class="nx-modal-label">Coller votre clé API</div>
+    <input type="password" id="nxKeyInput" class="nx-modal-input" placeholder="sk-ant-api03-..." autocomplete="off"/>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button class="nexus-btn" id="nxSaveKey" style="flex:1;min-width:120px">💾 Enregistrer</button>
+      <button class="nexus-btn alt" id="nxTestKey" style="flex:1;min-width:120px">🧪 Tester</button>
+      ${hasKey ? `<button class="nexus-btn danger" id="nxClearKey" style="flex:1;min-width:120px">🗑️ Supprimer</button>` : ''}
+    </div>
+    <div id="nxKeyResult" style="margin-top:12px;font-size:13px;color:#7a96a8;min-height:20px"></div>
+  `);
+  setTimeout(() => {
+    const input = document.getElementById('nxKeyInput');
+    const result = document.getElementById('nxKeyResult');
+
+    document.getElementById('nxSaveKey')?.addEventListener('click', () => {
+      const k = input.value.trim();
+      if (!k) { result.textContent = '⚠️ Saisir une clé'; result.style.color = '#fbbf24'; return; }
+      if (!k.startsWith('sk-ant-')) {
+        result.textContent = '⚠️ Format invalide (doit commencer par sk-ant-)';
+        result.style.color = '#fbbf24'; return;
+      }
+      NexusAnthropic.setKey(k);
+      result.innerHTML = '✅ Clé enregistrée. Cycle facturation activé.';
+      result.style.color = '#5fd1a8';
+      nxToast('Clé API enregistrée', 'success');
+      setTimeout(refreshAll, 400);
+    });
+
+    document.getElementById('nxTestKey')?.addEventListener('click', async () => {
+      const k = input.value.trim();
+      if (k && k !== '') NexusAnthropic.setKey(k);
+      result.innerHTML = '⏳ Test en cours...';
+      result.style.color = '#7a96a8';
+      const r = await NexusAnthropic.testKey();
+      if (r.ok) {
+        result.innerHTML = '✅ Clé valide — appel test réussi (' +
+          (r.data?.usage?.input_tokens || 0) + ' in / ' +
+          (r.data?.usage?.output_tokens || 0) + ' out tokens)';
+        result.style.color = '#5fd1a8';
+        nxToast('Clé valide !', 'success');
+        refreshAll();
+      } else {
+        result.innerHTML = '❌ ' + (r.error || 'Erreur');
+        result.style.color = '#ef4444';
+        nxToast('Test échoué', 'error');
+      }
+    });
+
+    document.getElementById('nxClearKey')?.addEventListener('click', async () => {
+      if (await nxConfirm('Supprimer la clé API ?\nLe tracking sera désactivé.')) {
+        NexusAnthropic.clearKey();
+        nxToast('Clé supprimée', 'warn');
+        document.querySelector('[data-x="1"]')?.click();
+        refreshAll();
+      }
+    });
+  }, 50);
+});
+
+// ─── 🧪 BOUTON TESTER CLÉ (dans la carte crédits) ───
+document.getElementById('testKey')?.addEventListener('click', async () => {
+  if (!NexusAnthropic.getKey()) {
+    nxToast('Configurer la clé via "Gérer les clés API"', 'warn');
+    return;
+  }
+  nxToast('Test en cours...', 'info');
+  const r = await NexusAnthropic.testKey();
+  if (r.ok) {
+    nxToast('Clé valide ✓', 'success');
+    refreshAll();
+  } else {
+    nxToast('❌ ' + (r.error || 'Échec'), 'error');
   }
 });
+
+// ─── 📨 ENVOYER RAPPORT MENSUEL (TEST) ───
+document.getElementById('sendReportNow')?.addEventListener('click', async () => {
+  if (!await nxConfirm('Envoyer le rapport mensuel maintenant (test) sur Telegram ?')) return;
+  nxToast('Envoi en cours...', 'info');
+  const r = await NexusBilling.sendReport(true);
+  if (r.ok) nxToast('Rapport envoyé sur Telegram ✓', 'success');
+  else nxToast('❌ ' + (r.error || 'Échec envoi'), 'error');
+});
+
+// ─── 📅 MODIFIER JOUR DÉBUT CYCLE ───
+document.getElementById('editCycle')?.addEventListener('click', () => {
+  const cycle = NexusBilling.getCycle();
+  nxModal('🗓️ Cycle de facturation', `
+    <div class="nx-help">
+      Jour du mois où le cycle redémarre (compteur crédits remis à zéro + rapport mensuel envoyé).
+    </div>
+    <div class="nx-modal-label">Jour du mois (1-28)</div>
+    <input type="number" id="nxCycleDay" class="nx-modal-input" min="1" max="28" value="${cycle.jour_debut_mois || 1}"/>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="nexus-btn" id="nxSaveCycle" style="flex:1">💾 Enregistrer</button>
+    </div>
+  `);
+  setTimeout(() => {
+    document.getElementById('nxSaveCycle')?.addEventListener('click', () => {
+      const day = parseInt(document.getElementById('nxCycleDay').value, 10);
+      if (!day || day < 1 || day > 28) { nxToast('Jour invalide (1-28)', 'error'); return; }
+      // Patch dans CONFIG en mémoire + storage
+      NEXUS.cycle_facturation = NEXUS.cycle_facturation || {};
+      NEXUS.cycle_facturation.jour_debut_mois = day;
+      NexusBilling.setCycle({ jour_debut_mois: day, actif: true });
+      nxToast('Cycle mis à jour', 'success');
+      document.querySelector('[data-x="1"]')?.click();
+      refreshAll();
+    });
+  }, 50);
+});
+
+// ─── REFRESH LIVE des crédits + cycle ───
+function refreshAll() {
+  refreshUI();
+  if (!window.NexusAnthropic) return;
+  const st = NexusAnthropic.getDetailedStatus();
+
+  // Pilule statut clé
+  const keyPill = document.getElementById('keyStatusPill');
+  if (keyPill) {
+    if (st.hasKey) {
+      keyPill.textContent = '✅ ' + st.maskedKey;
+      keyPill.style.background = '#1a2a25';
+      keyPill.style.color = '#5fd1a8';
+    } else {
+      keyPill.textContent = '⚠ Aucune clé';
+      keyPill.style.background = '#2a1a1a';
+      keyPill.style.color = '#ef4444';
+    }
+  }
+
+  // Crédits live
+  setText('credits', (st.remaining || 0).toFixed(2));
+  setText('spentMonth', (st.spent || 0).toFixed(2) + ' €');
+  setText('remaining', (st.remaining || 0).toFixed(2) + ' €');
+  setText('callsCount', st.calls || 0);
+  setText('lastUpdate', st.last_update
+    ? new Date(st.last_update).toLocaleString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
+    : 'Jamais');
+
+  // Barre de progression
+  const pctRemaining = st.budget > 0 ? Math.max(0, 100 - st.pct) : 0;
+  const bar = document.getElementById('creditsBar');
+  if (bar) {
+    bar.style.width = pctRemaining + '%';
+    if (pctRemaining < 10)      bar.style.background = '#ef4444';
+    else if (pctRemaining < 25) bar.style.background = '#fbbf24';
+    else                        bar.style.background = '#5fd1a8';
+  }
+
+  // Pilule statut crédits
+  const pill = document.getElementById('creditsPill');
+  if (pill) {
+    if (!st.hasKey) { pill.textContent = 'Configurer la clé pour activer'; pill.style.background = '#2a1a1a'; pill.style.color = '#ef4444'; }
+    else if (pctRemaining < 10)      { pill.textContent = '🔴 Critique — recharger'; pill.style.background = '#2a1a1a'; pill.style.color = '#ef4444'; }
+    else if (pctRemaining < 25)      { pill.textContent = '🟠 Bas'; pill.style.background = '#2a2418'; pill.style.color = '#fbbf24'; }
+    else if (pctRemaining < 50)      { pill.textContent = '🟡 Attention'; pill.style.background = '#2a2418'; pill.style.color = '#fbbf24'; }
+    else                             { pill.textContent = pctRemaining.toFixed(0) + '% — Tout va bien'; pill.style.background = '#1a2a25'; pill.style.color = '#5fd1a8'; }
+  }
+
+  // Cycle facturation
+  if (window.NexusBilling) {
+    const cycle = NexusBilling.getCycle();
+    const day = cycle.jour_debut_mois || 1;
+    setText('cycleDayLabel', day === 1 ? '1er du mois' : (day + ' du mois'));
+    setText('cycleActivation', cycle.date_activation
+      ? new Date(cycle.date_activation).toLocaleDateString('fr-FR')
+      : '—');
+    const ca = document.getElementById('cycleActive');
+    if (ca) {
+      ca.textContent = cycle.actif ? '● Actif' : '○ Non';
+      ca.style.color = cycle.actif ? '#5fd1a8' : '#7a96a8';
+    }
+
+    // Statut rapport auto
+    const tg = NEXUS.alertes_techniques?.telegram;
+    const tgOk = tg && tg.bot_token && tg.chat_id;
+    const ra = document.getElementById('reportAuto');
+    if (ra) {
+      if (tgOk && NEXUS.rapport_mensuel?.active && cycle.actif) {
+        ra.textContent = '✅ Activé — ' + (NEXUS.rapport_mensuel.heure_envoi || '09:00');
+        ra.style.color = '#5fd1a8';
+      } else {
+        ra.textContent = '⚙️ À configurer';
+        ra.style.color = '#fbbf24';
+      }
+    }
+
+    const lr = localStorage.getItem('wassou_last_monthly_report');
+    setText('lastReport', lr ? new Date(lr).toLocaleString('fr-FR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : 'Jamais');
+  }
+}
+
+function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+
+// Auto-refresh toutes les 30s
+refreshAll();
+setInterval(refreshAll, 30000);
 
 document.getElementById('actConsole').addEventListener('click', () => {
   window.open('https://console.anthropic.com/dashboard', '_blank');

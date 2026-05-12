@@ -9,6 +9,19 @@
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/png" href="icons/favicon-32.png"/>
 <link rel="stylesheet" href="css/app.css"/>
+<style>
+.export-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+.export-grid .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 8px;text-align:center;font-size:13px;line-height:1.3}
+.export-grid .btn-ic{font-size:22px;line-height:1}
+.export-grid .btn-sub{font-size:11px;color:var(--text-soft);font-weight:400}
+@media (max-width:480px){.export-grid{grid-template-columns:1fr 1fr}.export-grid .btn:last-child{grid-column:span 2}}
+.export-section{background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius);padding:18px;margin-top:14px}
+.export-section h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.export-section .hint{font-size:12px;color:var(--text-soft);margin-bottom:4px}
+.period-row{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+.period-chip{padding:7px 13px;background:var(--green-soft);color:var(--green-text);border:1px solid transparent;border-radius:100px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.period-chip.active{background:var(--green-dark);color:#fff}
+</style>
 </head>
 <body>
 <div class="status-spacer"></div>
@@ -16,64 +29,336 @@
 
 <main class="page fade-in" id="main"></main>
 
+<script src="config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script>
 if (!App.init('dashboard','Rapports', 'Statistiques globales')) {} else {
-  const s = DB.stats();
-  const ints = DB.interventions.all();
-  const byService = {};
-  ints.forEach(i => { byService[i.service||'Autre'] = (byService[i.service||'Autre']||0)+1; });
-  const byStatut = {};
-  ints.forEach(i => { byStatut[i.statut||'—'] = (byStatut[i.statut||'—']||0)+1; });
 
-  document.getElementById('main').innerHTML = `
-    <div class="kpi-grid">
-      <div class="kpi-card"><div class="kpi-icon green">${App.icons.users}</div><div class="kpi-info"><div class="kpi-value">${s.clients}</div><div class="kpi-label">Clients</div></div></div>
-      <div class="kpi-card"><div class="kpi-icon blue">${App.icons.calendar}</div><div class="kpi-info"><div class="kpi-value">${s.interventionsTotal}</div><div class="kpi-label">Interventions</div></div></div>
-      <div class="kpi-card"><div class="kpi-icon purple">${App.icons.trending}</div><div class="kpi-info"><div class="kpi-value">${Fmt.eur(s.caTotal)}</div><div class="kpi-label">CA total</div></div></div>
-      <div class="kpi-card"><div class="kpi-icon orange">${App.icons.sms}</div><div class="kpi-info"><div class="kpi-value">${s.sms}</div><div class="kpi-label">SMS envoyés</div></div></div>
-    </div>
+  // ─── Helpers ───
+  const today = new Date();
+  let currentPeriod = 'all'; // 'today' | 'month' | 'all'
 
-    <div class="card">
-      <div class="card-head"><div class="card-title">Interventions par service</div></div>
-      ${Object.keys(byService).length ? Object.entries(byService).map(([k,v]) => `
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft)">
-          <span style="font-size:14px">${k}</span><strong>${v}</strong>
+  function filterByPeriod(arr, dateField='date'){
+    if (currentPeriod === 'all') return arr;
+    const ymd = today.toISOString().slice(0,10);
+    const ym  = ymd.slice(0,7);
+    return arr.filter(x => {
+      const d = (x[dateField] || x.createdAt || '').slice(0,10);
+      if (currentPeriod === 'today') return d === ymd;
+      if (currentPeriod === 'month') return d.startsWith(ym);
+      return true;
+    });
+  }
+
+  function periodLabel(){
+    if (currentPeriod === 'today') return "Aujourd'hui";
+    if (currentPeriod === 'month') return "Ce mois";
+    return "Tout l'historique";
+  }
+
+  function render(){
+    const s = DB.stats();
+    const intsAll = DB.interventions.all();
+    const ints = filterByPeriod(intsAll, 'date');
+    const paysAll = DB.paiements.all();
+    const pays = filterByPeriod(paysAll, 'date');
+
+    const byService = {};
+    ints.forEach(i => { byService[i.service||'Autre'] = (byService[i.service||'Autre']||0)+1; });
+    const byStatut = {};
+    ints.forEach(i => { byStatut[i.statut||'—'] = (byStatut[i.statut||'—']||0)+1; });
+
+    const ca = pays.filter(p=>p.statut==='reçu').reduce((sum,p)=>sum+(p.montant||0),0);
+
+    document.getElementById('main').innerHTML = `
+      <div class="period-row">
+        <button class="period-chip ${currentPeriod==='today'?'active':''}" data-p="today">Aujourd'hui</button>
+        <button class="period-chip ${currentPeriod==='month'?'active':''}" data-p="month">Ce mois</button>
+        <button class="period-chip ${currentPeriod==='all'?'active':''}" data-p="all">Tout</button>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon green">${App.icons.users}</div><div class="kpi-info"><div class="kpi-value">${s.clients}</div><div class="kpi-label">Clients</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon blue">${App.icons.calendar}</div><div class="kpi-info"><div class="kpi-value">${ints.length}</div><div class="kpi-label">Interventions</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon purple">${App.icons.trending}</div><div class="kpi-info"><div class="kpi-value">${Fmt.eur(ca)}</div><div class="kpi-label">CA ${periodLabel().toLowerCase()}</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon orange">${App.icons.sms}</div><div class="kpi-info"><div class="kpi-value">${s.sms}</div><div class="kpi-label">SMS envoyés</div></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">Interventions par service</div></div>
+        ${Object.keys(byService).length ? Object.entries(byService).map(([k,v]) => `
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft)">
+            <span style="font-size:14px">${k}</span><strong>${v}</strong>
+          </div>
+        `).join('') : '<p class="empty-state">Aucune donnée</p>'}
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">Répartition par statut</div></div>
+        ${Object.keys(byStatut).length ? Object.entries(byStatut).map(([k,v]) => `
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft)">
+            <span class="li-status status-${k}">${k}</span><strong>${v}</strong>
+          </div>
+        `).join('') : '<p class="empty-state">Aucune donnée</p>'}
+      </div>
+
+      <!-- ─── EXPORTS ─── -->
+      <div class="export-section">
+        <h3>📤 Exporter les rapports</h3>
+        <p class="hint">Période : <strong>${periodLabel()}</strong> · Données : clients, interventions, devis, paiements, SMS</p>
+        <div class="export-grid">
+          <button class="btn btn-outline" id="exportExcel">
+            <span class="btn-ic">📊</span>
+            <span>Excel</span>
+            <span class="btn-sub">.csv / .xls</span>
+          </button>
+          <button class="btn btn-outline" id="exportPdf">
+            <span class="btn-ic">📄</span>
+            <span>PDF</span>
+            <span class="btn-sub">imprimable</span>
+          </button>
+          <button class="btn btn-outline" id="exportJson">
+            <span class="btn-ic">💾</span>
+            <span>JSON</span>
+            <span class="btn-sub">sauvegarde</span>
+          </button>
         </div>
-      `).join('') : '<p class="empty-state">Aucune donnée</p>'}
-    </div>
+      </div>
+    `;
 
-    <div class="card">
-      <div class="card-head"><div class="card-title">Répartition par statut</div></div>
-      ${Object.keys(byStatut).length ? Object.entries(byStatut).map(([k,v]) => `
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-soft)">
-          <span class="li-status status-${k}">${k}</span><strong>${v}</strong>
-        </div>
-      `).join('') : '<p class="empty-state">Aucune donnée</p>'}
-    </div>
+    // Re-bind boutons
+    document.querySelectorAll('.period-chip').forEach(b => {
+      b.addEventListener('click', () => { currentPeriod = b.dataset.p; render(); });
+    });
+    document.getElementById('exportExcel').addEventListener('click', exportExcel);
+    document.getElementById('exportPdf').addEventListener('click', exportPdf);
+    document.getElementById('exportJson').addEventListener('click', exportJson);
+  }
 
-    <button class="btn btn-outline btn-block mt-12" id="exportBtn">${App.icons.download} Exporter les données (JSON)</button>
-  `;
+  // ============================================================
+  //  EXPORT EXCEL (CSV multi-sheet via UTF-8 BOM compatible Excel)
+  // ============================================================
+  function csvEscape(v){
+    if (v === null || v === undefined) return '';
+    const s = String(v).replace(/"/g, '""');
+    return /[";\n,]/.test(s) ? `"${s}"` : s;
+  }
+  function arrToCSV(rows){
+    if (!rows.length) return '';
+    const headers = Object.keys(rows[0]);
+    const lines = [headers.join(';')];
+    rows.forEach(r => lines.push(headers.map(h => csvEscape(r[h])).join(';')));
+    return lines.join('\n');
+  }
 
-  document.getElementById('exportBtn').addEventListener('click', () => {
+  function exportExcel(){
+    const intsAll = DB.interventions.all();
+    const ints = filterByPeriod(intsAll, 'date');
+    const paysAll = DB.paiements.all();
+    const pays = filterByPeriod(paysAll, 'date');
+    const clients = DB.clients.all();
+    const devis = filterByPeriod(DB.devis.all(), 'date');
+    const sms = DB.sms.all();
+
+    // Construction d'un fichier "Excel" via plusieurs blocs CSV séparés
+    let csv = `Wassou Multiservices — Rapport ${periodLabel()};Généré le ${today.toLocaleString('fr-FR')}\n\n`;
+
+    csv += `=== CLIENTS ===\n`;
+    csv += arrToCSV(clients.map(c => ({
+      ID: c.id, Nom: c.nom||'', Telephone: c.telephone||'', Email: c.email||'',
+      Adresse: c.adresse||'', Cree_le: (c.createdAt||'').slice(0,10),
+    }))) + '\n\n';
+
+    csv += `=== INTERVENTIONS ===\n`;
+    csv += arrToCSV(ints.map(i => ({
+      ID: i.id, Date: i.date||'', Heure: i.heure||'',
+      Client: i.clientNom||i.client||'', Service: i.service||'',
+      Agent: i.agentNom||'', Statut: i.statut||'', Adresse: i.adresse||'',
+      Notes: (i.notes||'').replace(/\n/g,' '),
+    }))) + '\n\n';
+
+    csv += `=== DEVIS ===\n`;
+    csv += arrToCSV(devis.map(d => ({
+      Numero: d.numero||d.id, Date: (d.date||d.createdAt||'').slice(0,10),
+      Client: d.clientNom||'', Total_HT: d.totalHT||0, Total_TTC: d.totalTTC||d.total||0,
+      Statut: d.statut||'',
+    }))) + '\n\n';
+
+    csv += `=== PAIEMENTS ===\n`;
+    csv += arrToCSV(pays.map(p => ({
+      ID: p.id, Date: (p.date||p.createdAt||'').slice(0,10),
+      Client: p.clientNom||'', Montant_EUR: p.montant||0, Methode: p.methode||'', Statut: p.statut||'',
+    }))) + '\n\n';
+
+    csv += `=== SMS ===\n`;
+    csv += arrToCSV(sms.map(s => ({
+      Date: (s.date||s.createdAt||'').slice(0,10),
+      Destinataire: s.numero||s.destinataire||'', Type: s.type||'',
+      Statut: s.statut||'', Message: (s.message||'').slice(0,80).replace(/\n/g,' '),
+    }))) + '\n\n';
+
+    csv += `=== SYNTHÈSE ===\n`;
+    csv += `Total clients;${clients.length}\n`;
+    csv += `Total interventions (${periodLabel()});${ints.length}\n`;
+    csv += `CA total reçu (${periodLabel()});${pays.filter(p=>p.statut==='reçu').reduce((s,p)=>s+(p.montant||0),0).toFixed(2)} €\n`;
+    csv += `Devis émis (${periodLabel()});${devis.length}\n`;
+    csv += `SMS envoyés;${sms.length}\n`;
+
+    // BOM UTF-8 pour Excel
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csv], { type:'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `wassou-rapport-${currentPeriod}-${today.toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    App.toast('📊 Fichier Excel téléchargé','success');
+  }
+
+  // ============================================================
+  //  EXPORT PDF (via window.print sur HTML stylé)
+  // ============================================================
+  function exportPdf(){
+    const intsAll = DB.interventions.all();
+    const ints = filterByPeriod(intsAll, 'date');
+    const paysAll = DB.paiements.all();
+    const pays = filterByPeriod(paysAll, 'date');
+    const clients = DB.clients.all();
+    const devis = filterByPeriod(DB.devis.all(), 'date');
+
+    const ca = pays.filter(p=>p.statut==='reçu').reduce((s,p)=>s+(p.montant||0),0);
+    const biz = (typeof CONFIG !== 'undefined' && CONFIG.business) || {};
+
+    const byService = {};
+    ints.forEach(i => { byService[i.service||'Autre'] = (byService[i.service||'Autre']||0)+1; });
+    const byStatut = {};
+    ints.forEach(i => { byStatut[i.statut||'—'] = (byStatut[i.statut||'—']||0)+1; });
+
+    const rows = (obj) => Object.entries(obj).map(([k,v]) =>
+      `<tr><td>${k}</td><td style="text-align:right"><strong>${v}</strong></td></tr>`
+    ).join('') || '<tr><td colspan="2" style="text-align:center;color:#888;padding:10px">Aucune donnée</td></tr>';
+
+    const intsList = ints.slice(0,50).map(i => `
+      <tr>
+        <td>${(i.date||'').slice(0,10)}</td>
+        <td>${i.clientNom||i.client||'—'}</td>
+        <td>${i.service||'—'}</td>
+        <td>${i.agentNom||'—'}</td>
+        <td>${i.statut||'—'}</td>
+      </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#888;padding:10px">Aucune intervention</td></tr>';
+
+    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<title>Rapport Wassou — ${periodLabel()}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1a1a1a;padding:30px;font-size:13px;line-height:1.4}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1b4332;padding-bottom:16px;margin-bottom:20px}
+  .head h1{font-size:22px;color:#1b4332;margin-bottom:4px}
+  .head .sub{font-size:12px;color:#666}
+  .head .meta{text-align:right;font-size:11px;color:#666;line-height:1.6}
+  .head .meta strong{color:#1b4332}
+  h2{font-size:15px;color:#1b4332;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid #d4a017}
+  .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+  .kpi{background:#f5faf7;padding:14px;border-radius:8px;border-left:3px solid #1b4332}
+  .kpi .v{font-size:22px;font-weight:700;color:#1b4332}
+  .kpi .l{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.04em}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+  th{background:#1b4332;color:#fff;text-align:left;padding:8px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+  td{padding:7px 8px;border-bottom:1px solid #eee}
+  tr:nth-child(even) td{background:#fafaf8}
+  .footer{margin-top:30px;padding-top:14px;border-top:1px solid #ddd;font-size:11px;color:#888;text-align:center}
+  .footer strong{color:#1b4332}
+  @media print{body{padding:18px}.no-print{display:none}}
+  .print-bar{position:fixed;top:10px;right:10px;background:#1b4332;color:#fff;padding:10px 18px;border-radius:8px;cursor:pointer;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.2);border:none;font-size:13px}
+</style></head><body>
+<button class="print-bar no-print" onclick="window.print()">🖨️ Imprimer / Enregistrer en PDF</button>
+
+<div class="head">
+  <div>
+    <h1>🌿 ${biz.nom || 'Wassou Multiservices'}</h1>
+    <div class="sub">${biz.slogan || 'Services à domicile en Guadeloupe'}</div>
+  </div>
+  <div class="meta">
+    <div><strong>Rapport — ${periodLabel()}</strong></div>
+    <div>Généré le ${today.toLocaleString('fr-FR')}</div>
+    <div>${biz.telephone || ''} · ${biz.email || ''}</div>
+  </div>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi"><div class="v">${clients.length}</div><div class="l">Clients</div></div>
+  <div class="kpi"><div class="v">${ints.length}</div><div class="l">Interventions</div></div>
+  <div class="kpi"><div class="v">${ca.toFixed(2)} €</div><div class="l">CA reçu</div></div>
+  <div class="kpi"><div class="v">${devis.length}</div><div class="l">Devis</div></div>
+</div>
+
+<h2>Interventions par service</h2>
+<table>
+  <thead><tr><th>Service</th><th style="text-align:right">Nombre</th></tr></thead>
+  <tbody>${rows(byService)}</tbody>
+</table>
+
+<h2>Répartition par statut</h2>
+<table>
+  <thead><tr><th>Statut</th><th style="text-align:right">Nombre</th></tr></thead>
+  <tbody>${rows(byStatut)}</tbody>
+</table>
+
+<h2>Détail des interventions ${ints.length > 50 ? '(50 premières)' : ''}</h2>
+<table>
+  <thead><tr><th>Date</th><th>Client</th><th>Service</th><th>Agent</th><th>Statut</th></tr></thead>
+  <tbody>${intsList}</tbody>
+</table>
+
+<div class="footer">
+  <strong>${biz.nom || 'Wassou Multiservices'}</strong> — ${biz.adresse || 'Guadeloupe'}<br>
+  Document généré automatiquement · Confidentiel
+</div>
+
+<script>setTimeout(()=>window.print(),500)<\/script>
+</body></html>`;
+
+    const w = window.open('', '_blank');
+    if (!w) {
+      App.toast('Autorisez les pop-ups pour l\'export PDF','error');
+      return;
+    }
+    w.document.write(html);
+    w.document.close();
+    App.toast('📄 Aperçu PDF ouvert — utilisez "Enregistrer en PDF"','success');
+  }
+
+  // ============================================================
+  //  EXPORT JSON (original conservé)
+  // ============================================================
+  function exportJson(){
     const data = {
+      meta: {
+        site: 'Wassou Multiservices',
+        period: periodLabel(),
+        exported_at: new Date().toISOString(),
+      },
       clients: DB.clients.all(),
       agents: DB.agents.all(),
-      interventions: DB.interventions.all(),
-      devis: DB.devis.all(),
-      paiements: DB.paiements.all(),
+      interventions: filterByPeriod(DB.interventions.all(), 'date'),
+      devis: filterByPeriod(DB.devis.all(), 'date'),
+      paiements: filterByPeriod(DB.paiements.all(), 'date'),
       sms: DB.sms.all(),
-      exported: new Date().toISOString(),
     };
     const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `wassou-export-${Date.now()}.json`;
-    a.click(); URL.revokeObjectURL(url);
-    App.toast('Export téléchargé','success');
-  });
+    a.href = url;
+    a.download = `wassou-export-${currentPeriod}-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    App.toast('💾 Sauvegarde JSON téléchargée','success');
+  }
+
+  render();
 }
 </script>
 </body>

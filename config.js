@@ -515,6 +515,72 @@ Tu as accès aux outils suivants :
         heure_support_sup: 60,                    // €/heure
       },
     },
+
+    // ----------------------------------------------------------
+    // 🆕 CLÉ API ANTHROPIC (CACHÉE — visible UNIQUEMENT depuis le panel Nexus)
+    // ----------------------------------------------------------
+    // ⚠️ NE JAMAIS COMMITTER UNE VRAIE CLÉ ICI DANS UN REPO PUBLIC.
+    // Saisir plutôt depuis le panel Nexus (modal "🔑 Gérer les clés API")
+    // → stockage en localStorage côté navigateur uniquement.
+    // Si tu mets une valeur ici, elle sera utilisée par défaut (override
+    // possible via localStorage).
+    anthropic: {
+      api_key: "",                                // ← laisse vide, saisis-la dans Nexus
+      modele: "claude-sonnet-4-5",
+      // Tarif estimé (USD pour 1M tokens) — utilisé pour le tracking local
+      tarif_input_per_mtok: 3.00,
+      tarif_output_per_mtok: 15.00,
+      // Taux EUR/USD pour conversion (modifiable)
+      taux_eur_usd: 0.92,
+    },
+
+    // ----------------------------------------------------------
+    // 🆕 CYCLE DE FACTURATION + RAPPORT MENSUEL TELEGRAM
+    // ----------------------------------------------------------
+    // Une fois la mensualité activée, un rapport est envoyé au bot Telegram
+    // au jour J configuré (par défaut le 1er du mois à 9h).
+    cycle_facturation: {
+      // Jour du mois où démarre la facturation (1-28)
+      jour_debut_mois: 1,
+      // Date d'activation initiale (auto-remplie au 1er enregistrement de la clé)
+      date_activation: "",                        // ISO yyyy-mm-dd ou vide
+      // Forfait actif ?
+      actif: false,
+    },
+
+    rapport_mensuel: {
+      active: true,                               // Envoi auto le jour J
+      heure_envoi: "09:00",                       // Format HH:MM
+      // Contenu inclus dans le rapport
+      inclure: {
+        rdv: true,
+        ca: true,
+        marge: true,
+        credits_ia: true,
+        alertes: true,
+        sms: true,
+      },
+      // Template du message (Markdown Telegram)
+      template: `📊 *Rapport mensuel Wassou — {mois}*
+
+🗓️ *Activité*
+• RDV pris : *{rdv_count}* / {rdv_inclus}
+• CA encaissé : *{ca_total} €*
+• Devis émis : *{devis_count}*
+• SMS envoyés : *{sms_count}*
+
+💰 *Finances*
+• Forfait mensuel : {forfait} €
+• Marge ce mois : *{marge} €*
+• Statut paiement : {statut_paiement}
+
+🤖 *Agent IA*
+• Crédits dépensés : *{credits_spent} €* / {credits_budget} €
+• Solde restant : *{credits_remaining} €* ({credits_pct}%)
+• Alertes du mois : {alertes_count}
+
+🌿 _Bonne nouvelle journée — NexusAI_`,
+    },
   },
 
   avance: {
@@ -622,6 +688,25 @@ CONFIG.LANDING = {
       inclus:["Devis gratuit 24h","Intervention sur mesure"], featured:false },
   ],
 
+};
+
+// ============================================================
+// 💬 SUPPORT TECHNIQUE — Bouton chatbot Telegram (sidebar admin)
+// ============================================================
+// Bouton "Support" affiché dans la sidebar de l'application (zone admin
+// connectée). PAS VISIBLE sur la landing publique.
+// Au clic → ouvre le chatbot Telegram NexusAI.
+CONFIG.SUPPORT = {
+  active: true,
+  label: "Support NexusAI",
+  // Lien direct vers le bot Telegram chatbot
+  telegram_url: "https://t.me/nexusai_wassou_bot",
+  // Message pré-rempli (optionnel — ajouté en query ?start=)
+  start_payload: "support",
+  // Icône affichée dans la sidebar
+  icon: "💬",
+  // Sous-titre dans la sidebar
+  sublabel: "Aide en direct",
 };
 
 // Expose en global pour tous les autres scripts

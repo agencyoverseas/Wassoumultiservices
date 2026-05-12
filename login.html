@@ -85,8 +85,9 @@
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script>
-// Si déjà connecté → dashboard
-if (Auth.getSession()) location.replace('dashboard.html');
+// Si déjà connecté → dashboard selon rôle
+const _existingSession = Auth.getSession();
+if (_existingSession) location.replace(Auth.homePage(_existingSession.role));
 
 const tabs = document.querySelectorAll('.tab-switch button');
 const formAdmin = document.getElementById('formAdmin');
@@ -110,7 +111,7 @@ formAgent.addEventListener('submit', async e => {
   e.preventDefault();
   const fd = new FormData(formAgent);
   const ok = await Auth.loginAgent(fd.get('agentId'), fd.get('pin'));
-  if (ok) location.replace('dashboard.html');
+  if (ok) location.replace('dashboard-agent.html');
   else App.toast('PIN incorrect','error');
 });
 </script>

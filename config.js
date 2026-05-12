@@ -572,6 +572,58 @@ Tu as accès aux outils suivants :
   } catch (e) {}
 })();
 
+// ============================================================
+// 🌿 LANDING PAGE — Personnalisation de l'accueil public (index.html)
+// ============================================================
+// Modifie cette section pour personnaliser la landing SANS toucher au code.
+// ------------------------------------------------------------
+CONFIG.LANDING = {
+
+  // Numéro WhatsApp où arrivent les demandes RDV + Devis
+  // Format international SANS le "+", SANS espaces. Ex : "590690673085"
+  whatsapp: "590690673085",
+
+  // Textes principaux (HTML autorisé pour le titre hero)
+  textes: {
+    nav_logo: "Wassou",
+    hero_title_html: 'Vos services à domicile,<br/><span class="hl">simples</span> et <span class="hl-gold">soignés</span>.',
+    hero_sub: "Jardinage, kärcher, nettoyage, débroussaillage… une équipe locale de confiance pour particuliers et professionnels.",
+    about_title: "Une entreprise locale, des prestations soignées.",
+    about_text: "Wassou Multiservices intervient partout en Guadeloupe pour le nettoyage et l'entretien de vos espaces, qu'ils soient privés ou professionnels. Notre équipe vous garantit ponctualité, qualité de finition et matériel professionnel.",
+    footer_desc: "Services à domicile en Guadeloupe.",
+  },
+
+  // Menu déroulant des services (RDV + Devis) + cartes services
+  // Si laissé vide, la landing utilisera CONFIG.services (section 7) en fallback.
+  services_menu: [
+    { id:"menage-maison", nom:"Nettoyage maison", icone:"🧽",
+      description:"Ménage complet de votre domicile, en profondeur.",
+      inclus:["Sols, vitres, sanitaires","Cuisine dégraissée","Poussière & surfaces"], featured:false },
+    { id:"menage-pro", nom:"Nettoyage bureau / local pro", icone:"🏢",
+      description:"Entretien régulier ou ponctuel de vos locaux professionnels.",
+      inclus:["Bureaux & open-space","Sanitaires & accueil","Vitrerie"], featured:false },
+    { id:"jardin", nom:"Entretien jardin", icone:"🌱",
+      description:"Remise en état et entretien régulier de vos espaces verts.",
+      inclus:["Tonte & débroussaillage","Taille de haies","Évacuation déchets verts"], featured:false },
+    { id:"debroussaillage", nom:"Débroussaillage", icone:"🪓",
+      description:"Nettoyage de terrains, friches et zones envahies.",
+      inclus:["Coupe végétation dense","Élagage","Évacuation"], featured:false },
+    { id:"karcher-terrasse", nom:"Karcher terrasse / façade", icone:"💦",
+      description:"Nettoyage haute pression de vos surfaces extérieures.",
+      inclus:["Terrasses & dalles","Façades & murs","Allées & clôtures"], featured:true },
+    { id:"karcher-voiture", nom:"Karcher voiture", icone:"🚗",
+      description:"Nettoyage extérieur soigné de votre véhicule à domicile.",
+      inclus:["Carrosserie","Jantes","Pas de portes"], featured:false },
+    { id:"vitres", nom:"Lavage vitres", icone:"🪟",
+      description:"Vitres impeccables, sans traces, intérieur et extérieur.",
+      inclus:["Vitres & baies","Encadrements","Miroirs"], featured:false },
+    { id:"autre", nom:"Autre prestation", icone:"🔧",
+      description:"Une demande particulière ? Parlons-en, devis sous 24h.",
+      inclus:["Devis gratuit 24h","Intervention sur mesure"], featured:false },
+  ],
+
+};
+
 // Expose en global pour tous les autres scripts
 if (typeof window !== 'undefined') {
   window.CONFIG = CONFIG;

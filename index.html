@@ -2,47 +2,283 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <meta name="theme-color" content="#1b4332"/>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="Wassou"/>
-<title>Wassou Multiservices</title>
+<meta name="description" content="Wassou Multiservices — Services à domicile en Guadeloupe : jardinage, kärcher, nettoyage, débroussaillage. Devis gratuit, intervention rapide."/>
+<title>Wassou Multiservices — Services à domicile en Guadeloupe</title>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"/>
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png"/>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;overflow:hidden;-webkit-tap-highlight-color:transparent}
-body{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1b4332 0%,#2d6a4f 100%);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:#fff;text-align:center;padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom)}
-.loader{display:flex;flex-direction:column;align-items:center;gap:18px}
-.spinner{width:46px;height:46px;border:4px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.logo{font-size:64px;margin-bottom:8px}
-h1{font-size:1.4rem;font-weight:700}
-p{font-size:.9rem;opacity:.8}
-</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/landing.css"/>
 </head>
-<body>
-<div class="loader">
-  <div class="logo">🌿</div>
-  <h1>Wassou Multiservices</h1>
-  <div class="spinner"></div>
-  <p>Chargement…</p>
-</div>
-<script src="js/data.js"></script>
-<script src="js/auth.js"></script>
-<script>
-setTimeout(() => {
-  const s = Auth.getSession();
-  if (s) location.replace('dashboard.html');
-  else location.replace('login.html');
-}, 600);
+<body class="page-enter">
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW',e));
-}
-</script>
+<!-- Loader de transition entre pages -->
+<div class="page-transition" id="pageTransition" aria-hidden="true">
+  <div class="pt-leaf">🌿</div>
+</div>
+
+<!-- ============= NAV ============= -->
+<header class="nav" id="nav">
+  <div class="container nav-inner">
+    <a href="#hero" class="nav-logo">
+      <span class="nav-logo-mark">🌿</span>
+      <span class="nav-logo-text" id="navLogoText">Wassou</span>
+    </a>
+    <nav class="nav-links" aria-label="Navigation principale">
+      <a href="#services">Services</a>
+      <a href="#about">À propos</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="login.html" class="btn btn-ghost btn-sm js-nav" data-href="login.html">Connexion</a>
+      <a href="#rdv" class="btn btn-primary btn-sm">Prendre RDV</a>
+    </div>
+    <button class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+  <div class="nav-mobile" id="navMobile">
+    <a href="#services">Services</a>
+    <a href="#about">À propos</a>
+    <a href="#contact">Contact</a>
+    <a href="login.html" class="js-nav" data-href="login.html">Connexion</a>
+    <a href="#rdv" class="btn btn-primary">Prendre RDV</a>
+  </div>
+</header>
+
+<!-- ============= HERO ============= -->
+<section class="hero" id="hero">
+  <div class="hero-bg" aria-hidden="true">
+    <div class="hero-blob hero-blob-1"></div>
+    <div class="hero-blob hero-blob-2"></div>
+  </div>
+  <div class="container hero-inner">
+    <div class="hero-content">
+      <span class="hero-badge">
+        <span class="dot"></span> Disponible 7j/7 en Guadeloupe
+      </span>
+      <h1 class="hero-title" id="heroTitle">
+        Vos services à domicile,<br/>
+        <span class="hl">simples</span> et <span class="hl-gold">soignés</span>.
+      </h1>
+      <p class="hero-sub" id="heroSub">
+        Jardinage, kärcher, nettoyage, débroussaillage… une équipe locale de confiance pour particuliers et professionnels.
+      </p>
+      <div class="hero-actions">
+        <a href="#rdv" class="btn btn-primary btn-lg">Prendre rendez-vous</a>
+        <a href="#devis" class="btn btn-outline btn-lg">Demander un devis</a>
+      </div>
+      <div class="hero-stats">
+        <div><strong>500+</strong><span>Interventions</span></div>
+        <div><strong>4.9/5</strong><span>Satisfaction</span></div>
+        <div><strong>24h</strong><span>Devis offert</span></div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-card">
+        <img src="assets/landing/hero.jpg" alt="Service à domicile Wassou" onerror="this.style.display='none';this.parentNode.classList.add('no-img')"/>
+        <div class="hero-card-fallback">🌿</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============= SERVICES ============= -->
+<section class="section" id="services">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Nos prestations</span>
+      <h2>Ce que nous faisons pour vous</h2>
+      <p>Particulier ou professionnel, nous prenons soin de vos espaces.</p>
+    </div>
+    <div class="services-grid" id="servicesGrid">
+      <!-- généré par JS depuis CONFIG.LANDING.services -->
+    </div>
+  </div>
+</section>
+
+<!-- ============= ABOUT ============= -->
+<section class="section section-alt" id="about">
+  <div class="container about-inner">
+    <div class="about-visual">
+      <img src="assets/landing/about.jpg" alt="Équipe Wassou Multiservices" onerror="this.style.display='none';this.parentNode.classList.add('no-img')"/>
+      <div class="about-fallback">👷‍♂️</div>
+    </div>
+    <div class="about-content">
+      <span class="eyebrow">Qui sommes-nous</span>
+      <h2 id="aboutTitle">Une entreprise locale, des prestations soignées.</h2>
+      <p id="aboutText">
+        Wassou Multiservices intervient partout en Guadeloupe pour le nettoyage et l'entretien de vos espaces, qu'ils soient privés ou professionnels. Notre équipe vous garantit ponctualité, qualité de finition et matériel pro.
+      </p>
+      <ul class="about-list">
+        <li>✓ Devis gratuit sous 24 h</li>
+        <li>✓ Matériel professionnel inclus</li>
+        <li>✓ Intervention rapide & ponctuelle</li>
+        <li>✓ Paiement après prestation</li>
+      </ul>
+      <a href="#rdv" class="btn btn-primary">Réserver maintenant</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============= RDV ============= -->
+<section class="section" id="rdv">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Prise de rendez-vous</span>
+      <h2>Réservez en 1 minute</h2>
+      <p>Remplissez le formulaire, votre demande est envoyée directement sur notre WhatsApp.</p>
+    </div>
+    <form class="form-card" id="formRdv" novalidate>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="rdv-nom">Nom complet *</label>
+          <input id="rdv-nom" name="nom" type="text" required placeholder="Jean Dupont"/>
+        </div>
+        <div class="form-group">
+          <label for="rdv-tel">Téléphone *</label>
+          <input id="rdv-tel" name="tel" type="tel" required placeholder="0690 12 34 56"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="rdv-email">Email</label>
+          <input id="rdv-email" name="email" type="email" placeholder="vous@email.com"/>
+        </div>
+        <div class="form-group">
+          <label for="rdv-service">Type de service *</label>
+          <select id="rdv-service" name="service" required>
+            <option value="">— Choisir un service —</option>
+            <!-- options générées par JS -->
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="rdv-date">Date souhaitée *</label>
+          <input id="rdv-date" name="date" type="date" required/>
+        </div>
+        <div class="form-group">
+          <label for="rdv-adresse">Adresse d'intervention *</label>
+          <input id="rdv-adresse" name="adresse" type="text" required placeholder="Ville, quartier"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="rdv-message">Message (optionnel)</label>
+        <textarea id="rdv-message" name="message" rows="3" placeholder="Précisez vos besoins, surface, accès…"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg btn-block">
+        Envoyer ma demande sur WhatsApp
+      </button>
+      <p class="form-hint">En cliquant, WhatsApp s'ouvre avec votre message pré-rempli.</p>
+    </form>
+  </div>
+</section>
+
+<!-- ============= DEVIS ============= -->
+<section class="section section-alt" id="devis">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">Devis gratuit</span>
+      <h2>Un projet plus large ?</h2>
+      <p>Décrivez votre besoin, nous revenons vers vous sous 24 h avec un devis détaillé.</p>
+    </div>
+    <form class="form-card" id="formDevis" novalidate>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="devis-nom">Nom *</label>
+          <input id="devis-nom" name="nom" type="text" required placeholder="Jean Dupont"/>
+        </div>
+        <div class="form-group">
+          <label for="devis-tel">Téléphone *</label>
+          <input id="devis-tel" name="tel" type="tel" required placeholder="0690 12 34 56"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="devis-type">Type de demande *</label>
+          <select id="devis-type" name="type" required>
+            <option value="">— Choisir —</option>
+            <option value="Particulier">Particulier</option>
+            <option value="Professionnel">Professionnel</option>
+            <option value="Copropriété">Copropriété</option>
+            <option value="Collectivité">Collectivité</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="devis-service">Service concerné *</label>
+          <select id="devis-service" name="service" required>
+            <option value="">— Choisir un service —</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="devis-desc">Description du projet *</label>
+        <textarea id="devis-desc" name="description" rows="4" required placeholder="Surface, fréquence souhaitée, contraintes particulières…"></textarea>
+      </div>
+      <button type="submit" class="btn btn-gold btn-lg btn-block">
+        Demander mon devis gratuit
+      </button>
+    </form>
+  </div>
+</section>
+
+<!-- ============= CONTACT / CTA ============= -->
+<section class="cta-band" id="contact">
+  <div class="container cta-inner">
+    <div>
+      <h2>Besoin d'une intervention rapide ?</h2>
+      <p>Appelez-nous directement ou écrivez sur WhatsApp.</p>
+    </div>
+    <div class="cta-actions">
+      <a href="#" id="ctaPhone" class="btn btn-light btn-lg">📞 Appeler</a>
+      <a href="#" id="ctaWhatsapp" class="btn btn-primary btn-lg">💬 WhatsApp</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============= FOOTER ============= -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <div>
+      <div class="footer-logo">🌿 <span id="footerName">Wassou Multiservices</span></div>
+      <p class="footer-desc" id="footerDesc">Services à domicile en Guadeloupe.</p>
+    </div>
+    <div class="footer-cols">
+      <div>
+        <h4>Services</h4>
+        <ul id="footerServices"></ul>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <ul>
+          <li id="footerTel">📞 —</li>
+          <li id="footerMail">✉️ —</li>
+          <li id="footerAdresse">📍 —</li>
+          <li id="footerHoraires">🕒 —</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Espace pro</h4>
+        <ul>
+          <li><a href="login.html" class="js-nav" data-href="login.html">Connexion équipe</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container">© <span id="footerYear"></span> Wassou Multiservices — Tous droits réservés</div>
+  </div>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="js/landing.js"></script>
 </body>
 </html>

@@ -11,8 +11,26 @@
 <link rel="icon" type="image/png" href="icons/favicon-32.png"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
 <link rel="stylesheet" href="css/app.css"/>
+<style>
+/* Animation d'entrée cohérente avec la landing */
+@keyframes loginIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.login-bg { animation: loginIn .5s ease-out both; }
+.login-back {
+  position: absolute; top: 18px; left: 18px; z-index: 10;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 100px;
+  background: rgba(255,255,255,.15); color: #fff;
+  font-size: 13px; font-weight: 500; text-decoration: none;
+  backdrop-filter: blur(8px); transition: background .2s;
+}
+.login-back:hover { background: rgba(255,255,255,.25); }
+</style>
 </head>
 <body>
+<a href="index.html" class="login-back" aria-label="Retour à l'accueil">← Accueil</a>
 <div class="login-bg">
   <div class="login-card">
     <div class="login-logo">

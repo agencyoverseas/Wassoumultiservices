@@ -76,12 +76,13 @@ const CONFIG = {
   pwa: {
     popup_active: true,
     delai_avant_popup_ms: 3000,            // 3 secondes après arrivée
-    refus_cooldown_jours: 7,               // Si refusé, ne re-popup pas avant 7 jours
-    titre: "📲 Installer l'application",
-    sous_titre: "Accède à Wassou en plein écran depuis ton téléphone",
+    delai_reapparition_ms: 45000,          // Re-popup toutes les 45s si refusée
+    refus_cooldown_jours: 7,               // (legacy, plus utilisé en mode bloquant)
+    titre: "📲 Installer Wassou",
+    sous_titre: "Accès rapide depuis votre écran d'accueil",
     bouton_installer: "Installer",
     bouton_plus_tard: "Plus tard",
-    instructions_ios: "Touche 'Partager' puis 'Sur l'écran d'accueil'",
+    instructions_ios: "Touche le bouton Partager puis 'Sur l'écran d'accueil'",
     instructions_android: "Clique sur Installer pour ajouter l'app à ton écran d'accueil",
   },
 

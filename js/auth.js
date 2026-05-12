@@ -1,8 +1,24 @@
 // ============================================================
-// WASSOU — AUTH (simple, localStorage)
+// WASSOU — AUTH (simple, localStorage) — v2 avec séparation rôles
 // ============================================================
 const Auth = {
   KEY: 'wm_session',
+
+  // Pages réservées admin uniquement (agents = redirigés vers dashboard-agent.html)
+  ADMIN_ONLY: [
+    'dashboard.html','dashboard-admin.html',
+    'clients.html','client-detail.html',
+    'agents.html',
+    'devis.html','devis-create.html','facture-view.html',
+    'paiements.html',
+    'rapports.html',
+    'parametres.html',
+    'carte-fidelite.html',
+    'agent-ia.html',
+    'nexus.html','nexus-panel.html',
+  ],
+  // Pages réservées agent uniquement
+  AGENT_ONLY: ['dashboard-agent.html'],
 
   // SHA-256
   async sha256(txt){
@@ -29,7 +45,6 @@ const Auth = {
     try{
       const s = JSON.parse(localStorage.getItem(this.KEY) || 'null');
       if (!s) return null;
-      // expiration 8h
       if (s.expires && Date.now() > s.expires) { this.logout(false); return null; }
       return s;
     }catch(e){ return null; }
@@ -56,10 +71,27 @@ const Auth = {
     localStorage.removeItem(this.KEY);
     if (redirect) location.href = 'login.html';
   },
-  // Vérifie l'accès, sinon redirige vers login
+
+  // Page d'accueil selon rôle
+  homePage(role){
+    return role === 'agent' ? 'dashboard-agent.html' : 'dashboard.html';
+  },
+
+  // Vérifie l'accès, sinon redirige (login ou page autorisée selon rôle)
   guard(){
     const s = this.getSession();
     if (!s) { location.replace('login.html'); return false; }
+
+    // Vérif rôle vs page courante
+    const page = (location.pathname.split('/').pop() || '').toLowerCase();
+    if (s.role === 'agent' && this.ADMIN_ONLY.includes(page)) {
+      location.replace('dashboard-agent.html');
+      return false;
+    }
+    if (s.role === 'admin' && this.AGENT_ONLY.includes(page)) {
+      location.replace('dashboard.html');
+      return false;
+    }
     return s;
   },
 };
@@ -75,21 +107,13 @@ const PWAInstall = {
   init(){
     if (this.inited) return;
     this.inited = true;
-
-    // Déjà installée ?
     if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) return;
-
-    // Refusée récemment ?
     const dismissed = parseInt(localStorage.getItem(this.KEY) || '0');
     if (dismissed && Date.now() - dismissed < this.COOLDOWN_DAYS * 24*3600*1000) return;
-
-    // Capture le prompt natif
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       this.deferred = e;
     });
-
-    // Affiche après 3s
     setTimeout(() => this.show(), 3000);
   },
 
@@ -109,7 +133,6 @@ const PWAInstall = {
     `;
     document.body.appendChild(div);
     requestAnimationFrame(()=>div.classList.add('show'));
-
     div.querySelector('.install-close').addEventListener('click', () => this.dismiss());
     div.querySelector('#installBtn').addEventListener('click', () => this.install());
   },
@@ -123,11 +146,8 @@ const PWAInstall = {
       this.deferred = null;
     } else {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      if (isIOS){
-        App.toast("Sur iPhone : Touche 'Partager' puis 'Sur l'écran d'accueil'");
-      } else {
-        App.toast("Pour installer : menu navigateur → Ajouter à l'écran d'accueil");
-      }
+      if (isIOS){ App.toast("Sur iPhone : Touche 'Partager' puis 'Sur l'écran d'accueil'"); }
+      else { App.toast("Pour installer : menu navigateur → Ajouter à l'écran d'accueil"); }
     }
   },
 
@@ -143,17 +163,10 @@ const PWAInstall = {
 };
 
 // ============================================================
-// 📲 AUTO-LOADER POPUP PWA (v2)
-// ============================================================
-// Charge automatiquement js/pwa-install.js sur TOUTES les pages
-// (auth.js est inclus dans chaque page du site).
-// Affiche la popup d'installation 3 secondes après le chargement,
-// si CONFIG.pwa.popup_active = true et si l'app n'est pas déjà installée.
+// AUTO-LOADER POPUP PWA
 // ============================================================
 (function loadPwaInstallScript() {
-  // Éviter le double chargement
   if (document.querySelector('script[data-pwa-loader]')) return;
-  // Détecter si on est dans un sous-dossier (sécurité)
   const path = location.pathname;
   const inSubdir = path.split('/').filter(Boolean).length > 1
     && !path.endsWith('.html')
@@ -163,6 +176,6 @@ const PWAInstall = {
   s.src = base + 'pwa-install.js';
   s.async = true;
   s.setAttribute('data-pwa-loader', '1');
-  s.onerror = () => console.warn('[PWA] pwa-install.js introuvable. Vérifier que le fichier est bien dans /js/');
+  s.onerror = () => console.warn('[PWA] pwa-install.js introuvable.');
   (document.head || document.documentElement).appendChild(s);
 })();

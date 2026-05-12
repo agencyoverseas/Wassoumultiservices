@@ -172,6 +172,10 @@
     `;
     document.body.appendChild(overlay);
 
+    // Masquer la popup PWA "Installer Wassou" si elle est ouverte (évite le chevauchement visuel)
+    const pwaPopup = document.getElementById('installBanner') || document.getElementById('pwa-popup-bloc');
+    if (pwaPopup) pwaPopup.style.display = 'none';
+
     const submit = async () => {
       const login = document.getElementById('nx-login').value.trim();
       const pass = document.getElementById('nx-pass').value;

@@ -14,7 +14,7 @@ const PdfFacture = {
       nom:    s.bizNom   || 'Wassou Multiservices',
       tel:    s.bizTel   || '0690 67 30 85',
       email:  s.bizEmail || 'contact@wassou-services.fr',
-      zone:   s.bizZone  || 'Martinique',
+      zone:   s.bizZone  || 'Guadeloupe',
       siret:  s.bizSiret || '—',
     };
   },

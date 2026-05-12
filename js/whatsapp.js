@@ -89,7 +89,7 @@ Cordialement,
       nom:    s.bizNom   || 'Wassou Multiservices',
       tel:    s.bizTel   || '0690 67 30 85',
       email:  s.bizEmail || 'contact@wassou-services.fr',
-      zone:   s.bizZone  || 'Martinique',
+      zone:   s.bizZone  || 'Guadeloupe',
     };
   },
 
@@ -98,10 +98,11 @@ Cordialement,
     if (!tel) return '';
     let n = tel.replace(/\D/g, '');           // que des chiffres
     if (n.startsWith('0') && n.length === 10) n = '33' + n.slice(1);  // FR métropole
-    else if (n.startsWith('0596') || n.startsWith('596')) n = '596' + n.replace(/^0?596/, ''); // Martinique
-    else if (n.startsWith('0690') || n.startsWith('690')) n = '596' + n.replace(/^0?(690)/, '$1'); // Mobile Martinique
+    // Guadeloupe : 0590 = fixe, 0690 / 0691 = mobile → préfixe +590
+    else if (n.startsWith('0590') || n.startsWith('590')) n = '590' + n.replace(/^0?590/, ''); // Fixe Guadeloupe
+    else if (n.startsWith('0690') || n.startsWith('690')) n = '590' + n.replace(/^0?(690)/, '$1'); // Mobile Guadeloupe
+    else if (n.startsWith('0691') || n.startsWith('691')) n = '590' + n.replace(/^0?(691)/, '$1'); // Mobile Guadeloupe
     else if (n.startsWith('0694') || n.startsWith('694')) n = '594' + n.replace(/^0?(694)/, '$1'); // Guyane
-    else if (n.startsWith('0590') || n.startsWith('590')) n = '590' + n.replace(/^0?590/, ''); // Guadeloupe
     return n;
   },
 

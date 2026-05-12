@@ -1,5 +1,5 @@
 // ============================================================
-// WASSOU MOBILE — APP CORE
+// WASSOU MOBILE — APP CORE — v2 (séparation Admin/Agent)
 // ============================================================
 
 const App = {
@@ -50,25 +50,37 @@ const App = {
     document.getElementById('openDrawer')?.addEventListener('click', ()=>Drawer.open());
     document.getElementById('bellBtn')?.addEventListener('click', ()=>App.toast('Aucune nouvelle notification'));
 
-    // Easter egg : 5 taps sur le titre = panneau Nexus
-    let taps=0, lastTap=0;
-    document.getElementById('appLogo')?.addEventListener('click', () => {
-      const now = Date.now();
-      if (now - lastTap > 1500) taps = 0;
-      taps++; lastTap = now;
-      if (taps >= 5) { taps = 0; window.location.href = 'nexus.html'; }
-    });
+    // NOTE: la redirection Nexus est maintenant gérée par nexus-secret.js
+    // (qui binde sur #appLogo via #logo-trigger). On ne fait plus de redirect direct ici.
+    document.getElementById('appLogo')?.setAttribute('id','appLogo');
+    // Marquer le titre comme trigger Nexus (sans rediriger)
+    const logoEl = document.getElementById('appLogo');
+    if (logoEl) logoEl.id = 'logo-trigger';
   },
 
-  // ─── Bottom nav ───
+  // ─── Bottom nav (role-aware) ───
   renderNav(active){
-    const items = [
-      {key:'dashboard', label:'Tableau de bord', href:'dashboard.html', ic:this.icons.dashboard},
-      {key:'clients', label:'Clients', href:'clients.html', ic:this.icons.users},
-      {key:'agents', label:'Agents', href:'agents.html', ic:this.icons.agent},
-      {key:'interventions', label:'Interventions', href:'interventions.html', ic:this.icons.calendar},
-      {key:'sms', label:'SMS', href:'sms.html', ic:this.icons.sms},
-    ];
+    const session = Auth.getSession() || {};
+    const role = session.role || 'admin';
+
+    let items;
+    if (role === 'agent') {
+      // L'agent voit UNIQUEMENT son espace
+      items = [
+        {key:'agent-home', label:'Mon espace', href:'dashboard-agent.html', ic:this.icons.dashboard},
+        {key:'interventions', label:'Interventions', href:'interventions.html', ic:this.icons.calendar},
+        {key:'sms', label:'SMS', href:'sms.html', ic:this.icons.sms},
+      ];
+    } else {
+      items = [
+        {key:'dashboard', label:'Tableau de bord', href:'dashboard.html', ic:this.icons.dashboard},
+        {key:'clients', label:'Clients', href:'clients.html', ic:this.icons.users},
+        {key:'agents', label:'Agents', href:'agents.html', ic:this.icons.agent},
+        {key:'interventions', label:'Interventions', href:'interventions.html', ic:this.icons.calendar},
+        {key:'sms', label:'SMS', href:'sms.html', ic:this.icons.sms},
+      ];
+    }
+
     const html = `<nav class="bottom-nav">${items.map(it=>`
       <a href="${it.href}" class="bn-item ${active===it.key?'active':''}">
         ${it.ic}
@@ -142,7 +154,6 @@ const App = {
     this.renderHeader(title, subtitle);
     this.renderNav(navKey);
     PWAInstall.init();
-    // Pull-to-refresh natif (chargé une seule fois)
     if (!document.querySelector('script[data-ptr]')) {
       const s = document.createElement('script');
       s.src = 'js/pull-refresh.js';
@@ -154,12 +165,43 @@ const App = {
 };
 
 // ============================================================
-// DRAWER (menu latéral)
+// DRAWER (menu latéral) — role-aware
 // ============================================================
 const Drawer = {
   ensureDOM(){
     if (document.getElementById('drawer')) return;
     const session = Auth.getSession() || {};
+    const role = session.role || 'admin';
+
+    // Liens selon rôle
+    let linksHtml;
+    if (role === 'agent') {
+      linksHtml = `
+        <a href="dashboard-agent.html" class="drawer-link"><span class="ic">🏠</span>Mon espace</a>
+        <a href="interventions.html" class="drawer-link"><span class="ic">📅</span>Mes interventions</a>
+        <a href="sms.html" class="drawer-link"><span class="ic">💬</span>SMS</a>
+        <a href="parametres.html" class="drawer-link" style="display:none"></a>
+      `;
+    } else {
+      linksHtml = `
+        <a href="dashboard.html" class="drawer-link"><span class="ic">📊</span>Tableau de bord</a>
+        <a href="clients.html" class="drawer-link"><span class="ic">👥</span>Clients</a>
+        <a href="agents.html" class="drawer-link"><span class="ic">🧑‍🌾</span>Agents</a>
+        <a href="interventions.html" class="drawer-link"><span class="ic">📅</span>Interventions</a>
+        <a href="sms.html" class="drawer-link"><span class="ic">💬</span>SMS</a>
+        <a href="devis.html" class="drawer-link"><span class="ic">📄</span>Devis</a>
+        <a href="paiements.html" class="drawer-link"><span class="ic">💳</span>Paiements</a>
+        <a href="carte-fidelite.html" class="drawer-link"><span class="ic">🎫</span>Carte Fidélité</a>
+        <a href="rapports.html" class="drawer-link"><span class="ic">📈</span>Rapports</a>
+        <a href="agent-ia.html" class="drawer-link"><span class="ic">🤖</span>Agent IA</a>
+        <a href="parametres.html" class="drawer-link"><span class="ic">⚙️</span>Paramètres</a>
+      `;
+    }
+
+    const subtitle = role === 'admin'
+      ? 'Administrateur'
+      : (session.nom || 'Agent');
+
     document.body.insertAdjacentHTML('beforeend', `
       <div class="overlay" id="drawerOverlay"></div>
       <aside class="drawer" id="drawer">
@@ -167,21 +209,11 @@ const Drawer = {
           <div class="drawer-logo">🌿</div>
           <div class="drawer-info">
             <h3>Wassou Multiservices</h3>
-            <p>${session.role==='admin' ? 'Administrateur' : (session.nom || 'Agent')}</p>
+            <p>${subtitle}</p>
           </div>
         </div>
         <nav class="drawer-nav">
-          <a href="dashboard.html" class="drawer-link"><span class="ic">📊</span>Tableau de bord</a>
-          <a href="clients.html" class="drawer-link"><span class="ic">👥</span>Clients</a>
-          <a href="agents.html" class="drawer-link"><span class="ic">🧑‍🌾</span>Agents</a>
-          <a href="interventions.html" class="drawer-link"><span class="ic">📅</span>Interventions</a>
-          <a href="sms.html" class="drawer-link"><span class="ic">💬</span>SMS</a>
-          <a href="devis.html" class="drawer-link"><span class="ic">📄</span>Devis</a>
-          <a href="paiements.html" class="drawer-link"><span class="ic">💳</span>Paiements</a>
-          <a href="carte-fidelite.html" class="drawer-link"><span class="ic">🎫</span>Carte Fidélité</a>
-          <a href="rapports.html" class="drawer-link"><span class="ic">📈</span>Rapports</a>
-          <a href="agent-ia.html" class="drawer-link"><span class="ic">🤖</span>Agent IA</a>
-          <a href="parametres.html" class="drawer-link"><span class="ic">⚙️</span>Paramètres</a>
+          ${linksHtml}
         </nav>
         <div class="drawer-foot">
           <button class="btn btn-outline btn-block" id="logoutBtn">↩ Déconnexion</button>
@@ -190,8 +222,7 @@ const Drawer = {
     `);
     document.getElementById('drawerOverlay').addEventListener('click', ()=>this.close());
     document.getElementById('logoutBtn').addEventListener('click', ()=>{ Auth.logout(); });
-    // marquer le lien actif
-    const cur = location.pathname.split('/').pop() || 'dashboard.html';
+    const cur = location.pathname.split('/').pop() || (role==='agent'?'dashboard-agent.html':'dashboard.html');
     document.querySelectorAll('.drawer-link').forEach(a => {
       if (a.getAttribute('href') === cur) a.classList.add('active');
     });

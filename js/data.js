@@ -6,7 +6,7 @@ const DB = {
     clients:'wm_clients', agents:'wm_agents', interventions:'wm_interventions',
     sms:'wm_sms', devis:'wm_devis', paiements:'wm_paiements',
     rdvs:'wm_rdvs', photos:'wm_photos', notifs:'wm_notifs',
-    settings:'wm_settings', seeded:'wm_seeded_v2'
+    settings:'wm_settings', seeded:'wm_seeded_v3'
   },
   _get(k){ try{return JSON.parse(localStorage.getItem(k)||'[]')}catch(e){return []} },
   _set(k,v){ localStorage.setItem(k,JSON.stringify(v)) },
@@ -57,7 +57,11 @@ const DB = {
     ]);
     // INTERVENTIONS
     this.interventions.save([
-      {id:'i1', clientId:'c4', agentId:'a1', service:'Entretien jardin', date:'2026-05-10', heure:'03:50', adresse:'Le Gosier', statut:'planifié', montant:80, notes:'', photos:[]},
+      {id:'i1', clientId:'c4', agentId:'a1', service:'Entretien jardin', date:'2026-05-10', heure:'09:00', adresse:'Le Gosier', statut:'planifié', montant:80, notes:'', photos:[]},
+      {id:'i2', clientId:'c1', agentId:'a2', service:'Tonte de pelouse', date:'2026-05-13', heure:'08:30', adresse:'12 Rue des Fleurs, Baie-Mahault', statut:'planifié', montant:60, notes:'', photos:[]},
+      {id:'i3', clientId:'c2', agentId:'a2', service:'Taille de haies', date:'2026-05-15', heure:'14:00', adresse:'3 Résidence Bois Rouge, Le Gosier', statut:'planifié', montant:100, notes:'Haies hautes', photos:[]},
+      {id:'i4', clientId:'c3', agentId:'a2', service:'Nettoyage haute pression', date:'2026-05-11', heure:'10:00', adresse:'8 Allée des Manguiers, Pointe-à-Pitre', statut:'en_cours', montant:120, notes:'', photos:[]},
+      {id:'i5', clientId:'c5', agentId:'a3', service:'Débroussaillage', date:'2026-05-05', heure:'07:30', adresse:'Sainte-Anne', statut:'terminé', montant:90, notes:'', photos:[]},
     ]);
     // SMS / Devis / Paiements vides au début
     this.sms.save([]);

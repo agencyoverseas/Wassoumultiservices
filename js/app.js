@@ -142,6 +142,13 @@ const App = {
     this.renderHeader(title, subtitle);
     this.renderNav(navKey);
     PWAInstall.init();
+    // Pull-to-refresh natif (chargé une seule fois)
+    if (!document.querySelector('script[data-ptr]')) {
+      const s = document.createElement('script');
+      s.src = 'js/pull-refresh.js';
+      s.dataset.ptr = '1';
+      document.head.appendChild(s);
+    }
     return true;
   }
 };

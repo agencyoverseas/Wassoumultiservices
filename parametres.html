@@ -48,12 +48,6 @@ if (!App.init('dashboard','Paramètres', 'Configuration')) {} else {
     </div>
 
     <div class="card">
-      <div class="card-head"><div class="card-title">Application</div></div>
-      <button class="btn btn-outline btn-block mb-12" id="reset">${App.icons.trash} Réinitialiser les données démo</button>
-      <button class="btn btn-outline btn-block" id="clearCache">🔄 Vider le cache</button>
-    </div>
-
-    <div class="card">
       <div class="card-head"><div class="card-title">À propos</div></div>
       <div style="font-size:13.5px;color:var(--text-soft);line-height:1.6">
         <strong>Wassou Multiservices — Mobile PWA</strong><br>
@@ -70,22 +64,6 @@ if (!App.init('dashboard','Paramètres', 'Configuration')) {} else {
     const o = Object.fromEntries(new FormData(e.target));
     DB.settings.set({bizNom:o.nom, bizTel:o.tel, bizEmail:o.email, bizZone:o.zone});
     App.toast('Enregistré','success');
-  });
-
-  document.getElementById('reset').addEventListener('click', async () => {
-    if (await App.confirm('Réinitialiser toutes les données ? Cette action est irréversible.')){
-      Object.values(DB.KEYS).forEach(k => localStorage.removeItem(k));
-      App.toast('Données réinitialisées','success');
-      setTimeout(()=>location.reload(),700);
-    }
-  });
-
-  document.getElementById('clearCache').addEventListener('click', async () => {
-    if ('caches' in window){
-      const keys = await caches.keys();
-      await Promise.all(keys.map(k => caches.delete(k)));
-    }
-    App.toast('Cache vidé','success');
   });
 
   document.getElementById('lo').addEventListener('click', () => Auth.logout());

@@ -10,15 +10,16 @@
 <link rel="icon" type="image/png" href="icons/favicon-32.png"/>
 <link rel="stylesheet" href="css/app.css"/>
 <style>
-.chat-list{padding:14px;padding-bottom:200px}
+.chat-list{padding:14px;padding-bottom:240px}
 .bub{max-width:80%;padding:12px 14px;border-radius:18px;margin-bottom:10px;font-size:14.5px;line-height:1.45;word-wrap:break-word}
 .bub.user{background:var(--green-dark);color:#fff;margin-left:auto;border-bottom-right-radius:4px}
 .bub.bot{background:var(--surface);color:var(--text);border-bottom-left-radius:4px;box-shadow:var(--shadow-sm);border:1px solid var(--border-soft)}
-.chat-input-bar{position:fixed;bottom:calc(var(--nav-h) + var(--safe-bottom));left:0;right:0;background:var(--surface);border-top:1px solid var(--border-soft);padding:10px;display:flex;gap:8px;z-index:90}
+/* Champ de saisie : décalé pour ne pas toucher la bottom-nav (espace visible) */
+.chat-input-bar{position:fixed;bottom:calc(var(--nav-h) + var(--safe-bottom) + 18px);left:10px;right:10px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:10px;display:flex;gap:8px;z-index:90;box-shadow:var(--shadow)}
 .chat-input-bar input{flex:1;padding:12px 14px;border:1px solid var(--border);border-radius:100px;font-size:14px}
 .chat-input-bar button{background:var(--green-dark);color:#fff;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .chat-input-bar button svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2}
-.suggest{display:flex;gap:8px;overflow-x:auto;padding:0 14px 10px;scrollbar-width:none}
+.suggest{display:flex;gap:8px;overflow-x:auto;padding:0 14px 6px;scrollbar-width:none;position:fixed;bottom:calc(var(--nav-h) + var(--safe-bottom) + 86px);left:0;right:0;z-index:89;background:linear-gradient(to bottom,transparent,var(--bg) 25%);padding-top:18px}
 .suggest::-webkit-scrollbar{display:none}
 .suggest button{background:var(--green-soft);color:var(--green-text);padding:8px 14px;border-radius:100px;font-size:13px;font-weight:500;white-space:nowrap;flex-shrink:0;border:1px solid var(--green-soft)}
 </style>

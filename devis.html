@@ -5,16 +5,41 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"/>
 <meta name="theme-color" content="#1b4332"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<title>Devis — Wassou</title>
+<title>Devis & Factures — Wassou</title>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" type="image/png" href="icons/favicon-32.png"/>
 <link rel="stylesheet" href="css/app.css"/>
+<style>
+  .devis-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .devis-actions .btn-sm{padding:9px 10px;font-size:12.5px}
+  .devis-actions .btn-full{grid-column:1 / -1}
+  .type-tabs{display:flex;background:var(--bg);border-radius:100px;padding:4px;margin-bottom:14px;gap:4px}
+  .type-tabs button{flex:1;padding:9px;border-radius:100px;font-size:13.5px;font-weight:600;color:var(--text-soft)}
+  .type-tabs button.active{background:var(--surface);color:var(--green-dark);box-shadow:var(--shadow-sm)}
+  .badge-doctype{display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+  .bdt-devis{background:#e8f0fe;color:#1967d2}
+  .bdt-facture{background:#fff4e0;color:#b45309}
+  .choice-card{display:flex;align-items:center;gap:14px;padding:16px;border:1.5px solid var(--border);border-radius:14px;background:var(--surface);width:100%;text-align:left;margin-bottom:10px;transition:all .15s;cursor:pointer}
+  .choice-card:active{transform:scale(.98);border-color:var(--green-dark)}
+  .choice-card .ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+  .choice-card .ic.devis{background:#e8f0fe}
+  .choice-card .ic.facture{background:#fff4e0}
+  .choice-card .tx{flex:1;min-width:0}
+  .choice-card .tx .t{font-size:15px;font-weight:700;color:var(--text)}
+  .choice-card .tx .s{font-size:12.5px;color:var(--text-soft);margin-top:2px}
+</style>
 </head>
 <body>
 <div class="status-spacer"></div>
 <header class="app-header" id="header"></header>
 
 <main class="page fade-in">
+  <div class="type-tabs">
+    <button data-tab="all" class="active">Tous</button>
+    <button data-tab="devis">Devis</button>
+    <button data-tab="facture">Factures</button>
+  </div>
+
   <button class="fab-add" id="addBtn"></button>
   <div id="list"></div>
 </main>
@@ -22,34 +47,50 @@
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/pdf-facture.js"></script>
 <script>
-if (!App.init('interventions','Devis', `${DB.devis.all().length} devis`)) {} else {
-  document.getElementById('addBtn').innerHTML = App.icons.plus + ' Nouveau devis';
+if (!App.init('interventions','Devis & Factures', `${DB.devis.all().length} documents`)) {} else {
+
+  let activeTab = 'all';
 
   function calcTotal(lines){ return (lines||[]).reduce((s,l)=>s+(parseFloat(l.qty||0)*parseFloat(l.pu||0)),0) }
 
+  function visible(){
+    let arr = DB.devis.all();
+    if (activeTab === 'devis')   arr = arr.filter(d => (d.type||'devis') === 'devis');
+    if (activeTab === 'facture') arr = arr.filter(d => d.type === 'facture');
+    return arr.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+  }
+
   function render(){
-    const arr = DB.devis.all().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+    const arr  = visible();
     const list = document.getElementById('list');
     if (!arr.length){
-      list.innerHTML = `<div class="page-empty"><div class="ic">📄</div><div>Aucun devis</div></div>`;
+      list.innerHTML = `<div class="page-empty"><div class="ic">📄</div><div>Aucun ${activeTab==='facture'?'facture':activeTab==='devis'?'devis':'document'}</div></div>`;
       return;
     }
     list.innerHTML = arr.map(d => {
-      const c = DB.clients.get(d.clientId);
+      const c    = DB.clients.get(d.clientId);
+      const type = d.type || 'devis';
+      const bdt  = type === 'facture' ? 'bdt-facture' : 'bdt-devis';
+      const ico  = type === 'facture' ? '🧾' : '📄';
       return `<div class="list-item" data-id="${d.id}">
         <div class="li-head">
-          <div>
+          <div style="flex:1;min-width:0">
+            <span class="badge-doctype ${bdt}">${ico} ${type === 'facture' ? 'Facture' : 'Devis'}</span>
             <div class="li-name">${d.numero||d.id}</div>
-            <div style="font-size:13px;color:var(--text-soft);margin-top:4px">${c?(c.prenom+' '+c.nom):'—'}</div>
+            <div style="font-size:13px;color:var(--text-soft);margin-top:4px">${c?(c.prenom+' '+c.nom):'— Client supprimé'}</div>
             <div style="font-size:13px;color:var(--text-soft);margin-top:2px">${Fmt.date(d.date)}</div>
-            <div style="font-size:16px;font-weight:700;margin-top:6px">${Fmt.eur(d.total||0)}</div>
+            <div style="font-size:17px;font-weight:700;margin-top:6px;color:var(--green-dark)">${Fmt.eur(d.total||0)}</div>
           </div>
           <span class="li-status status-${d.statut||'brouillon'}">${d.statut||'brouillon'}</span>
         </div>
-        <div class="modal-actions" style="margin-top:10px">
+        <div class="devis-actions">
+          <button class="btn btn-outline btn-sm" data-act="edit">${App.icons.edit} Modifier</button>
           <button class="btn btn-outline btn-sm" data-act="status">Changer statut</button>
-          <button class="btn btn-danger btn-sm" data-act="del">Supprimer</button>
+          <button class="btn btn-primary btn-sm" data-act="mail">${App.icons.mail} Envoyer mail</button>
+          <button class="btn btn-outline btn-sm" data-act="pdf" style="border-color:var(--gold);color:var(--gold)">${App.icons.doc} PDF</button>
+          <button class="btn btn-danger btn-sm btn-full" data-act="del">${App.icons.trash} Supprimer</button>
         </div>
       </div>`;
     }).join('');
@@ -58,13 +99,17 @@ if (!App.init('interventions','Devis', `${DB.devis.all().length} devis`)) {} els
       const id = el.dataset.id;
       el.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', async e => {
         e.stopPropagation();
+        const d = DB.devis.get(id);
+        if (!d) return;
+
         if (b.dataset.act === 'del'){
-          if (await App.confirm('Supprimer ce devis ?')){
+          if (await App.confirm('Supprimer ce document ?')){
             DB.devis.remove(id); render(); App.toast('Supprimé','success');
+            App.renderHeader('Devis & Factures', `${DB.devis.all().length} documents`);
           }
-        } else {
-          const d = DB.devis.get(id);
-          App.modal('Statut du devis', `
+        }
+        else if (b.dataset.act === 'status'){
+          App.modal('Changer le statut', `
             <div style="display:flex;flex-wrap:wrap;gap:8px">
               ${['brouillon','envoyé','accepté','refusé'].map(s=>`<button class="filter-chip ${d.statut===s?'active':''}" data-s="${s}">${s}</button>`).join('')}
             </div>
@@ -73,8 +118,51 @@ if (!App.init('interventions','Devis', `${DB.devis.all().length} devis`)) {} els
             document.querySelectorAll('[data-s]').forEach(btn => btn.addEventListener('click', () => {
               DB.devis.update(id, {statut: btn.dataset.s});
               document.querySelector('.modal-overlay').remove();
-              App.toast('Mis à jour','success');
+              App.toast('Statut mis à jour','success');
               render();
+            }));
+          }, 50);
+        }
+        else if (b.dataset.act === 'edit'){
+          openForm(d);
+        }
+        else if (b.dataset.act === 'pdf'){
+          PdfFacture.open(d, d.type || 'devis');
+        }
+        else if (b.dataset.act === 'mail'){
+          App.modal('Envoyer par mail', `
+            <div style="font-size:14px;color:var(--text-soft);margin-bottom:14px">
+              Quel type de document souhaitez-vous envoyer ?
+            </div>
+            <button class="choice-card" data-send="devis">
+              <div class="ic devis">📄</div>
+              <div class="tx">
+                <div class="t">Envoyer comme devis</div>
+                <div class="s">Proposition commerciale</div>
+              </div>
+            </button>
+            <button class="choice-card" data-send="facture">
+              <div class="ic facture">🧾</div>
+              <div class="tx">
+                <div class="t">Envoyer comme facture</div>
+                <div class="s">Document à régler par le client</div>
+              </div>
+            </button>
+            <div class="modal-actions" style="margin-top:14px">
+              <button type="button" class="btn btn-outline btn-block" data-close>Annuler</button>
+            </div>
+          `);
+          setTimeout(() => {
+            document.querySelectorAll('[data-send]').forEach(btn => btn.addEventListener('click', () => {
+              const t = btn.dataset.send;
+              document.querySelector('.modal-overlay').remove();
+              const c = DB.clients.get(d.clientId);
+              if (!c?.email) {
+                App.toast("Ce client n'a pas d'adresse email","error");
+                return;
+              }
+              PdfFacture.sendByMail(d, t);
+              App.toast('Ouverture du mail…','success');
             }));
           }, 50);
         }
@@ -83,39 +171,79 @@ if (!App.init('interventions','Devis', `${DB.devis.all().length} devis`)) {} els
   }
   render();
 
-  document.getElementById('addBtn').addEventListener('click', () => {
+  document.querySelectorAll('.type-tabs button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.type-tabs button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    activeTab = b.dataset.tab;
+    render();
+  }));
+
+  function openForm(existing){
+    const isEdit  = !!existing;
+    const isFact  = existing?.type === 'facture';
     const clients = DB.clients.all();
-    App.modal('Nouveau devis', `
+    const line    = existing?.lines?.[0] || {label:'', qty:1, pu:0};
+
+    App.modal(isEdit ? `Modifier ${isFact ? 'la facture' : 'le devis'}` : 'Nouveau document', `
       <form id="nd">
+        <div class="form-group"><label>Type de document</label>
+          <select class="form-control" name="type" ${isEdit ? 'disabled' : ''} required>
+            <option value="devis"   ${existing?.type !== 'facture' ? 'selected' : ''}>📄 Devis</option>
+            <option value="facture" ${isFact ? 'selected' : ''}>🧾 Facture</option>
+          </select>
+        </div>
         <div class="form-group"><label>Client</label>
           <select class="form-control" name="clientId" required>
             <option value="">— Choisir —</option>
-            ${clients.map(c=>`<option value="${c.id}">${c.prenom} ${c.nom}</option>`).join('')}
+            ${clients.map(c=>`<option value="${c.id}" ${existing?.clientId===c.id?'selected':''}>${c.prenom} ${c.nom}</option>`).join('')}
           </select>
         </div>
-        <div class="form-group"><label>Date</label><input class="form-control" type="date" name="date" value="${new Date().toISOString().slice(0,10)}" required/></div>
-        <div class="form-group"><label>Description</label><input class="form-control" name="label" placeholder="ex: Entretien jardin complet" required/></div>
+        <div class="form-group"><label>Date</label><input class="form-control" type="date" name="date" value="${existing?.date || new Date().toISOString().slice(0,10)}" required/></div>
+        <div class="form-group"><label>Description</label><input class="form-control" name="label" placeholder="ex: Entretien jardin complet" value="${line.label||''}" required/></div>
         <div class="form-grid-2">
-          <div class="form-group"><label>Quantité</label><input class="form-control" name="qty" type="number" min="1" value="1" required/></div>
-          <div class="form-group"><label>Prix unitaire (€)</label><input class="form-control" name="pu" type="number" min="0" step="0.01" required/></div>
+          <div class="form-group"><label>Quantité</label><input class="form-control" name="qty" type="number" min="1" step="1" value="${line.qty||1}" required/></div>
+          <div class="form-group"><label>Prix unitaire (€)</label><input class="form-control" name="pu" type="number" min="0" step="0.01" value="${line.pu||0}" required/></div>
         </div>
-        <div class="form-group"><label>Notes</label><textarea class="form-control" name="notes"></textarea></div>
+        <div class="form-group"><label>Statut</label>
+          <select class="form-control" name="statut">
+            ${['brouillon','envoyé','accepté','refusé'].map(s=>`<option value="${s}" ${existing?.statut===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label>Notes (facultatif)</label><textarea class="form-control" name="notes" rows="2">${existing?.notes||''}</textarea></div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" data-close>Annuler</button>
-          <button type="submit" class="btn btn-primary">Créer</button>
+          <button type="submit" class="btn btn-primary">${isEdit ? 'Mettre à jour' : 'Créer'}</button>
         </div>
       </form>
     `, form => {
-      const o = Object.fromEntries(new FormData(form));
-      const lines = [{label:o.label, qty:parseFloat(o.qty), pu:parseFloat(o.pu)}];
+      const o     = Object.fromEntries(new FormData(form));
+      const type  = isEdit ? existing.type : (o.type || 'devis');
+      const lines = [{label: o.label, qty: parseFloat(o.qty), pu: parseFloat(o.pu)}];
       const total = calcTotal(lines);
-      const num = 'DEV-' + new Date().getFullYear() + '-' + String(DB.devis.all().length+1).padStart(3,'0');
-      DB.devis.add({clientId:o.clientId, date:o.date, numero:num, lines, total, statut:'brouillon', notes:o.notes||''});
-      App.toast('Devis créé','success');
+
+      if (isEdit) {
+        DB.devis.update(existing.id, {
+          clientId: o.clientId, date: o.date, lines, total,
+          statut: o.statut, notes: o.notes || '',
+        });
+        App.toast('Document mis à jour','success');
+      } else {
+        const prefix = type === 'facture' ? 'FAC' : 'DEV';
+        const count  = DB.devis.all().filter(d => (d.type||'devis') === type).length + 1;
+        const num    = `${prefix}-${new Date().getFullYear()}-${String(count).padStart(3,'0')}`;
+        DB.devis.add({
+          type, clientId: o.clientId, date: o.date, numero: num,
+          lines, total, statut: o.statut || 'brouillon', notes: o.notes || '',
+        });
+        App.toast(`${type === 'facture' ? 'Facture' : 'Devis'} créé`,'success');
+      }
       render();
-      App.renderHeader('Devis', `${DB.devis.all().length} devis`);
+      App.renderHeader('Devis & Factures', `${DB.devis.all().length} documents`);
     });
-  });
+  }
+
+  document.getElementById('addBtn').innerHTML = App.icons.plus + ' Nouveau document';
+  document.getElementById('addBtn').addEventListener('click', () => openForm(null));
 }
 </script>
 </body>

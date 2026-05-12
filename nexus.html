@@ -69,15 +69,42 @@
 <!-- Canaux d'alerte -->
 <div class="nexus-card">
   <h3>📡 Canaux d'alerte</h3>
-  <div class="nexus-stat"><span>📱 Push (PWA)</span><span id="pushStat" style="color:#fbbf24">⚠️ Permission requise</span></div>
-  <div class="nexus-stat"><span>✈️ Telegram</span><span id="tgStat" style="color:#7a96a8">Non configuré</span></div>
-  <div class="nexus-stat"><span>📧 Email</span><span id="mailStat" style="color:#5fd1a8">client@wassou.com</span></div>
-  <div class="nexus-stat"><span>🔗 Webhook Make</span><span id="hookStat" style="color:#7a96a8">Non configuré</span></div>
+  <div class="nexus-stat nx-clickable" id="rowPush">
+    <span>📱 Push (PWA)</span>
+    <span id="pushStat" style="color:#fbbf24">⚠️ Permission requise</span>
+  </div>
+  <div class="nexus-stat nx-clickable" id="rowTg">
+    <span>✈️ Telegram</span>
+    <span id="tgStat" style="color:#7a96a8">Non configuré ›</span>
+  </div>
+  <div class="nexus-stat nx-clickable" id="rowMail">
+    <span>📧 Email</span>
+    <span id="mailStat" style="color:#5fd1a8">client@wassou.com ›</span>
+  </div>
+  <div class="nexus-stat nx-clickable" id="rowHook">
+    <span>🔗 Webhook Make</span>
+    <span id="hookStat" style="color:#7a96a8">Non configuré ›</span>
+  </div>
   <div class="mt-12">
     <button class="nexus-btn" id="testAlert">🧪 Test alerte</button>
     <button class="nexus-btn alt" id="pushBtn">🔔 Activer push</button>
   </div>
 </div>
+
+<style>
+  .nx-clickable{cursor:pointer;transition:background .15s;border-radius:6px;padding:10px 8px;margin:-2px -8px}
+  .nx-clickable:active{background:#16252e}
+  .nx-modal-input{
+    width:100%;padding:12px;background:#0a1419;border:1px solid #1f3340;
+    border-radius:8px;color:#e6edf3;font-size:14px;margin-bottom:10px;
+    font-family:'Courier New',monospace;
+  }
+  .nx-modal-input:focus{outline:none;border-color:#5fd1a8}
+  .nx-modal-label{font-size:12px;color:#7a96a8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+  .nx-help{font-size:12px;color:#7a96a8;line-height:1.5;padding:10px;background:#0a1419;border-radius:8px;margin-bottom:14px;border-left:3px solid #5fd1a8}
+  .nx-help code{background:#1f3340;padding:2px 6px;border-radius:4px;color:#5fd1a8;font-size:11px}
+  .nx-help a{color:#5fd1a8;text-decoration:underline}
+</style>
 
 <!-- Agent IA état -->
 <div class="nexus-card">
@@ -202,6 +229,335 @@ function refreshUI() {
 }
 refreshUI();
 
+// ─── Modal Nexus réutilisable ───
+function nxModal(title, htmlContent) {
+  const ov = document.createElement('div');
+  ov.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+    display:flex;align-items:flex-end;justify-content:center;z-index:10000;
+  `;
+  ov.innerHTML = `
+    <div style="background:#0f1a22;border:1px solid #1f3340;border-radius:20px 20px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));max-width:500px;width:100%;max-height:90vh;overflow-y:auto;animation:nxSlideUp .25s">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 style="margin:0;color:#5fd1a8;font-size:17px">${title}</h3>
+        <button data-x="1" style="font-size:22px;color:#7a96a8;background:none;padding:4px 10px">✕</button>
+      </div>
+      ${htmlContent}
+    </div>
+  `;
+  if (!document.getElementById('nx-slide-anim')) {
+    const st = document.createElement('style');
+    st.id = 'nx-slide-anim';
+    st.textContent = '@keyframes nxSlideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}';
+    document.head.appendChild(st);
+  }
+  document.body.appendChild(ov);
+  ov.querySelector('[data-x]').onclick = () => ov.remove();
+  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+  return ov;
+}
+
+// ─── API Telegram ───
+const Telegram = {
+  cfg() { return state.telegram || {}; },
+
+  async send(message) {
+    const c = this.cfg();
+    if (!c.token || !c.chatId) throw new Error('Telegram non configuré');
+    const url = `https://api.telegram.org/bot${c.token}/sendMessage`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: c.chatId,
+        text: message,
+        parse_mode: 'HTML',
+      }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.description || 'Erreur Telegram');
+    return data;
+  },
+
+  async getMe(token) {
+    const res = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.description || 'Token invalide');
+    return data.result;
+  },
+};
+
+// ─── Affichage statut Telegram ───
+function refreshTgStatus() {
+  const el = document.getElementById('tgStat');
+  const c = Telegram.cfg();
+  if (c.token && c.chatId) {
+    el.textContent = '✅ ' + (c.botUsername ? '@'+c.botUsername : 'Configuré') + ' ›';
+    el.style.color = '#5fd1a8';
+  } else {
+    el.textContent = 'Non configuré ›';
+    el.style.color = '#7a96a8';
+  }
+}
+refreshTgStatus();
+
+// Statut email
+function refreshMailStatus() {
+  const el = document.getElementById('mailStat');
+  if (state.mail) {
+    el.textContent = state.mail + ' ›';
+    el.style.color = '#5fd1a8';
+  } else {
+    el.textContent = 'Non configuré ›';
+    el.style.color = '#7a96a8';
+  }
+}
+if (!state.mail) state.mail = 'client@wassou.com';
+refreshMailStatus();
+
+// Statut webhook
+function refreshHookStatus() {
+  const el = document.getElementById('hookStat');
+  if (state.webhook) { el.textContent = '✅ Configuré ›'; el.style.color = '#5fd1a8'; }
+  else { el.textContent = 'Non configuré ›'; el.style.color = '#7a96a8'; }
+}
+refreshHookStatus();
+
+// ─── Ligne Push : ouvre modale d'aide ───
+document.getElementById('rowPush').addEventListener('click', () => {
+  const c = Notification.permission;
+  let status = '';
+  if (c === 'granted') status = '<span style="color:#5fd1a8">✅ Autorisées</span>';
+  else if (c === 'denied') status = '<span style="color:#ef4444">🚫 Refusées par le navigateur</span>';
+  else status = '<span style="color:#fbbf24">⚠️ Permission non encore demandée</span>';
+
+  const ov = nxModal('📱 Notifications Push', `
+    <div class="nx-help">
+      Statut actuel : ${status}<br><br>
+      ${c === 'denied' ? `Vous avez refusé les notifications. Pour les réactiver :<br>
+        <strong>Chrome Android</strong> : ⋮ → Paramètres → Paramètres des sites → Notifications → trouvez ce site → Autoriser<br>
+        <strong>PWA installée</strong> : Appui long sur l'icône → Infos → Notifications → activer` :
+        c === 'granted' ? 'Les notifications fonctionnent. Vous recevrez les alertes système.' :
+        'Cliquez sur "Activer push" en bas du bloc Canaux pour autoriser les notifications.'}
+    </div>
+    <button class="nexus-btn alt" data-x="1" style="width:100%">Fermer</button>
+  `);
+});
+
+// ─── Ligne Telegram : ouvre modale configuration ───
+document.getElementById('rowTg').addEventListener('click', () => {
+  const c = Telegram.cfg();
+  const ov = nxModal('✈️ Configurer Telegram', `
+    <div class="nx-help">
+      <strong>Étape 1 — Créer un bot</strong><br>
+      Sur Telegram, cherchez <code>@BotFather</code> → envoyez <code>/newbot</code> → suivez les instructions → copiez le <strong>TOKEN</strong>.<br><br>
+      <strong>Étape 2 — Récupérer votre Chat ID</strong><br>
+      1. Envoyez "salut" à votre bot dans Telegram<br>
+      2. Cliquez <strong>"Récupérer mon Chat ID"</strong> ci-dessous après avoir collé le token
+    </div>
+
+    <div class="nx-modal-label">Token du bot</div>
+    <input type="text" class="nx-modal-input" id="tgToken" placeholder="123456789:ABCdef..." value="${c.token||''}"/>
+
+    <div class="nx-modal-label">Chat ID</div>
+    <input type="text" class="nx-modal-input" id="tgChatId" placeholder="123456789 ou -1001234567890" value="${c.chatId||''}"/>
+
+    <button class="nexus-btn alt" id="tgFindChat" style="width:100%;margin-bottom:8px">🔍 Récupérer mon Chat ID</button>
+    <button class="nexus-btn alt" id="tgTest" style="width:100%;margin-bottom:8px">🧪 Tester l'envoi</button>
+    <button class="nexus-btn" id="tgSave" style="width:100%;margin-bottom:8px">💾 Enregistrer</button>
+    ${c.token ? '<button class="nexus-btn danger" id="tgClear" style="width:100%">🗑️ Supprimer la configuration</button>' : ''}
+  `);
+
+  document.getElementById('tgFindChat').onclick = async () => {
+    const tk = document.getElementById('tgToken').value.trim();
+    if (!tk) return nxToast('Collez d\'abord le token', 'warn');
+    try {
+      const r = await fetch(`https://api.telegram.org/bot${tk}/getUpdates`);
+      const data = await r.json();
+      if (!data.ok) throw new Error(data.description);
+      const chats = [...new Set((data.result||[]).map(u =>
+        (u.message?.chat?.id) || (u.channel_post?.chat?.id)
+      ).filter(Boolean))];
+      if (!chats.length) {
+        nxToast('Aucun message reçu. Envoyez "salut" à votre bot d\'abord', 'warn');
+      } else {
+        document.getElementById('tgChatId').value = chats[0];
+        nxToast(`Chat ID trouvé : ${chats[0]}`, 'success');
+      }
+    } catch (e) {
+      nxToast('Erreur : ' + e.message, 'error');
+    }
+  };
+
+  document.getElementById('tgTest').onclick = async () => {
+    const tk = document.getElementById('tgToken').value.trim();
+    const ci = document.getElementById('tgChatId').value.trim();
+    if (!tk || !ci) return nxToast('Token et Chat ID requis', 'warn');
+    try {
+      // Test temporaire sans sauver
+      const saved = state.telegram;
+      state.telegram = { token: tk, chatId: ci };
+      await Telegram.send('🧪 <b>Test depuis Nexus AI</b>\n\nSi vous lisez ce message, Telegram est correctement configuré ✅\n\n<i>Wassou Multiservices</i>');
+      state.telegram = saved;
+      nxToast('Message envoyé sur Telegram ✅', 'success');
+    } catch (e) {
+      nxToast('Erreur : ' + e.message, 'error');
+    }
+  };
+
+  document.getElementById('tgSave').onclick = async () => {
+    const tk = document.getElementById('tgToken').value.trim();
+    const ci = document.getElementById('tgChatId').value.trim();
+    if (!tk || !ci) return nxToast('Token et Chat ID requis', 'warn');
+    try {
+      const bot = await Telegram.getMe(tk);
+      state.telegram = { token: tk, chatId: ci, botUsername: bot.username, botName: bot.first_name };
+      saveState(state);
+      refreshTgStatus();
+      ov.remove();
+      nxToast(`Bot @${bot.username} enregistré`, 'success');
+    } catch (e) {
+      nxToast('Token invalide : ' + e.message, 'error');
+    }
+  };
+
+  if (c.token) {
+    document.getElementById('tgClear').onclick = async () => {
+      if (await nxConfirm('Supprimer la configuration Telegram ?')) {
+        delete state.telegram;
+        saveState(state);
+        refreshTgStatus();
+        ov.remove();
+        nxToast('Configuration Telegram supprimée', 'success');
+      }
+    };
+  }
+});
+
+// ─── Ligne Email : ouvre modale ───
+document.getElementById('rowMail').addEventListener('click', () => {
+  const ov = nxModal('📧 Email destinataire', `
+    <div class="nx-help">
+      Email où recevoir les alertes (ouverture du client mail natif).<br>
+      Pour un envoi auto, il faudrait un webhook (voir Make.com).
+    </div>
+    <div class="nx-modal-label">Adresse email</div>
+    <input type="email" class="nx-modal-input" id="mailInput" value="${state.mail||''}" placeholder="vous@exemple.com"/>
+    <button class="nexus-btn" id="mailSave" style="width:100%;margin-top:8px">💾 Enregistrer</button>
+  `);
+  document.getElementById('mailSave').onclick = () => {
+    const v = document.getElementById('mailInput').value.trim();
+    if (!v.includes('@')) return nxToast('Email invalide', 'warn');
+    state.mail = v;
+    saveState(state);
+    refreshMailStatus();
+    ov.remove();
+    nxToast('Email enregistré', 'success');
+  };
+});
+
+// ─── Ligne Webhook : ouvre modale ───
+document.getElementById('rowHook').addEventListener('click', () => {
+  const ov = nxModal('🔗 Webhook Make / Zapier', `
+    <div class="nx-help">
+      URL HTTPS d'un webhook Make.com ou Zapier qui recevra les alertes en JSON.<br>
+      Format envoyé : <code>{type, title, message, timestamp}</code>
+    </div>
+    <div class="nx-modal-label">URL du webhook</div>
+    <input type="url" class="nx-modal-input" id="hookInput" value="${state.webhook||''}" placeholder="https://hook.eu1.make.com/..."/>
+    <button class="nexus-btn alt" id="hookTest" style="width:100%;margin-bottom:8px">🧪 Tester</button>
+    <button class="nexus-btn" id="hookSave" style="width:100%">💾 Enregistrer</button>
+  `);
+  document.getElementById('hookTest').onclick = async () => {
+    const u = document.getElementById('hookInput').value.trim();
+    if (!u.startsWith('https://')) return nxToast('URL HTTPS requise', 'warn');
+    try {
+      await fetch(u, { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ type:'test', title:'Test Webhook', message:'Webhook fonctionne !', timestamp: new Date().toISOString() })});
+      nxToast('Webhook appelé ✅', 'success');
+    } catch (e) { nxToast('Erreur : '+e.message, 'error'); }
+  };
+  document.getElementById('hookSave').onclick = () => {
+    const u = document.getElementById('hookInput').value.trim();
+    if (u && !u.startsWith('https://')) return nxToast('URL HTTPS requise', 'warn');
+    if (u) state.webhook = u; else delete state.webhook;
+    saveState(state);
+    refreshHookStatus();
+    ov.remove();
+    nxToast('Webhook enregistré', 'success');
+  };
+});
+
+// ─── Test alerte : envoie sur tous les canaux configurés ───
+document.getElementById('testAlert').addEventListener('click', async () => {
+  const now = new Date().toLocaleTimeString('fr-FR');
+  const sent = [];
+  const failed = [];
+
+  // 1. Journal local
+  const a = document.getElementById('alerts');
+  a.innerHTML = `<div style="text-align:left;padding:8px;background:#1a2a25;border-left:3px solid #5fd1a8;border-radius:6px;color:#e6edf3">
+    <strong>🧪 Test alerte</strong> · ${now}<br>
+    <span style="font-size:12px;color:#7a96a8" id="testLog">Envoi en cours…</span>
+  </div>`;
+
+  // 2. Push système
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      new Notification('Wassou — Test alerte', {
+        body: 'Le système d\'alertes fonctionne correctement.',
+        icon: 'icons/icon-192.png'
+      });
+      sent.push('Push');
+    } catch (e) { failed.push('Push'); }
+  }
+
+  // 3. Telegram (si configuré)
+  if (Telegram.cfg().token) {
+    try {
+      await Telegram.send(
+        '🧪 <b>Test alerte — Nexus AI</b>\n\n' +
+        `Heure : ${now}\n` +
+        'Tous les canaux d\'alerte sont opérationnels ✅\n\n' +
+        '<i>Wassou Multiservices · Maintenance</i>'
+      );
+      sent.push('Telegram');
+    } catch (e) {
+      failed.push('Telegram (' + e.message + ')');
+    }
+  }
+
+  // 4. Webhook
+  if (state.webhook) {
+    try {
+      await fetch(state.webhook, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          type: 'test',
+          title: 'Test alerte Nexus AI',
+          message: 'Tous les canaux opérationnels',
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      sent.push('Webhook');
+    } catch (e) { failed.push('Webhook'); }
+  }
+
+  // 5. Mise à jour du journal
+  const log = document.getElementById('testLog');
+  if (sent.length === 0 && failed.length === 0) {
+    log.innerHTML = '⚠️ Aucun canal configuré. Cliquez sur les lignes pour configurer Telegram / Webhook.';
+    nxToast('Aucun canal configuré', 'warn');
+  } else {
+    let html = '';
+    if (sent.length)   html += '✅ Envoyé via : <strong>' + sent.join(', ') + '</strong>';
+    if (failed.length) html += (html ? '<br>' : '') + '❌ Échec : ' + failed.join(', ');
+    log.innerHTML = html;
+    nxToast(sent.length + ' canal' + (sent.length>1?'s':'') + ' OK', sent.length ? 'success' : 'error');
+  }
+});
+
 // ─── Déconnexion ───
 document.getElementById('lo').addEventListener('click', () => Auth.logout());
 
@@ -226,25 +582,6 @@ document.getElementById('clearAlerts').addEventListener('click', async () => {
     document.getElementById('alerts').textContent = 'Aucune alerte. Tout fonctionne normalement ✅';
     nxToast('Journal vidé', 'success');
   }
-});
-
-// ─── Test alerte ───
-document.getElementById('testAlert').addEventListener('click', () => {
-  // Affiche une alerte dans le journal
-  const a = document.getElementById('alerts');
-  const now = new Date().toLocaleTimeString('fr-FR');
-  a.innerHTML = `<div style="text-align:left;padding:8px;background:#1a2a25;border-left:3px solid #5fd1a8;border-radius:6px;color:#e6edf3">
-    <strong>🧪 Test alerte</strong> · ${now}<br>
-    <span style="font-size:12px;color:#7a96a8">Tous les canaux d'alerte ont été testés avec succès.</span>
-  </div>`;
-  // Tente une notification système si autorisée
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification('Wassou — Test alerte', {
-      body: 'Le système d\'alertes fonctionne correctement.',
-      icon: 'icons/icon-192.png'
-    });
-  }
-  nxToast('Alerte test envoyée', 'success');
 });
 
 // ─── Activer push ───

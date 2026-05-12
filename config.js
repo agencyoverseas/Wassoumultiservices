@@ -464,7 +464,7 @@ Tu as accès aux outils suivants :
       telegram: {
         active: false,                            // À activer après configuration
         bot_token: "",                            // Voir guide TELEGRAM_SETUP.md
-        chat_id: "",                              // Votre chat ID Telegram
+        chat_id: "68944659",                              // Votre chat ID Telegram
       },
       
       // 3. Email de fallback
